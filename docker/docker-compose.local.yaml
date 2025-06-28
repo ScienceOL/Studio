@@ -1,0 +1,9 @@
+services:
+  service:
+    volumes:
+      - ../service:/app
+    env_file:
+      - .env.local
+  web:
+    env_file:
+      - .env.local

@@ -1,0 +1,7 @@
+services:
+  service:
+    env_file:
+      - .env.prod
+  web:
+    env_file:
+      - .env.prod
