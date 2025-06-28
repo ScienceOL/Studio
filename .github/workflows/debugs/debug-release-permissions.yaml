@@ -1,0 +1,35 @@
+name: Debug Release Permissions
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_tag:
+        description: 'Tag to use for test release'
+        required: true
+        default: 'test-tag'
+
+# Add this permissions block to fix the issue
+permissions:
+  contents: write # This allows creating releases
+
+jobs:
+  test-release-creation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show GitHub context
+        run: echo '${{ toJSON(github) }}'
+
+      - name: Test Release Creation
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.test_tag }}
+          release_name: Test Release ${{ github.event.inputs.test_tag }}
+          body: |
+            This is a test release to verify permissions.
+          draft: true # Make it a draft so it doesn't affect real releases
+          prerelease: true

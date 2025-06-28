@@ -1,0 +1,328 @@
+name: 'Manifest Merge'
+description: 'Merges multi-architecture Docker image manifests'
+
+inputs:
+  registry:
+    description: 'Docker registry URL'
+    required: true
+  username:
+    description: 'Registry username'
+    required: true
+  password:
+    description: 'Registry password'
+    required: true
+  service_image:
+    description: 'Service image name with tag'
+    required: true
+  protium_image:
+    description: 'Protium image name with tag'
+    required: true
+  repo:
+    description: 'Repository name'
+    required: true
+  run_id:
+    description: 'GitHub Actions run ID'
+    required: true
+  pr_number:
+    description: 'Pull request number'
+    required: true
+  pr_title:
+    description: 'Pull request title'
+    required: false
+    default: ''
+  pr_url:
+    description: 'Pull request URL'
+    required: false
+    default: ''
+  head_ref:
+    description: 'Head branch name'
+    required: true
+  base_ref:
+    description: 'Base branch name'
+    required: true
+  smtp_server:
+    description: 'SMTP server address'
+    required: true
+  smtp_port:
+    description: 'SMTP server port'
+    required: true
+  smtp_user:
+    description: 'SMTP username'
+    required: true
+  smtp_pass:
+    description: 'SMTP password'
+    required: true
+  recipient:
+    description: 'Email recipient'
+    required: true
+  commit_author:
+    description: 'Commit author'
+    required: true
+  commit_email:
+    description: 'Commit email'
+    required: true
+  commit_message:
+    description: 'Commit message'
+    required: true
+  commit_sha:
+    description: 'Full commit SHA'
+    required: true
+  commit_sha_short:
+    description: 'Short commit SHA'
+    required: true
+  commit_date:
+    description: 'Commit date'
+    required: true
+
+outputs:
+  merge_start:
+    description: 'Merge start time'
+    value: ${{ steps.merge_start.outputs.time }}
+  merge_end:
+    description: 'Merge end time'
+    value: ${{ steps.merge_duration.outputs.end_time }}
+  merge_duration:
+    description: 'Merge duration'
+    value: ${{ steps.merge_duration.outputs.duration }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set merge start time
+      id: merge_start
+      shell: bash
+      run: echo "time=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+
+    - name: Login to Docker Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+
+    - name: Extract specific manifests from architecture tags
+      id: extract_manifests
+      shell: bash
+      run: |
+        echo "🔍 Checking arch-specific images status..."
+        docker buildx imagetools inspect ${{ inputs.service_image }}-amd64 || echo "Image not found: ${{ inputs.service_image }}-amd64"
+        docker buildx imagetools inspect ${{ inputs.service_image }}-arm64 || echo "Image not found: ${{ inputs.service_image }}-arm64"
+
+        # 提取基础镜像路径（不含标签）
+        SERVICE_BASE_PATH=$(echo "${{ inputs.service_image }}" | cut -d':' -f1)
+        PROTIUM_BASE_PATH=$(echo "${{ inputs.protium_image }}" | cut -d':' -f1)
+
+        echo "Using base paths:"
+        echo "Service base path: $SERVICE_BASE_PATH"
+        echo "Protium base path: $PROTIUM_BASE_PATH"
+
+        # Extract the actual image manifests for AMD64 (try multiple methods)
+        AMD64_SERVICE_DIGEST=$(docker buildx imagetools inspect ${{ inputs.service_image }}-amd64 --format '{{ range .Manifest.Manifests }}{{ if eq .Platform.Architecture "amd64" }}{{ .Digest }}{{ end }}{{ end }}' 2>/dev/null || echo "")
+        if [ -z "$AMD64_SERVICE_DIGEST" ]; then
+          AMD64_SERVICE_DIGEST=$(docker buildx imagetools inspect ${{ inputs.service_image }}-amd64 | grep -A 1 "linux/amd64" | grep "Name:" | awk -F '@' '{print $2}' || echo "")
+        fi
+
+        # Extract the actual image manifests for ARM64 (try multiple methods)
+        ARM64_SERVICE_DIGEST=$(docker buildx imagetools inspect ${{ inputs.service_image }}-arm64 --format '{{ range .Manifest.Manifests }}{{ if eq .Platform.Architecture "arm64" }}{{ .Digest }}{{ end }}{{ end }}' 2>/dev/null || echo "")
+        if [ -z "$ARM64_SERVICE_DIGEST" ]; then
+          ARM64_SERVICE_DIGEST=$(docker buildx imagetools inspect ${{ inputs.service_image }}-arm64 | grep -A 1 "linux/arm64" | grep "Name:" | awk -F '@' '{print $2}' || echo "")
+        fi
+
+        # Extract the actual image manifests for Protium
+        AMD64_PROTIUM_DIGEST=$(docker buildx imagetools inspect ${{ inputs.protium_image }}-amd64 --format '{{ range .Manifest.Manifests }}{{ if eq .Platform.Architecture "amd64" }}{{ .Digest }}{{ end }}{{ end }}' 2>/dev/null || echo "")
+        if [ -z "$AMD64_PROTIUM_DIGEST" ]; then
+          AMD64_PROTIUM_DIGEST=$(docker buildx imagetools inspect ${{ inputs.protium_image }}-amd64 | grep -A 1 "linux/amd64" | grep "Name:" | awk -F '@' '{print $2}' || echo "")
+        fi
+
+        ARM64_PROTIUM_DIGEST=$(docker buildx imagetools inspect ${{ inputs.protium_image }}-arm64 --format '{{ range .Manifest.Manifests }}{{ if eq .Platform.Architecture "arm64" }}{{ .Digest }}{{ end }}{{ end }}' 2>/dev/null || echo "")
+        if [ -z "$ARM64_PROTIUM_DIGEST" ]; then
+          ARM64_PROTIUM_DIGEST=$(docker buildx imagetools inspect ${{ inputs.protium_image }}-arm64 | grep -A 1 "linux/arm64" | grep "Name:" | awk -F '@' '{print $2}' || echo "")
+        fi
+
+        # Validate extracted digests
+        if [ -z "$AMD64_SERVICE_DIGEST" ] || [ -z "$ARM64_SERVICE_DIGEST" ] || [ -z "$AMD64_PROTIUM_DIGEST" ] || [ -z "$ARM64_PROTIUM_DIGEST" ]; then
+          echo "⚠️ WARNING: One or more digests could not be extracted!"
+          echo "AMD64 service digest: $AMD64_SERVICE_DIGEST"
+          echo "ARM64 service digest: $ARM64_SERVICE_DIGEST"
+          echo "AMD64 protium digest: $AMD64_PROTIUM_DIGEST"
+          echo "ARM64 protium digest: $ARM64_PROTIUM_DIGEST"
+          
+          # Fall back to using the tags directly
+          echo "amd64_service=${{ inputs.service_image }}-amd64" >> $GITHUB_OUTPUT
+          echo "arm64_service=${{ inputs.service_image }}-arm64" >> $GITHUB_OUTPUT
+          echo "amd64_protium=${{ inputs.protium_image }}-amd64" >> $GITHUB_OUTPUT
+          echo "arm64_protium=${{ inputs.protium_image }}-arm64" >> $GITHUB_OUTPUT
+        else
+          echo "✅ All digests successfully extracted!"
+          echo "AMD64 service digest: $AMD64_SERVICE_DIGEST"
+          echo "ARM64 service digest: $ARM64_SERVICE_DIGEST"
+          echo "AMD64 protium digest: $AMD64_PROTIUM_DIGEST"
+          echo "ARM64 protium digest: $ARM64_PROTIUM_DIGEST"
+          
+          # 使用正确的镜像路径设置输出
+          echo "amd64_service=${SERVICE_BASE_PATH}@$AMD64_SERVICE_DIGEST" >> $GITHUB_OUTPUT
+          echo "arm64_service=${SERVICE_BASE_PATH}@$ARM64_SERVICE_DIGEST" >> $GITHUB_OUTPUT
+          echo "amd64_protium=${PROTIUM_BASE_PATH}@$AMD64_PROTIUM_DIGEST" >> $GITHUB_OUTPUT
+          echo "arm64_protium=${PROTIUM_BASE_PATH}@$ARM64_PROTIUM_DIGEST" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create multi-arch manifest for service
+      shell: bash
+      run: |
+        # 首先尝试删除可能存在的旧 manifest (忽略错误)
+        docker manifest rm ${{ inputs.service_image }} || true
+
+        echo "Creating service manifest with:"
+        echo "AMD64: ${{ steps.extract_manifests.outputs.amd64_service }}"
+        echo "ARM64: ${{ steps.extract_manifests.outputs.arm64_service }}"
+
+        # 创建新的 manifest，使用具体的镜像摘要
+        docker manifest create ${{ inputs.service_image }} \
+          --amend ${{ steps.extract_manifests.outputs.amd64_service }} \
+          --amend ${{ steps.extract_manifests.outputs.arm64_service }} || echo "⚠️ Manifest creation had issues"
+
+        # 显式注释平台信息
+        docker manifest annotate ${{ inputs.service_image }} ${{ steps.extract_manifests.outputs.amd64_service }} --os linux --arch amd64 || echo "⚠️ AMD64 annotation had issues"
+        docker manifest annotate ${{ inputs.service_image }} ${{ steps.extract_manifests.outputs.arm64_service }} --os linux --arch arm64 || echo "⚠️ ARM64 annotation had issues"
+
+        # 推送 manifest
+        docker manifest push --purge ${{ inputs.service_image }} || { echo "❌ Service manifest push failed"; exit 1; }
+
+        echo "✅ Service manifest pushed successfully!"
+
+    - name: Create multi-arch manifest for protium
+      shell: bash
+      run: |
+        # 首先尝试删除可能存在的旧 manifest (忽略错误)
+        docker manifest rm ${{ inputs.protium_image }} || true
+
+        echo "Creating protium manifest with:"
+        echo "AMD64: ${{ steps.extract_manifests.outputs.amd64_protium }}"
+        echo "ARM64: ${{ steps.extract_manifests.outputs.arm64_protium }}"
+
+        # 创建新的 manifest，使用具体的镜像摘要
+        docker manifest create ${{ inputs.protium_image }} \
+          --amend ${{ steps.extract_manifests.outputs.amd64_protium }} \
+          --amend ${{ steps.extract_manifests.outputs.arm64_protium }} || echo "⚠️ Manifest creation had issues"
+          
+        # 显式注释平台信息  
+        docker manifest annotate ${{ inputs.protium_image }} ${{ steps.extract_manifests.outputs.amd64_protium }} --os linux --arch amd64 || echo "⚠️ AMD64 annotation had issues"
+        docker manifest annotate ${{ inputs.protium_image }} ${{ steps.extract_manifests.outputs.arm64_protium }} --os linux --arch arm64 || echo "⚠️ ARM64 annotation had issues"
+
+        # 推送 manifest
+        docker manifest push --purge ${{ inputs.protium_image }} || { echo "❌ Protium manifest push failed"; exit 1; }
+
+        echo "✅ Protium manifest pushed successfully!"
+
+    - name: Verify multi-platform manifests
+      shell: bash
+      run: |
+        echo "🔍 Verifying service multi-arch manifest..."
+        docker buildx imagetools inspect ${{ inputs.service_image }}
+
+        echo "🔍 Verifying protium multi-arch manifest..."
+        docker buildx imagetools inspect ${{ inputs.protium_image }}
+
+        # 使用更可靠的检查方式
+        # Fix: Remove the period between 'imagetools' and 'inspect', and fix the template
+        SERVICE_PLATFORMS=$(docker buildx imagetools inspect ${{ inputs.service_image }} --format '{{ range .Manifest.Manifests }}{{ .Platform.Architecture }}/{{ .Platform.OS }} {{ end }}')
+        PROTIUM_PLATFORMS=$(docker buildx imagetools inspect ${{ inputs.protium_image }} --format '{{ range .Manifest.Manifests }}{{ .Platform.Architecture }}/{{ .Platform.OS }} {{ end }}')
+
+        echo "Service platforms: $SERVICE_PLATFORMS"
+        echo "Protium platforms: $PROTIUM_PLATFORMS"
+
+        # Check if both architectures are present using string matching
+        if [[ "$SERVICE_PLATFORMS" == *"amd64/linux"* && "$SERVICE_PLATFORMS" == *"arm64/linux"* ]]; then
+          echo "✅ Service image has both platforms"
+        else
+          echo "❌ Service image is missing platforms"
+          exit 1
+        fi
+
+        if [[ "$PROTIUM_PLATFORMS" == *"amd64/linux"* && "$PROTIUM_PLATFORMS" == *"arm64/linux"* ]]; then
+          echo "✅ Protium image has both platforms"
+        else
+          echo "❌ Protium image is missing platforms"
+          exit 1
+        fi
+
+    - name: Calculate merge duration
+      id: merge_duration
+      shell: bash
+      run: |
+        MERGE_END=$(date '+%Y-%m-%d %H:%M:%S')
+
+        # Handle different date command on macOS and Linux
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          MERGE_START=$(date -j -f "%Y-%m-%d %H:%M:%S" "${{ steps.merge_start.outputs.time }}" +%s)
+          MERGE_END_SEC=$(date -j -f "%Y-%m-%d %H:%M:%S" "$MERGE_END" +%s)
+        else
+          MERGE_START=$(date -d "${{ steps.merge_start.outputs.time }}" +%s)
+          MERGE_END_SEC=$(date -d "$MERGE_END" +%s)
+        fi
+
+        DURATION_SEC=$((MERGE_END_SEC - MERGE_START))
+
+        # Format as hours:minutes:seconds
+        HOURS=$((DURATION_SEC / 3600))
+        MINUTES=$(((DURATION_SEC % 3600) / 60))
+        SECONDS=$((DURATION_SEC % 60))
+
+        DURATION="${HOURS}h ${MINUTES}m ${SECONDS}s"
+
+        echo "end_time=$MERGE_END" >> $GITHUB_OUTPUT
+        echo "duration=$DURATION" >> $GITHUB_OUTPUT
+
+    - name: Send Success Email
+      if: success()
+      uses: ./.github/actions/manifest-merge-success-notification
+      with:
+        smtp_server: ${{ inputs.smtp_server }}
+        smtp_port: ${{ inputs.smtp_port }}
+        smtp_user: ${{ inputs.smtp_user }}
+        smtp_pass: ${{ inputs.smtp_pass }}
+        recipient: ${{ inputs.recipient }}
+        repo: ${{ inputs.repo }}
+        pr_number: ${{ inputs.pr_number }}
+        pr_title: ${{ inputs.pr_title }}
+        pr_url: ${{ inputs.pr_url }}
+        head_ref: ${{ inputs.head_ref }}
+        base_ref: ${{ inputs.base_ref }}
+        run_id: ${{ inputs.run_id }}
+        merge_start: ${{ steps.merge_start.outputs.time }}
+        merge_end: ${{ steps.merge_duration.outputs.end_time }}
+        merge_duration: ${{ steps.merge_duration.outputs.duration }}
+        commit_author: ${{ inputs.commit_author }}
+        commit_email: ${{ inputs.commit_email }}
+        commit_message: ${{ inputs.commit_message }}
+        commit_sha: ${{ inputs.commit_sha }}
+        commit_sha_short: ${{ inputs.commit_sha_short }}
+        commit_date: ${{ inputs.commit_date }}
+        service_image: ${{ inputs.service_image }}
+        protium_image: ${{ inputs.protium_image }}
+
+    - name: Send Failure Email
+      if: failure()
+      uses: ./.github/actions/manifest-merge-failure-notification
+      with:
+        smtp_server: ${{ inputs.smtp_server }}
+        smtp_port: ${{ inputs.smtp_port }}
+        smtp_user: ${{ inputs.smtp_user }}
+        smtp_pass: ${{ inputs.smtp_pass }}
+        recipient: ${{ inputs.recipient }}
+        repo: ${{ inputs.repo }}
+        pr_number: ${{ inputs.pr_number }}
+        pr_title: ${{ inputs.pr_title }}
+        pr_url: ${{ inputs.pr_url }}
+        head_ref: ${{ inputs.head_ref }}
+        base_ref: ${{ inputs.base_ref }}
+        run_id: ${{ inputs.run_id }}
+        merge_start: ${{ steps.merge_start.outputs.time }}
+        merge_end: ${{ steps.merge_duration.outputs.end_time }}
+        merge_duration: ${{ steps.merge_duration.outputs.duration }}
+        commit_author: ${{ inputs.commit_author }}
+        commit_email: ${{ inputs.commit_email }}
+        commit_message: ${{ inputs.commit_message }}
+        commit_sha: ${{ inputs.commit_sha }}
+        commit_sha_short: ${{ inputs.commit_sha_short }}
+        commit_date: ${{ inputs.commit_date }}

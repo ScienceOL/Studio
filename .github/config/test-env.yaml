@@ -1,0 +1,17 @@
+# Test environment configuration for Docker builds
+# Don't put any sensitive information here
+
+# Node environment
+NODE_ENV: production
+
+# Application name (renamed from PLATFORM)
+APP_NAME: Protium
+
+# URLs configuration
+SITE_URL: https://workflow.test.aissquare.com
+BASE_URL: https://api.test.aissquare.com/api
+MEDIA_URL: https://api.test.aissquare.com
+WS_URL: wss://api.test.aissquare.com
+
+BRM_OAUTH_CLIENT_ID: "bb154829-8428-4fef-a110-b1066c752520"
+BRM_OAUTH_URL: "https://platform.test.dp.tech"

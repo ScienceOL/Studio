@@ -1,0 +1,68 @@
+name: 'Setup Build Environment'
+description: 'Prepares the build environment and sets up necessary variables'
+
+inputs:
+  fetch-depth:
+    description: 'Number of commits to fetch. 0 indicates all history for all branches and tags.'
+    required: false
+    default: '1'
+
+outputs:
+  build_start:
+    description: 'Build start time'
+    value: ${{ steps.build_info.outputs.build_start }}
+  commit_author:
+    description: 'Commit author name'
+    value: ${{ steps.commit_info.outputs.author }}
+  commit_email:
+    description: 'Commit author email'
+    value: ${{ steps.commit_info.outputs.email }}
+  commit_message:
+    description: 'Commit message'
+    value: ${{ steps.commit_info.outputs.message }}
+  commit_sha:
+    description: 'Full commit SHA'
+    value: ${{ steps.commit_info.outputs.sha }}
+  commit_sha_short:
+    description: 'Short commit SHA'
+    value: ${{ steps.commit_info.outputs.sha_short }}
+  commit_date:
+    description: 'Commit date'
+    value: ${{ steps.commit_info.outputs.date }}
+
+runs:
+  using: 'composite'
+  steps:
+    # - name: Checkout repository
+    #   uses: actions/checkout@v4
+    #   with:
+    #     fetch-depth: ${{ inputs.fetch-depth }}
+
+    - name: Setup Docker buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Record build start time and info
+      id: build_info
+      shell: bash
+      run: |
+        echo "build_start=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+        echo "Build started at $(date '+%Y-%m-%d %H:%M:%S')"
+
+    - name: Get commit information
+      id: commit_info
+      shell: bash
+      run: |
+        echo "author=$(git log -1 --pretty=format:'%an')" >> $GITHUB_OUTPUT
+        echo "email=$(git log -1 --pretty=format:'%ae')" >> $GITHUB_OUTPUT
+        echo "message=$(git log -1 --pretty=format:'%s')" >> $GITHUB_OUTPUT
+        echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        echo "date=$(git log -1 --pretty=format:'%cd' --date=format:'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+
+        echo "Commit information:"
+        echo "Author: $(git log -1 --pretty=format:'%an')"
+        echo "Email: $(git log -1 --pretty=format:'%ae')"
+        echo "Message: $(git log -1 --pretty=format:'%s')"
+        echo "SHA: $(git rev-parse HEAD)"
+        echo "Short SHA: $(git rev-parse --short HEAD)"
+        echo "Date: $(git log -1 --pretty=format:'%cd' --date=format:'%Y-%m-%d %H:%M:%S')"

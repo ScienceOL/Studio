@@ -1,0 +1,13 @@
+# Production environment configuration for Docker builds
+
+NODE_ENV: production
+APP_NAME: Protium
+
+# Production URLs
+SITE_URL: https://workflow.aissquare.com
+BASE_URL: https://api.aissquare.com/api
+MEDIA_URL: https://api.aissquare.com
+WS_URL: wss://api.aissquare.com
+
+BRM_OAUTH_CLIENT_ID: "a5478cff-b2fa-4280-818a-3b2f2fa9e23d"
+BRM_OAUTH_URL: "https://platform.dp.tech"

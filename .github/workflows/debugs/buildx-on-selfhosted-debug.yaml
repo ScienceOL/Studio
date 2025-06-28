@@ -1,0 +1,36 @@
+name: Debug Buildx on Self-Hosted
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug-build:
+    name: Test Buildx with QEMU
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+      fail-fast: false
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          install: true
+
+      - name: Build test image for ${{ matrix.arch }}
+        run: |
+          docker buildx build \
+            --platform linux/${{ matrix.arch }} \
+            -t debug-build:${{ matrix.arch }} \
+            --load \
+            .

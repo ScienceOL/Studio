@@ -1,0 +1,243 @@
+name: Buildx Images When Push dev
+
+on:
+  push:
+    branches:
+      - dev
+
+env:
+  REGISTRY_REPO: registry.aissquare.com
+  SERVICE_IMAGE: registry.aissquare.com/base/service:dev
+  PROTIUM_IMAGE: registry.aissquare.com/base/web:dev
+  RECEIVER: quehaohui@dp.tech
+
+jobs:
+  build-and-push:
+    outputs:
+      service_digest: ${{ steps.save_digest.outputs.service_digest }}
+      protium_digest: ${{ steps.save_digest.outputs.protium_digest }}
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runs_on: ubuntu-latest
+          - arch: arm64
+            runs_on: [self-hosted, ARM64]
+      fail-fast: false
+    runs-on: ${{ matrix.runs_on }}
+
+    name: Build for ${{ matrix.arch }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup build environment
+        id: build_setup
+        uses: ./.github/actions/build-setup
+        with:
+          fetch-depth: 0
+
+      - name: Build and push Docker images
+        id: docker_build
+        uses: ./.github/actions/docker-build-push
+        with:
+          architecture: ${{ matrix.arch }}
+          registry: ${{ env.REGISTRY_REPO }}
+          username: ${{ secrets.HARBOR_REGISTRY_USERNAME }}
+          password: ${{ secrets.HARBOR_REGISTRY_PASSWORD }}
+          service_image: ${{ env.SERVICE_IMAGE }}
+          protium_image: ${{ env.PROTIUM_IMAGE }}
+          env_file: .github/config/test-env.yaml
+
+      # 保存镜像摘要供后续步骤使用
+      - name: Save image digest
+        id: save_digest
+        if: matrix.arch == 'amd64' # 只需要在一个架构上设置
+        run: |
+          echo "service_digest=${{ steps.docker_build.outputs.service_digest }}" >> $GITHUB_OUTPUT
+          echo "protium_digest=${{ steps.docker_build.outputs.protium_digest }}" >> $GITHUB_OUTPUT
+          echo "PROTIUM_DIGEST=${{ steps.docker_build.outputs.protium_digest }}" >> $GITHUB_ENV
+          echo "SERVICE_DIGEST=${{ steps.docker_build.outputs.service_digest }}" >> $GITHUB_ENV
+          echo "获取到 Protium 镜像摘要: ${{ steps.docker_build.outputs.protium_digest }}"
+          echo "获取到 Service 镜像摘要: ${{ steps.docker_build.outputs.service_digest }}"
+
+      - name: Verify Docker images
+        id: image_verify
+        uses: ./.github/actions/image-verification
+        with:
+          architecture: ${{ matrix.arch }}
+          service_image: ${{ env.SERVICE_IMAGE }}
+          protium_image: ${{ env.PROTIUM_IMAGE }}
+          test_amd64: ${{ matrix.arch == 'amd64' }}
+
+      - name: Calculate build duration
+        if: always()
+        id: build_duration
+        shell: bash
+        run: |
+          # 确保 build_start 有值
+          BUILD_START="${{ steps.build_setup.outputs.build_start }}"
+          if [ -z "$BUILD_START" ]; then
+            echo "Warning: build_start is empty, using current time as fallback"
+            BUILD_START=$(date '+%Y-%m-%d %H:%M:%S')
+          fi
+
+          if [[ $(uname) == 'Darwin' ]]; then
+            BUILD_START_SEC=$(date -j -f "%Y-%m-%d %H:%M:%S" "$BUILD_START" +%s)
+          else
+            BUILD_START_SEC=$(date -d "$BUILD_START" +%s)
+          fi
+          BUILD_END=$(date '+%Y-%m-%d %H:%M:%S')
+          BUILD_END_SEC=$(date +%s)
+          DURATION_SEC=$((BUILD_END_SEC - BUILD_START_SEC))
+
+          # Format as hours:minutes:seconds
+          HOURS=$((DURATION_SEC / 3600))
+          MINUTES=$(((DURATION_SEC % 3600) / 60))
+          SECONDS=$((DURATION_SEC % 60))
+
+          DURATION="${HOURS}h ${MINUTES}m ${SECONDS}s"
+
+          echo "build_end=$BUILD_END" >> $GITHUB_ENV
+          echo "build_duration=$DURATION" >> $GITHUB_ENV
+
+      - name: Send build notification
+        if: always()
+        uses: ./.github/actions/email-notification
+        with:
+          status: ${{ job.status }}
+          smtp_server: smtp.feishu.cn
+          smtp_port: 465
+          smtp_user: ${{ secrets.SMTP_USER }}
+          smtp_pass: ${{ secrets.SMTP_PASS }}
+          recipient: ${{ env.RECEIVER }}
+          architecture: ${{ matrix.arch }}
+          repo: ${{ github.repository }}
+          run_id: ${{ github.run_id }}
+          build_start: ${{ steps.build_setup.outputs.build_start }}
+          build_end: ${{ env.build_end }}
+          build_duration: ${{ env.build_duration }}
+          commit_author: ${{ steps.build_setup.outputs.commit_author }}
+          commit_email: ${{ steps.build_setup.outputs.commit_email }}
+          commit_message: ${{ steps.build_setup.outputs.commit_message }}
+          commit_sha: ${{ steps.build_setup.outputs.commit_sha }}
+          commit_sha_short: ${{ steps.build_setup.outputs.commit_sha_short }}
+          commit_date: ${{ steps.build_setup.outputs.commit_date }}
+          service_image: ${{ env.SERVICE_IMAGE }}
+          protium_image: ${{ env.PROTIUM_IMAGE }}
+
+  merge-manifests:
+    name: Merge multi-arch images
+    needs: build-and-push
+    runs-on: [self-hosted, ARM64]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup build environment
+        id: build_setup
+        uses: ./.github/actions/build-setup
+
+      - name: Merge manifests and send notifications
+        uses: ./.github/actions/manifest-merge
+        with:
+          registry: ${{ env.REGISTRY_REPO }}
+          username: ${{ secrets.HARBOR_REGISTRY_USERNAME }}
+          password: ${{ secrets.HARBOR_REGISTRY_PASSWORD }}
+          service_image: ${{ env.SERVICE_IMAGE }}
+          protium_image: ${{ env.PROTIUM_IMAGE }}
+          repo: ${{ github.repository }}
+          run_id: ${{ github.run_id }}
+          pr_number: ${{ github.event.pull_request.number || '0' }}
+          pr_title: ${{ github.event.pull_request.title || github.event.head_commit.message || 'Direct push to dev' }}
+          pr_url: ${{ github.event.pull_request.html_url || github.event.repository.html_url }}
+          head_ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          base_ref: ${{ github.event.pull_request.base.ref || 'dev' }}
+          smtp_server: smtp.feishu.cn
+          smtp_port: 465
+          smtp_user: ${{ secrets.SMTP_USER }}
+          smtp_pass: ${{ secrets.SMTP_PASS }}
+          recipient: ${{ env.RECEIVER }}
+          commit_author: ${{ steps.build_setup.outputs.commit_author }}
+          commit_email: ${{ steps.build_setup.outputs.commit_email }}
+          commit_message: ${{ steps.build_setup.outputs.commit_message }}
+          commit_sha: ${{ steps.build_setup.outputs.commit_sha }}
+          commit_sha_short: ${{ steps.build_setup.outputs.commit_sha_short }}
+          commit_date: ${{ steps.build_setup.outputs.commit_date }}
+
+      - name: Setup ArgoCD CLI
+        id: setup_argocd
+        run: |
+          # 检查是否已安装 ArgoCD CLI
+          if ! command -v argocd &> /dev/null; then
+
+            echo "ArgoCD CLI 未找到，开始安装..."
+            ARGOCD_VERSION=$(curl --silent "https://api.github.com/repos/argoproj/argo-cd/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+            
+            # 检测操作系统和架构
+            OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+            ARCH=$(uname -m)
+            
+            # 将架构映射到 ArgoCD 的命名约定
+            if [[ "$ARCH" == "x86_64" ]]; then
+              ARCH="amd64"
+            elif [[ "$ARCH" == "aarch64" ]]; then
+              ARCH="arm64"
+            fi
+            
+            # 构建正确的二进制文件名
+            if [[ "$OS" == "darwin" ]]; then
+              BINARY_NAME="argocd-${OS}-${ARCH}"
+            else
+              # 默认为 Linux
+              BINARY_NAME="argocd-linux-${ARCH}"
+            fi
+            
+            echo "系统类型: $OS, 架构: $ARCH, 使用二进制文件: $BINARY_NAME"
+            
+            # 创建工具缓存目录
+            mkdir -p $HOME/.local/bin
+            mkdir -p $HOME/.cache/argocd
+            
+            # 检查缓存中是否存在 ArgoCD
+            ARGOCD_CACHE="$HOME/.cache/argocd/$BINARY_NAME"
+            if [ -f "$ARGOCD_CACHE" ]; then
+              echo "使用缓存的 ArgoCD CLI..."
+              cp "$ARGOCD_CACHE" $HOME/.local/bin/argocd
+            else
+              echo "下载 ArgoCD CLI: $BINARY_NAME..."
+              # 下载到临时文件
+              curl -sSL -o /tmp/$BINARY_NAME https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/$BINARY_NAME
+              # 保存到缓存
+              cp /tmp/$BINARY_NAME "$HOME/.cache/argocd/$BINARY_NAME"
+              # 复制到 bin 目录
+              cp /tmp/$BINARY_NAME $HOME/.local/bin/argocd
+            fi
+            
+            chmod +x $HOME/.local/bin/argocd
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
+          else
+            echo "ArgoCD CLI 已安装，跳过安装步骤"
+          fi
+
+      - name: Deploy to ArgoCD
+        if: success()
+        run: |
+          # 登录 ArgoCD，使用 GitHub Secrets 中存储的凭证
+          argocd login ${{ secrets.ARGOCD_SERVER }} --username ${{ secrets.ARGOCD_USERNAME }} --password ${{ secrets.ARGOCD_PASSWORD }} --grpc-web
+
+          # 使用摘要更新镜像参数 - 注意使用与 Kustomization 配置匹配的镜像路径
+          argocd app set protium-test \
+            --kustomize-image registry.aissquare.com/base/service@${{ needs.build-and-push.outputs.service_digest }} \
+            --kustomize-image registry.aissquare.com/base/web@${{ needs.build-and-push.outputs.protium_digest }}
+
+          # 触发 ArgoCD 应用同步
+          argocd app sync protium-test
+
+          # 等待同步完成
+          argocd app wait protium-test --timeout 300

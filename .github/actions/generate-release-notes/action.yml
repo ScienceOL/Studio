@@ -1,0 +1,198 @@
+name: 'Generate AI Release Notes'
+description: 'Generates release notes using AI by analyzing changes since the previous release'
+
+inputs:
+  github_token:
+    description: 'GitHub token for API access'
+    required: true
+  azure_openai_endpoint:
+    description: 'Azure OpenAI API endpoint'
+    required: true
+  azure_openai_api_key:
+    description: 'Azure OpenAI API key'
+    required: true
+  azure_openai_api_version:
+    description: 'Azure OpenAI API version'
+    required: true
+  azure_openai_deployment:
+    description: 'Azure OpenAI deployment name'
+    required: true
+    default: 'gpt-4o'
+  repository:
+    description: 'Repository name with owner'
+    required: true
+    default: ${{ github.repository }}
+  current_tag:
+    description: 'Current tag being released'
+    required: true
+
+outputs:
+  release_notes:
+    description: 'Generated release notes'
+    value: ${{ steps.generate_notes.outputs.release_notes }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python and virtual environment
+      shell: bash
+      run: |
+        # Create a virtual environment
+        python -m venv ./venv
+
+        # Activate the virtual environment
+        source ./venv/bin/activate
+
+        # Install dependencies in the virtual environment
+        pip install --upgrade pip
+        pip install openai requests
+
+    - name: Generate release notes
+      id: generate_notes
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+        AZURE_OPENAI_KEY: ${{ inputs.azure_openai_api_key }}
+        AZURE_OPENAI_ENDPOINT: ${{ inputs.azure_openai_endpoint }}
+        AZURE_OPENAI_API_VERSION: ${{ inputs.azure_openai_api_version }}
+        AZURE_OPENAI_DEPLOYMENT: ${{ inputs.azure_openai_deployment }}
+        REPO: ${{ inputs.repository }}
+        CURRENT_TAG: ${{ inputs.current_tag }}
+      run: |
+        # Activate the virtual environment
+        source ./venv/bin/activate
+
+        echo "Generating Azure OpenAI release notes for $CURRENT_TAG..."
+
+        # Create a script to generate the notes
+        cat > generate_notes.py << 'EOF'
+        import os
+        import subprocess
+        import json
+        import re
+        import openai
+        from openai import AzureOpenAI
+        import textwrap
+
+        # Azure OpenAI Setup
+        client = AzureOpenAI(
+            api_key=os.environ["AZURE_OPENAI_KEY"],
+            api_version=os.environ["AZURE_OPENAI_API_VERSION"],
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"]
+        )
+
+        deployment_name = os.environ["AZURE_OPENAI_DEPLOYMENT"]
+        repo = os.environ["REPO"]
+        current_tag = os.environ["CURRENT_TAG"]
+
+        def run_command(cmd):
+            return subprocess.check_output(cmd, shell=True).decode('utf-8').strip()
+
+        # Find the previous release tag
+        try:
+            # Try to find the previous tag on main branch
+            prev_tag = run_command(f'git describe --tags --abbrev=0 {current_tag}^ 2>/dev/null || echo ""')
+            
+            if not prev_tag:
+                # Fall back to most recent tag
+                prev_tag = run_command('git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo ""')
+            
+            if not prev_tag:
+                # If still no tag, use the first commit
+                prev_tag = run_command('git rev-list --max-parents=0 HEAD')
+                print(f"No previous tag found, using initial commit: {prev_tag}")
+            else:
+                print(f"Previous tag: {prev_tag}")
+        except Exception as e:
+            print(f"Error finding previous tag: {e}")
+            prev_tag = ""
+
+        # Get list of changes
+        if prev_tag:
+            diff_command = f"git diff --name-status {prev_tag}..{current_tag}"
+            pr_command = f'git log {prev_tag}..{current_tag} --pretty=format:"%s" | grep -E "^Merge pull request #[0-9]+ from" || echo ""'
+        else:
+            diff_command = "git diff --name-status $(git rev-list --max-parents=0 HEAD)..HEAD"
+            pr_command = 'git log --pretty=format:"%s" | grep -E "^Merge pull request #[0-9]+ from" || echo ""'
+
+        # Get file changes
+        changes = run_command(diff_command)
+
+        # Get merged PRs
+        merged_prs = run_command(pr_command)
+        pr_list = []
+
+        if merged_prs:
+            for line in merged_prs.split('\n'):
+                match = re.search(r'#(\d+)', line)
+                if match:
+                    pr_number = match.group(1)
+                    pr_list.append(pr_number)
+
+        # Get PR details using GitHub CLI if available
+        pr_details = []
+        for pr_number in pr_list:
+            try:
+                pr_info = run_command(f'gh pr view {pr_number} --repo {repo} --json title,number,url')
+                pr_details.append(json.loads(pr_info))
+            except:
+                print(f"Could not fetch details for PR #{pr_number}")
+
+        # Gather detailed changes, including file-level diffs with patches
+        diff_full_command = f"git log -p {prev_tag}..{current_tag}" if prev_tag else "git log -p --reverse"
+        full_changes = run_command(diff_full_command)
+        if len(full_changes) > 15000:
+            full_changes = full_changes[:15000] + "...(truncated)"
+
+        # Improve the prompt with more detailed context
+        context = f"""
+        Repository: {repo}
+        Current Tag: {current_tag}
+        Previous Tag: {prev_tag}
+
+        Full Code Changes (patch-level):
+        {full_changes}
+
+        Pull Requests Merged:
+        {json.dumps(pr_details, indent=2) if pr_details else "None identified"}
+        """
+
+        with open('changes.txt', 'w') as f:
+            f.write(context)
+        print("Changes and PR details saved to changes.txt for debugging.")
+
+        # Call Azure OpenAI API to generate summary
+        system_prompt = (
+            "You are a thorough and detail-oriented assistant, tasked with generating high-quality release notes. "
+            "Your goal is to write a professional and reader-friendly summary of all important changes, grouped by "
+            "category (e.g., New Features, Improvements, Bug Fixes). Include references to file modifications and "
+            "pull requests where relevant, note any breaking changes, and highlight major or user-facing updates. "
+            "Structure the release notes clearly with headings or bullet points, using concise language. "
+            "If there are no significant changes in a category, omit it. Your audience is technical but aims for "
+            "quick readability, so please keep the final output succinct yet comprehensive.\n\n"
+        )
+
+        try:
+            response = client.chat.completions.create(
+                model=deployment_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Generate release notes for {current_tag}:\n\n{context}"}
+                ],
+                temperature=0.2,
+                max_tokens=6000
+            )
+            summary = response.choices[0].message.content.strip()
+        except Exception as e:
+            summary = f"Error generating summary: {str(e)}. Please update manually."
+
+        # Save to output
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            # Use the special delimiter syntax for multiline outputs
+            f.write(f"release_notes<<EOT\n{summary}\nEOT\n")
+
+        print("Azure OpenAI release notes generated successfully!")
+        EOF
+
+        # Execute the script
+        python generate_notes.py

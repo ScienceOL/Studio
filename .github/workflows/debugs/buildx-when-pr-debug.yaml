@@ -1,0 +1,74 @@
+name: Debug Multi-Architecture Manifest Creation
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to test with'
+        default: 'debug'
+        required: true
+
+env:
+  SERVICE_IMAGE: registry.aissquare.com/web/service:${{ github.event.inputs.tag }}
+  PROTIUM_IMAGE: registry.cn-shanghai.aliyuncs.com/scienceol/protium:${{ github.event.inputs.tag }}
+
+jobs:
+  debug-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Aliyun Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.cn-shanghai.aliyuncs.com
+          username: ${{ secrets.ALIYUN_REGISTRY_USERNAME }}
+          password: ${{ secrets.ALIYUN_REGISTRY_PASSWORD }}
+
+      - name: Extract specific manifests from architecture tags
+        id: extract_manifests
+        run: |
+          # Extract the actual image manifests (not the manifest lists)
+          AMD64_DIGEST=$(docker buildx imagetools inspect ${{ env.SERVICE_IMAGE }}-amd64 --format '{{ range .Manifest.Manifests }}{{ if eq .Platform.Architecture "amd64" }}{{ .Digest }}{{ end }}{{ end }}')
+          ARM64_DIGEST=$(docker buildx imagetools inspect ${{ env.SERVICE_IMAGE }}-arm64 --format '{{ range .Manifest.Manifests }}{{ if eq .Platform.Architecture "arm64" }}{{ .Digest }}{{ end }}{{ end }}')
+
+          # If the format command didn't work, try extracting manually
+          if [ -z "$AMD64_DIGEST" ]; then
+            AMD64_DIGEST=$(docker buildx imagetools inspect ${{ env.SERVICE_IMAGE }}-amd64 | grep -A 1 "linux/amd64" | grep "Name:" | awk -F '@' '{print $2}')
+          fi
+
+          if [ -z "$ARM64_DIGEST" ]; then
+            ARM64_DIGEST=$(docker buildx imagetools inspect ${{ env.SERVICE_IMAGE }}-arm64 | grep -A 1 "linux/arm64" | grep "Name:" | awk -F '@' '{print $2}')
+          fi
+
+          echo "AMD64 specific digest: $AMD64_DIGEST"
+          echo "ARM64 specific digest: $ARM64_DIGEST"
+
+          # Create full image references with digests
+          AMD64_IMAGE="registry.aissquare.com/web/service@$AMD64_DIGEST"
+          ARM64_IMAGE="registry.aissquare.com/web/service@$ARM64_DIGEST"
+
+          echo "amd64_image=$AMD64_IMAGE" >> $GITHUB_OUTPUT
+          echo "arm64_image=$ARM64_IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Create and push manifest with direct digests
+        run: |
+          set -x
+          # Remove any existing manifest (use registry manifest remove command if needed)
+          docker manifest rm ${{ env.SERVICE_IMAGE }} || true
+
+          # Create new manifest using the specific image digests, not the manifest lists
+          docker manifest create ${{ env.SERVICE_IMAGE }} \
+            --amend ${{ steps.extract_manifests.outputs.amd64_image }} \
+            --amend ${{ steps.extract_manifests.outputs.arm64_image }} || echo "Manifest creation failed"
+
+          # Add platform annotations
+          docker manifest annotate ${{ env.SERVICE_IMAGE }} ${{ steps.extract_manifests.outputs.amd64_image }} --os linux --arch amd64 || echo "AMD64 annotation failed"
+          docker manifest annotate ${{ env.SERVICE_IMAGE }} ${{ steps.extract_manifests.outputs.arm64_image }} --os linux --arch arm64 || echo "ARM64 annotation failed"
+
+          # Push with purge option
+          docker manifest push --purge ${{ env.SERVICE_IMAGE }} || echo "Manifest push failed"
+
+          # Verify final manifest
+          docker buildx imagetools inspect ${{ env.SERVICE_IMAGE }}

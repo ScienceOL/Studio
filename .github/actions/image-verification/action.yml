@@ -1,0 +1,84 @@
+name: 'Image Verification'
+description: 'Verifies Docker images for specified architectures'
+
+inputs:
+  architecture:
+    description: 'Target architecture (amd64 or arm64)'
+    required: true
+  service_image:
+    description: 'Service image name with tag'
+    required: true
+  protium_image:
+    description: 'Protium image name with tag'
+    required: true
+  test_amd64:
+    description: 'Whether to test amd64 service image startup'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Verify single-architecture build
+      shell: bash
+      run: |
+        echo "🔍 Verifying service image for ${{ inputs.architecture }}..."
+        docker buildx imagetools inspect ${{ inputs.service_image }}-${{ inputs.architecture }}
+
+        echo "🔍 Verifying protium image for ${{ inputs.architecture }}..."
+        docker buildx imagetools inspect ${{ inputs.protium_image }}-${{ inputs.architecture }}
+
+        # 验证当前架构是否存在
+        SERVICE_PLATFORM=$(docker buildx imagetools inspect ${{ inputs.service_image }}-${{ inputs.architecture }} --format '{{ range .Manifest.Manifests }}{{ .Platform.Architecture }}/{{ .Platform.OS }} {{ end }}')
+        PROTIUM_PLATFORM=$(docker buildx imagetools inspect ${{ inputs.protium_image }}-${{ inputs.architecture }} --format '{{ range .Manifest.Manifests }}{{ .Platform.Architecture }}/{{ .Platform.OS }} {{ end }}')
+
+        echo "Service platform: $SERVICE_PLATFORM"
+        echo "Protium platform: $PROTIUM_PLATFORM"
+
+        if [[ "$SERVICE_PLATFORM" == *"${{ inputs.architecture }}/linux"* ]]; then
+          echo "✅ Service image has ${{ inputs.architecture }} platform"
+        else
+          echo "❌ Service image missing ${{ inputs.architecture }} platform"
+          exit 1
+        fi
+
+        if [[ "$PROTIUM_PLATFORM" == *"${{ inputs.architecture }}/linux"* ]]; then
+          echo "✅ Protium image has ${{ inputs.architecture }} platform"
+        else
+          echo "❌ Protium image missing ${{ inputs.architecture }} platform"
+          exit 1
+        fi
+
+    - name: Test service image startup
+      if: inputs.architecture == 'amd64' && inputs.test_amd64 == 'true'
+      shell: bash
+      run: |
+        # Create a minimal test environment file
+        cat > test-env.env << EOF
+        # Core database settings
+        DATABASE_ENGINE=django.db.backends.sqlite3
+        DATABASE_NAME=:memory:
+        DEBUG=True
+        CORS_ALLOW_ALL_ORIGINS=True
+        SECRET_KEY=test-key-for-ci-only
+        # Disable external services for test
+        MQTT_ENABLE=False
+        EOF
+
+        # Start with minimal configuration suitable for testing
+        echo "🔄 Testing amd64 service image..."
+        docker run --rm -d -p 48197:48197 --name service_amd64 \
+          --platform linux/amd64 \
+          --env-file test-env.env \
+          ${{ inputs.service_image }}-amd64
+
+        sleep 30  # Allow time for service to initialize
+
+        # Test for health check endpoint instead of root
+        curl --retry 3 --retry-delay 5 --max-time 10 -sSf http://127.0.0.1:48197/api/health/ || {
+          echo "❌ AMD64 service health check failed";
+          docker logs service_amd64;
+          exit 1;
+        }
+
+        docker stop service_amd64

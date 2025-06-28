@@ -1,0 +1,170 @@
+name: 'Success Email Notification'
+description: 'Sends success email notification for build status'
+
+inputs:
+  smtp_server:
+    description: 'SMTP server address'
+    required: true
+  smtp_port:
+    description: 'SMTP server port'
+    required: true
+  smtp_user:
+    description: 'SMTP username'
+    required: true
+  smtp_pass:
+    description: 'SMTP password'
+    required: true
+  recipient:
+    description: 'Email recipient'
+    required: true
+  architecture:
+    description: 'Target architecture (amd64 or arm64)'
+    required: true
+  pr_number:
+    description: 'Pull request number'
+    required: true
+  pr_title:
+    description: 'Pull request title'
+    required: false
+    default: ''
+  pr_url:
+    description: 'Pull request URL'
+    required: false
+    default: ''
+  head_ref:
+    description: 'Head branch name'
+    required: true
+  base_ref:
+    description: 'Base branch name'
+    required: true
+  repo:
+    description: 'Repository name'
+    required: true
+  run_id:
+    description: 'GitHub Actions run ID'
+    required: true
+  build_start:
+    description: 'Build start time'
+    required: true
+  build_end:
+    description: 'Build end time'
+    required: true
+  build_duration:
+    description: 'Build duration'
+    required: true
+  commit_author:
+    description: 'Commit author'
+    required: true
+  commit_email:
+    description: 'Commit email'
+    required: true
+  commit_message:
+    description: 'Commit message'
+    required: true
+  commit_sha:
+    description: 'Full commit SHA'
+    required: true
+  commit_sha_short:
+    description: 'Short commit SHA'
+    required: true
+  commit_date:
+    description: 'Commit date'
+    required: true
+  service_image:
+    description: 'Service image name with tag'
+    required: true
+  protium_image:
+    description: 'Protium image name with tag'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Send Success Email
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: ${{ inputs.smtp_server }}
+        server_port: ${{ inputs.smtp_port }}
+        username: ${{ inputs.smtp_user }}
+        password: ${{ inputs.smtp_pass }}
+        subject: '🚀 PROTIUM: ${{ inputs.architecture }} Build Success | PR #${{ inputs.pr_number }}'
+        html_body: |
+          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px;">
+            <h1 style="color: #2da44e; border-bottom: 2px solid #2da44e; padding-bottom: 10px;">✅ Build Successful for ${{ inputs.architecture }}</h1>
+            
+            <div style="background-color: #f6f8fa; padding: 15px; border-radius: 6px; margin-top: 20px;">
+              <h2 style="color: #0969da; margin-top: 0;">📋 Build Summary</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px; font-weight: bold;">Repository:</td>
+                  <td style="padding: 8px;"><a href="https://github.com/${{ inputs.repo }}">${{ inputs.repo }}</a></td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; font-weight: bold;">Pull Request:</td>
+                  <td style="padding: 8px;"><a href="${{ inputs.pr_url }}">#${{ inputs.pr_number }} - ${{ inputs.pr_title }}</a></td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; font-weight: bold;">Branch:</td>
+                  <td style="padding: 8px;">${{ inputs.head_ref }} → ${{ inputs.base_ref }}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; font-weight: bold;">Architecture:</td>
+                  <td style="padding: 8px;">${{ inputs.architecture }}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; font-weight: bold;">Build Start:</td>
+                  <td style="padding: 8px;">${{ inputs.build_start }}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; font-weight: bold;">Build End:</td>
+                  <td style="padding: 8px;">${{ inputs.build_end }}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; font-weight: bold;">Duration:</td>
+                  <td style="padding: 8px;">${{ inputs.build_duration }}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div style="background-color: #f6f8fa; padding: 15px; border-radius: 6px; margin-top: 20px;">
+              <h2 style="color: #0969da; margin-top: 0;">🔄 Commit Information</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px; font-weight: bold;">Author:</td>
+                  <td style="padding: 8px;">${{ inputs.commit_author }} (${{ inputs.commit_email }})</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; font-weight: bold;">Commit:</td>
+                  <td style="padding: 8px;"><a href="https://github.com/${{ inputs.repo }}/commit/${{ inputs.commit_sha }}">${{ inputs.commit_sha_short }}</a></td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; font-weight: bold;">Date:</td>
+                  <td style="padding: 8px;">${{ inputs.commit_date }}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; font-weight: bold;">Message:</td>
+                  <td style="padding: 8px;">${{ inputs.commit_message }}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div style="background-color: #f6f8fa; padding: 15px; border-radius: 6px; margin-top: 20px;">
+              <h2 style="color: #0969da; margin-top: 0;">🖼️ Docker Images</h2>
+              <ul style="list-style-type: none; padding-left: 5px;">
+                <li style="padding: 5px 0;"><strong>Service:</strong> <code>${{ inputs.service_image }}-${{ inputs.architecture }}</code></li>
+                <li style="padding: 5px 0;"><strong>Protium:</strong> <code>${{ inputs.protium_image }}-${{ inputs.architecture }}</code></li>
+              </ul>
+            </div>
+            
+            <div style="background-color: #f6f8fa; padding: 15px; border-radius: 6px; margin-top: 20px;">
+              <h2 style="color: #0969da; margin-top: 0;">🔍 Build Details</h2>
+              <p>View complete build log: <a href="https://github.com/${{ inputs.repo }}/actions/runs/${{ inputs.run_id }}">GitHub Actions</a></p>
+            </div>
+            
+            <div style="margin-top: 30px; font-size: 12px; color: #666; text-align: center; border-top: 1px solid #ddd; padding-top: 10px;">
+              This is an automated message from PROTIUM CI/CD system.
+            </div>
+          </div>
+        from: PROTIUM CI <${{ inputs.smtp_user }}>
+        to: ${{ inputs.recipient }}
+        convert_markdown: false

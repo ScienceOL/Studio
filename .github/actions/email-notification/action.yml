@@ -1,0 +1,142 @@
+name: 'Email Notification'
+description: 'Sends email notifications for build status'
+
+inputs:
+  status:
+    description: 'Build status (success or failure)'
+    required: true
+  smtp_server:
+    description: 'SMTP server address'
+    required: true
+  smtp_port:
+    description: 'SMTP server port'
+    required: true
+  smtp_user:
+    description: 'SMTP username'
+    required: true
+  smtp_pass:
+    description: 'SMTP password'
+    required: true
+  recipient:
+    description: 'Email recipient'
+    required: true
+  architecture:
+    description: 'Target architecture (amd64 or arm64)'
+    required: true
+  pr_number:
+    description: 'Pull request number'
+    required: true
+  pr_title:
+    description: 'Pull request title'
+    required: false
+    default: ''
+  pr_url:
+    description: 'Pull request URL'
+    required: false
+    default: ''
+  head_ref:
+    description: 'Head branch name'
+    required: true
+  base_ref:
+    description: 'Base branch name'
+    required: true
+  repo:
+    description: 'Repository name'
+    required: true
+  run_id:
+    description: 'GitHub Actions run ID'
+    required: true
+  build_start:
+    description: 'Build start time'
+    required: true
+  build_end:
+    description: 'Build end time'
+    required: true
+  build_duration:
+    description: 'Build duration'
+    required: true
+  commit_author:
+    description: 'Commit author'
+    required: true
+  commit_email:
+    description: 'Commit email'
+    required: true
+  commit_message:
+    description: 'Commit message'
+    required: true
+  commit_sha:
+    description: 'Full commit SHA'
+    required: true
+  commit_sha_short:
+    description: 'Short commit SHA'
+    required: true
+  commit_date:
+    description: 'Commit date'
+    required: true
+  service_image:
+    description: 'Service image name with tag'
+    required: true
+  protium_image:
+    description: 'Protium image name with tag'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    # 使用专门的success-email-notification
+    - name: Send Success Email
+      if: inputs.status == 'success'
+      uses: ./.github/actions/success-email-notification
+      with:
+        smtp_server: ${{ inputs.smtp_server }}
+        smtp_port: ${{ inputs.smtp_port }}
+        smtp_user: ${{ inputs.smtp_user }}
+        smtp_pass: ${{ inputs.smtp_pass }}
+        recipient: ${{ inputs.recipient }}
+        architecture: ${{ inputs.architecture }}
+        pr_number: ${{ inputs.pr_number }}
+        pr_title: ${{ inputs.pr_title }}
+        pr_url: ${{ inputs.pr_url }}
+        head_ref: ${{ inputs.head_ref }}
+        base_ref: ${{ inputs.base_ref }}
+        repo: ${{ inputs.repo }}
+        run_id: ${{ inputs.run_id }}
+        build_start: ${{ inputs.build_start }}
+        build_end: ${{ inputs.build_end }}
+        build_duration: ${{ inputs.build_duration }}
+        commit_author: ${{ inputs.commit_author }}
+        commit_email: ${{ inputs.commit_email }}
+        commit_message: ${{ inputs.commit_message }}
+        commit_sha: ${{ inputs.commit_sha }}
+        commit_sha_short: ${{ inputs.commit_sha_short }}
+        commit_date: ${{ inputs.commit_date }}
+        service_image: ${{ inputs.service_image }}
+        protium_image: ${{ inputs.protium_image }}
+
+    # 使用专门的failure-email-notification
+    - name: Send Failure Email
+      if: inputs.status == 'failure'
+      uses: ./.github/actions/failure-email-notification
+      with:
+        smtp_server: ${{ inputs.smtp_server }}
+        smtp_port: ${{ inputs.smtp_port }}
+        smtp_user: ${{ inputs.smtp_user }}
+        smtp_pass: ${{ inputs.smtp_pass }}
+        recipient: ${{ inputs.recipient }}
+        architecture: ${{ inputs.architecture }}
+        pr_number: ${{ inputs.pr_number }}
+        pr_title: ${{ inputs.pr_title }}
+        pr_url: ${{ inputs.pr_url }}
+        head_ref: ${{ inputs.head_ref }}
+        base_ref: ${{ inputs.base_ref }}
+        repo: ${{ inputs.repo }}
+        run_id: ${{ inputs.run_id }}
+        build_start: ${{ inputs.build_start }}
+        build_end: ${{ inputs.build_end }}
+        build_duration: ${{ inputs.build_duration }}
+        commit_author: ${{ inputs.commit_author }}
+        commit_email: ${{ inputs.commit_email }}
+        commit_message: ${{ inputs.commit_message }}
+        commit_sha: ${{ inputs.commit_sha }}
+        commit_sha_short: ${{ inputs.commit_sha_short }}
+        commit_date: ${{ inputs.commit_date }}
