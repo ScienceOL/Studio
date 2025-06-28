@@ -162,24 +162,16 @@ services:
       - ../middleware/casdoor/init_data.json:/init_data.json
 
   service:
-    image: registry.aissquare.com/base/service
+    image: registry.scienceol.tech/base/service
     pull_policy: if_not_present
     container_name: sciol-service
     network_mode: 'service:network-service'
     restart: unless-stopped
-    build:
-      context: ../service
-      platforms:
-        - linux/amd64
-        - linux/arm64
-      dockerfile: Dockerfile
     depends_on:
       postgresql:
         condition: service_healthy
       redis:
         condition: service_healthy
-      # elasticsearch:
-      #   condition: service_healthy
     healthcheck:
       test:
         [
@@ -192,17 +184,11 @@ services:
       start_period: 15s
 
   web:
-    image: registry.aissquare.com/base/web
+    image: registry.scienceol.tech/base/web
     pull_policy: if_not_present
     container_name: sciol-web
     network_mode: 'service:network-service'
     restart: unless-stopped
-    build:
-      context: ../web
-      platforms:
-        - linux/amd64
-        - linux/arm64
-      dockerfile: Dockerfile
     depends_on:
       service:
         condition: service_healthy

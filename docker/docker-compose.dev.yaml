@@ -1,6 +1,12 @@
 services:
   service:
     image: registry.aissquare.com/base/service:dev
+    build:
+      context: ../service
+      platforms:
+        - linux/amd64
+        - linux/arm64
+      dockerfile: Dockerfile
     env_file:
       - .env.dev
     volumes:
@@ -24,6 +30,12 @@ services:
 
   web:
     image: registry.aissquare.com/base/web:dev
+    build:
+      context: ../web
+      platforms:
+        - linux/amd64
+        - linux/arm64
+      dockerfile: Dockerfile
     env_file:
       - .env.dev
     volumes:
