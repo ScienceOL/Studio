@@ -60,11 +60,11 @@ services:
         mc alias set myminio http://localhost:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin}
         
         # 检查默认存储桶是否存在，不存在则创建
-        if ! mc ls myminio/${AWS_STORAGE_BUCKET_NAME} > /dev/null 2>&1; then
-          echo 'Creating bucket ${AWS_STORAGE_BUCKET_NAME}'
-          mc mb myminio/${AWS_STORAGE_BUCKET_NAME}
+        if ! mc ls myminio/${AWS_STORAGE_BUCKET_NAME:-studio} > /dev/null 2>&1; then
+          echo 'Creating bucket ${AWS_STORAGE_BUCKET_NAME:-studio}'
+          mc mb myminio/${AWS_STORAGE_BUCKET_NAME:-studio}
         else
-          echo 'Bucket ${AWS_STORAGE_BUCKET_NAME} already exists'
+          echo 'Bucket ${AWS_STORAGE_BUCKET_NAME:-studio} already exists'
         fi
 
         # 检查 Lab 收集存储桶是否启用，启用则创建
@@ -140,9 +140,9 @@ services:
     restart: unless-stopped
     network_mode: 'service:network-service'
     volumes:
-      - ../middleware/mosquitto/config:/mosquitto/config
-      - ../middleware/mosquitto/data:/mosquitto/data
-      - ../middleware/mosquitto/log:/mosquitto/log
+      - ../infra/mosquitto/config:/mosquitto/config
+      - ../infra/mosquitto/data:/mosquitto/data
+      - ../infra/mosquitto/log:/mosquitto/log
 
   casdoor:
     image: casbin/casdoor:v1.924.0
@@ -159,7 +159,7 @@ services:
       dataSourceName: 'user=${DATABASE_USER:-postgres} password=${DATABASE_PASSWORD:-protium} host=localhost port=5432 sslmode=disable dbname=casdoor'
       runmode: 'dev'
     volumes:
-      - ../middleware/casdoor/init_data.json:/init_data.json
+      - ../infra/casdoor/init_data.json:/init_data.json
 
   service:
     image: registry.scienceol.tech/base/service
