@@ -76,7 +76,7 @@ yarn-error.log
 core/vendor/
 
 # ===== 构建产物 =====
-service/build/
+service/bin/
 public/static/
 public/build/
 .next/
