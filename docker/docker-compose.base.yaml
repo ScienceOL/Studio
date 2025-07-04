@@ -46,6 +46,8 @@ services:
     environment:
       - 'MINIO_API_CORS_ALLOW_ORIGIN=*'
     restart: always
+    deploy:
+      replicas: ${MINIO_REPLICAS:-1}
     entrypoint: >
       /bin/sh -c "
         minio server /etc/minio/data --address ':9000' --console-address ':9001' &
@@ -102,6 +104,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    deploy:
+      replicas: ${REDIS_REPLICAS:-1}
 
   elasticsearch:
     image: elasticsearch:8.18.2
@@ -133,6 +137,7 @@ services:
         reservations:
           cpus: '1.0'
           memory: '1G'
+      replicas: ${ELASTICSEARCH_REPLICAS:-1}
 
   mosquitto:
     image: eclipse-mosquitto:2.0.21
@@ -143,6 +148,8 @@ services:
       - ../infra/mosquitto/config:/mosquitto/config
       - ../infra/mosquitto/data:/mosquitto/data
       - ../infra/mosquitto/log:/mosquitto/log
+    deploy:
+      replicas: ${MQTT_REPLICAS:-1}
 
   casdoor:
     image: casbin/casdoor:v1.924.0
@@ -182,6 +189,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    deploy:
+      replicas: ${SERVICE_REPLICAS:-1}
 
   web:
     image: registry.scienceol.tech/base/web
@@ -192,6 +201,8 @@ services:
     depends_on:
       service:
         condition: service_healthy
+    deploy:
+      replicas: ${WEB_REPLICAS:-1}
 
 volumes:
   db-data:

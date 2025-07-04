@@ -24,23 +24,7 @@ Desktop.ini
 .LSOverride
 
 # ===== Python 项目 =====
-# Django 相关
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.py.class
-*.py.orig
-*.pyc.stale
-*.egg-info/
-*.sqlite3
-venv/
-.venv/
-.python-version
-.mypy_cache
-celerybeat-schedule
-**/media/
-**/static/
+./service/vendor/
 
 # ===== Node.js 项目 =====
 node_modules/

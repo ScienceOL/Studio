@@ -1,0 +1,11 @@
+{
+  "version": "0.2.0",
+  "configurations": [{
+    "name": "launching",
+    "type": "go",
+    "request": "launch",
+    "program": "${workspaceFolder}/cmd/api/main.go",
+    "args": ["apiserver"],
+    "env": {}
+  }]
+}
