@@ -12,6 +12,8 @@ import (
 
 	"github.com/scienceol/studio/service/internal/configs/webapp"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
+	"github.com/scienceol/studio/service/pkg/repository/db"
+	"github.com/scienceol/studio/service/pkg/repository/redis"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"github.com/scienceol/studio/service/pkg/web"
 
@@ -57,10 +59,34 @@ func initGlobalResource(cmd *cobra.Command, args []string) error {
 	}
 
 	// 日志初始化
-	logger.MustInit(config.Log.LogPath, logger.ServiceEnv{
-		Platform: config.Server.Platform,
-		Service:  config.Server.Service,
-		Env:      config.Server.Env,
+	logger.Init(&logger.LogConfig{
+		Path:     config.Log.LogPath,
+		LogLevel: config.Log.LogLevel,
+		ServiceEnv: logger.ServiceEnv{
+			Platform: config.Server.Platform,
+			Service:  config.Server.Service,
+			Env:      config.Server.Env,
+		},
+	})
+
+	// 初始化数据库
+	db.InitPostgres(cmd.Context(), &db.Config{
+		Host:   config.Database.Host,
+		Port:   config.Database.Port,
+		User:   config.Database.User,
+		PW:     config.Database.Password,
+		DBName: config.Database.Name,
+		LogConf: db.LogConf{
+			Level: config.Log.LogLevel,
+		},
+	})
+
+	// 初始化 redis
+	redis.InitRedis(cmd.Context(), &redis.Redis{
+		Host:     config.Redis.Host,
+		Port:     config.Redis.Port,
+		Password: config.Redis.Password,
+		DB:       config.Redis.DB,
 	})
 
 	return nil
@@ -68,6 +94,9 @@ func initGlobalResource(cmd *cobra.Command, args []string) error {
 
 func cleanGlobalResrource(cmd *cobra.Command, args []string) error {
 	// 服务退出清理资源
+	db.ClosePostgres(cmd.Context())
+	redis.CloseRedis(cmd.Context())
+
 	return nil
 }
 
@@ -76,8 +105,8 @@ func newRouter(cmd *cobra.Command, args []string) error {
 
 	web.NewRouter(router)
 
-    port := webapp.Config().Server.Port
-    addr := ":" + strconv.Itoa(port)
+	port := webapp.Config().Server.Port
+	addr := ":" + strconv.Itoa(port)
 
 	httpServer := http.Server{
 		Addr:              ":" + strconv.Itoa(webapp.Config().Server.Port),
@@ -89,9 +118,9 @@ func newRouter(cmd *cobra.Command, args []string) error {
 		}(),
 	}
 
-	    // 添加启动成功的日志输出
-    fmt.Printf("🚀 Server starting on http://localhost:%d\n", port)
-    fmt.Printf("📡 API Server is running at: http://0.0.0.0:%d\n", port)
+	// 添加启动成功的日志输出
+	fmt.Printf("🚀 Server starting on http://localhost:%d\n", port)
+	fmt.Printf("📡 API Server is running at: http://0.0.0.0:%d\n", port)
 	fmt.Printf("🔧 Server configuration: %+v\n", addr)
 
 	// 异步监听端口
@@ -105,10 +134,9 @@ func newRouter(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	})
 
-    // 服务启动成功提示
-    fmt.Printf("✅ Server successfully started on port %d\n", port)
-    fmt.Println("Press Ctrl+C to gracefully shutdown the server...")
-
+	// 服务启动成功提示
+	fmt.Printf("✅ Server successfully started on port %d\n", port)
+	fmt.Println("Press Ctrl+C to gracefully shutdown the server...")
 
 	// 阻塞等待收到中断信号
 	<-cmd.Context().Done()

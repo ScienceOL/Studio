@@ -34,12 +34,16 @@ func getLoggerLevel(lvl string) zapcore.Level {
 	return zapcore.InfoLevel
 }
 
+func BaseLogger() *otelzap.Logger {
+	return ctxLogger
+}
+
 // OtelLogger ensures that the caller does not forget to pass the context.
 func CtxLogger(ctx context.Context) otelzap.LoggerWithCtx {
 	return ctxLogger.Ctx(ctx)
 }
 
-func InitStdOutCtxLogger(platform, service string, opts ...otelzap.Option) {
+func InitStdOutCtxLogger(conf *LogConfig, opts ...otelzap.Option) {
 	once.Do(func() {
 		encoderConfig := zap.NewDevelopmentEncoderConfig()
 		encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
@@ -49,8 +53,8 @@ func InitStdOutCtxLogger(platform, service string, opts ...otelzap.Option) {
 			zapcore.DebugLevel,
 		)
 		l := zap.New(core,
-			zap.Fields(zap.String("platform", platform),
-				zap.String("service", service)),
+			zap.Fields(zap.String("platform", conf.Platform),
+				zap.String("service", conf.Service)),
 			zap.WithCaller(true),
 			zap.AddCallerSkip(1),
 			zap.AddStacktrace(zapcore.ErrorLevel),
@@ -59,17 +63,17 @@ func InitStdOutCtxLogger(platform, service string, opts ...otelzap.Option) {
 	})
 }
 
-func InitCtxLogger(conf Log, platform, service string, opts ...otelzap.Option) {
+func InitCtxLogger(conf *LogConfig, opts ...otelzap.Option) {
 	once.Do(func() {
-		ws := getLumberjackConfig(*NewSafeLog(&conf))
+		ws := getLumberjackConfig(conf)
 		core := zapcore.NewCore(
 			zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
 			zapcore.AddSync(ws),
 			atomicLevel,
 		)
 		l := zap.New(core,
-			zap.Fields(zap.String("platform", platform),
-				zap.String("service", service)),
+			zap.Fields(zap.String("platform", conf.Platform),
+				zap.String("service", conf.Service)),
 			zap.WithCaller(true),
 			zap.AddCallerSkip(1),
 			zap.AddStacktrace(zapcore.ErrorLevel),
@@ -79,7 +83,7 @@ func InitCtxLogger(conf Log, platform, service string, opts ...otelzap.Option) {
 }
 
 // 获取文件切割和归档配置信息
-func getLumberjackConfig(conf Log) zapcore.WriteSyncer {
+func getLumberjackConfig(conf *LogConfig) zapcore.WriteSyncer {
 	lumberjackLogger = &lumberjack.Logger{
 		Filename:   conf.Path,       // 日志文件
 		MaxSize:    conf.MaxSize,    // 单文件最大容量(单位MB)
