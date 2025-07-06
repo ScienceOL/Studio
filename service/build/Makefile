@@ -198,3 +198,8 @@ info: ## 显示项目信息
 
 # 确保这些目标不被误认为是文件
 .PHONY: all build clean test
+
+# 生成错误码
+generate:
+	go generate ../pkg/...
+
