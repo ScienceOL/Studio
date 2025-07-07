@@ -12,6 +12,8 @@ type WebGlobalConfig struct {
 	Redis    Redis    `mapstructure:",squash"`
 	Server   Server   `mapstructure:",squash"`
 	Log      Log      `mapstructure:",squash"`
+	MQTT     MQTT     `mapstructure:",squash"`
+	Trace    Trace    `mapstructure:",squash"`
 }
 
 var config = &WebGlobalConfig{}

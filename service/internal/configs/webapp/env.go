@@ -28,3 +28,23 @@ type Log struct {
 	LogPath  string `mapstructure:"LOG_PATH" default:"./info.log"`
 	LogLevel string `mapstructure:"LOG_LEVEL" default:"info"` // debug info warn error dpanic panic fatal
 }
+
+type MQTT struct {
+	AccessKey  string `mapstructure:"MQTT_ACCESS_KEY" default:""`
+	SecretKey  string `mapstructure:"MQTT_SECRET_KEY" default:""`
+	InstanceId string `mapstructure:"MQTT_INSTANCEID" default:"mqtt-cn-kjp48jwyv01"`
+	Domain     string `mapstructure:"MQTT_DOMAIN" default:"mqtt-cn-kjp48jwyv01-server.mqtt.aliyuncs.com"`
+	Port       int16  `mapstructure:"MQTT_PORT" default:"5672"`
+	Topic      string `mapstructure:"MQTT_TOPIC" default:"labs"`
+	Gid        string `mapstructure:"MQTT_GID" default:"GID_share_test"`
+}
+
+type Trace struct {
+	Version         string `mapstructure:"TRACE_VERSION" default:"0.0.1"`
+	TraceEndpoint   string `mapstructure:"TRACE_TRACEENDPOINT" default:""`
+	MetricEndpoint  string `mapstructure:"TRACE_METRICENDPOINT" default:""`
+	TraceProject    string `mapstructure:"TRACE_TRACEPROJECT" default:""`
+	TraceInstanceID string `mapstructure:"TRACE_TRACEINSTANCEID" default:""`
+	TraceAK         string `mapstructure:"TRACE_TRACEAK" default:""`
+	TraceSK         string `mapstructure:"TRACE_TRACESK" default:""`
+}

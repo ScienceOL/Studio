@@ -12,6 +12,7 @@ import (
 
 	"github.com/scienceol/studio/service/internal/configs/webapp"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
+	"github.com/scienceol/studio/service/pkg/middleware/trace"
 	"github.com/scienceol/studio/service/pkg/repository/db"
 	"github.com/scienceol/studio/service/pkg/repository/redis"
 	"github.com/scienceol/studio/service/pkg/utils"
@@ -69,6 +70,18 @@ func initGlobalResource(cmd *cobra.Command, args []string) error {
 		},
 	})
 
+	// 初始化 trace
+	trace.InitTrace(cmd.Context(), &trace.TraceConfig{
+		ServiceName:     fmt.Sprintf("%s-%s", config.Server.Service, config.Server.Platform),
+		Version:         config.Trace.Version,
+		TraceEndpoint:   config.Trace.TraceEndpoint,
+		MetricEndpoint:  config.Trace.MetricEndpoint,
+		TraceProject:    config.Trace.TraceProject,
+		TraceInstanceID: config.Trace.TraceInstanceID,
+		TraceAK:         config.Trace.TraceAK,
+		TraceSK:         config.Trace.TraceSK,
+	})
+
 	// 初始化数据库
 	db.InitPostgres(cmd.Context(), &db.Config{
 		Host:   config.Database.Host,
@@ -94,9 +107,10 @@ func initGlobalResource(cmd *cobra.Command, args []string) error {
 
 func cleanGlobalResrource(cmd *cobra.Command, args []string) error {
 	// 服务退出清理资源
-	db.ClosePostgres(cmd.Context())
 	redis.CloseRedis(cmd.Context())
-
+	db.ClosePostgres(cmd.Context())
+	trace.CloseTrace()
+	logger.Close()
 	return nil
 }
 
