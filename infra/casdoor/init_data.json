@@ -32,13 +32,13 @@
   "applications": [
     {
       "owner": "admin",
-      "name": "protium",
+      "name": "scienceol",
       "createdTime": "2024-09-09T09:26:06Z",
-      "displayName": "PROTIUM",
+      "displayName": "ScienceOL",
       "logo": "",
       "homepageUrl": "",
       "description": "",
-      "organization": "",
+      "organization": "scienceol",
       "cert": "cert-built-in",
       "headerHtml": "",
       "enablePassword": true,
@@ -606,12 +606,19 @@
           "viewRule": "Self",
           "modifyRule": "Self",
           "regex": ""
+        },
+        {
+          "name": "API key",
+          "visible": true,
+          "viewRule": "Admin",
+          "modifyRule": "Admin",
+          "regex": ""
         }
       ]
     },
     {
       "owner": "admin",
-      "name": "protium",
+      "name": "scienceol",
       "createdTime": "2024-09-09T09:26:04Z",
       "displayName": "PROTIUM Organization",
       "websiteUrl": "",
@@ -871,6 +878,13 @@
           "viewRule": "Self",
           "modifyRule": "Self",
           "regex": ""
+        },
+        {
+          "name": "API key",
+          "visible": true,
+          "viewRule": "Self",
+          "modifyRule": "Self",
+          "regex": ""
         }
       ]
     }
@@ -1055,7 +1069,10 @@
       "invitationCode": "",
       "faceIds": null,
       "ldap": "",
-      "properties": {},
+      "properties": {
+        "apiKey": "studio",
+        "apiKeyEnabled": "true"
+      },
       "roles": null,
       "permissions": null,
       "groups": null,

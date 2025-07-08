@@ -12,3 +12,8 @@ const (
 const (
 	Platform = "uni-lab"
 )
+
+// websocket
+const (
+	MaxMessageSize = 1024 * 1024 // 1M
+)

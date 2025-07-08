@@ -23,7 +23,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	oteltrace "go.opentelemetry.io/otel/sdk/trace"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/encoding/gzip"
@@ -33,8 +32,8 @@ const (
 	slsProjectHeader         = "x-sls-otel-project"
 	slsInstanceIDHeader      = "x-sls-otel-instance-id"
 	slsAccessKeyIDHeader     = "x-sls-otel-ak-id"
-	slsAccessKeySecretHeader = "x-sls-otel-ak-secret"
-	slsSecurityTokenHeader   = "x-sls-otel-token"
+	slsAccessKeySecretHeader = "x-sls-otel-ak-secret" //nolint:gosec // G101: This is a header name, not a credential
+	slsSecurityTokenHeader   = "x-sls-otel-token"     //nolint:gosec // G101: This is a header name, not a credential
 )
 
 // Option configures the sls otel provider
@@ -136,7 +135,7 @@ func WithSLSConfig(project, instanceID, accessKeyID, accessKeySecret string) Opt
 	}
 }
 
-func WithIDGenerator(generator sdktrace.IDGenerator) Option {
+func WithIDGenerator(generator oteltrace.IDGenerator) Option {
 	return func(config *Config) {
 		if generator != nil {
 			config.IDGenerator = generator
@@ -159,7 +158,7 @@ type Config struct {
 	AccessKeyID                    string `env:"SLS_OTEL_ACCESS_KEY_ID"`
 	AccessKeySecret                string `env:"SLS_OTEL_ACCESS_KEY_SECRET"`
 	AttributesEnvKeys              string `env:"SLS_OTEL_ATTRIBUTES_ENV_KEYS"`
-	IDGenerator                    sdktrace.IDGenerator
+	IDGenerator                    oteltrace.IDGenerator
 
 	Resource *resource.Resource
 
@@ -207,7 +206,7 @@ func mergeResource(c *Config) error {
 		return e
 	}
 
-	var keyValues []attribute.KeyValue
+	keyValues := make([]attribute.KeyValue, 0, len(c.resourceAttributes))
 	for key, value := range c.resourceAttributes {
 		keyValues = append(keyValues, attribute.KeyValue{
 			Key:   attribute.Key(key),
@@ -227,9 +226,9 @@ func (c *Config) initOtelExporter(otlpEndpoint string, insecure bool) (oteltrace
 	var metricsExporter metric.Exporter
 	var err error
 
-	var exporterStop = func() {
+	exporterStop := func() {
 		if traceExporter != nil {
-			traceExporter.Shutdown(context.Background())
+			_ = traceExporter.Shutdown(context.Background())
 		}
 	}
 
@@ -240,7 +239,7 @@ func (c *Config) initOtelExporter(otlpEndpoint string, insecure bool) (oteltrace
 			return nil, nil, nil, err
 		}
 		enc := json.NewEncoder(os.Stdout)
-		metricsExporter, err = stdoutmetric.New(stdoutmetric.WithEncoder(enc))
+		metricsExporter, _ = stdoutmetric.New(stdoutmetric.WithEncoder(enc))
 	} else if otlpEndpoint != "" {
 		headers := map[string]string{}
 		if c.Project != "" && c.InstanceID != "" {
@@ -271,7 +270,7 @@ func (c *Config) initOtelExporter(otlpEndpoint string, insecure bool) (oteltrace
 			metricSecureOption = otlpmetricgrpc.WithInsecure()
 		}
 
-		metricsExporter, err = otlpmetricgrpc.New(context.Background(), otlpmetricgrpc.WithEndpoint(otlpEndpoint),
+		metricsExporter, _ = otlpmetricgrpc.New(context.Background(), otlpmetricgrpc.WithEndpoint(otlpEndpoint),
 			metricSecureOption, otlpmetricgrpc.WithHeaders(headers), otlpmetricgrpc.WithCompressor(gzip.Name))
 	}
 
@@ -303,7 +302,7 @@ func (c *Config) initMetric(metricsExporter metric.Exporter, stop func()) error 
 	// 默认集成Golang runtime指标
 	err = runtime.Start(runtime.WithMeterProvider(meterProvider), runtime.WithMinimumReadMemStatsInterval(time.Second))
 	c.stop = append(c.stop, func() {
-		meterProvider.Shutdown(context.Background())
+		_ = meterProvider.Shutdown(context.Background())
 		stop()
 	})
 	return err
@@ -315,17 +314,17 @@ func (c *Config) initTracer(traceExporter oteltrace.SpanExporter, stop func(), c
 		return nil
 	}
 	// 建议使用AlwaysSample全量上传Trace数据，若您的数据太多，可以使用sdktrace.ProbabilitySampler进行采样上传
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(
+	tp := oteltrace.NewTracerProvider(
+		oteltrace.WithBatcher(
 			traceExporter,
 		),
-		sdktrace.WithIDGenerator(config.IDGenerator),
-		sdktrace.WithResource(c.Resource),
+		oteltrace.WithIDGenerator(config.IDGenerator),
+		oteltrace.WithResource(c.Resource),
 	)
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	c.stop = append(c.stop, func() {
-		tp.Shutdown(context.Background())
+		_ = tp.Shutdown(context.Background())
 		stop()
 	})
 	return nil
@@ -351,7 +350,8 @@ func (c *Config) IsValid() error {
 			strings.ContainsAny(c.InstanceID, "${}") ||
 			strings.ContainsAny(c.AccessKeyID, "${}") ||
 			strings.ContainsAny(c.AccessKeySecret, "${}") {
-			return errors.New("invalid project, instanceID, accessKeyID or accessKeySecret when send data to sls directly, you should replace these parameters with actual values")
+			return errors.New(`invalid project, instanceID, accessKeyID or accessKeySecret when send data to sls directly,
+				you should replace these parameters with actual values`)
 		}
 	}
 	return nil
@@ -374,7 +374,7 @@ func NewConfig(opts ...Option) (*Config, error) {
 
 	// 3. merge resource
 	parseEnvKeys(&c)
-	mergeResource(&c)
+	_ = mergeResource(&c)
 	return &c, c.IsValid()
 }
 
