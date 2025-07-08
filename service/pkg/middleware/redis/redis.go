@@ -22,3 +22,8 @@ func CloseRedis(ctx context.Context) {
 		redisClient.Close()
 	}
 }
+
+// GetClient 获取Redis客户端实例
+func GetClient() *r.Client {
+	return redisClient
+}

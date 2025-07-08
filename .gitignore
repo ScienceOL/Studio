@@ -24,7 +24,7 @@ Desktop.ini
 .LSOverride
 
 # ===== Python 项目 =====
-./service/vendor/
+service/vendor/
 
 # ===== Node.js 项目 =====
 node_modules/

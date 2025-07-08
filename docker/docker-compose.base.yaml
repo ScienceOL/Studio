@@ -10,14 +10,41 @@ services:
       - '${REDIS_PORT:-6379}:6379'
       - '${ELASTICSEARCH_PORT:-9200}:9200'
       - '${CASDOOR_PORT:-8000}:8000'
-      - '${WEB_PORT:-32234}:32234'
-      - '${SERVICE_PORT:-48197}:48197'
+      # - '${WEB_PORT:-32234}:32234'
+      # - '${SERVICE_PORT:-48197}:48197'
       - '${MQTT_PORT:-1883}:1883'
       - '${MQTT_TLS_PORT:-8883}:8883'
       - '${MQTT_WEBSOCKET_PORT:-9002}:9002'
+      - '${NACOS_PORT:-8848}:8848'
+      - '${NACOS_GRPC_PORT:-9848}:9848'
+      - '${NACOS_WEB_PORT:-7848}:8080'
     command: tail -f /dev/null
     networks:
       - sciol-network
+
+  nacos:
+    image: nacos/nacos-server:v3.0.2
+    container_name: sciol-nacos
+    pull_policy: if_not_present
+    network_mode: 'service:network-service'
+    environment:
+      - MODE=standalone
+      - PREFER_HOST_MODE=hostname
+      - NACOS_AUTH_ENABLE=false
+      - NACOS_AUTH_TOKEN=SecretKey012345678901234567890123456789012345678901234567890123456789
+      - NACOS_AUTH_IDENTITY_KEY=serverIdentity
+      - NACOS_AUTH_IDENTITY_VALUE=security
+    restart: always
+    deploy:
+      replicas: ${NACOS_REPLICAS:-1}
+    volumes:
+      - nacos-data:/home/nacos/data
+    # healthcheck:
+    #   test: ['CMD-SHELL', 'curl --fail --silent --max-time 3 http://localhost:8848/nacos/v1/ns/operator/servers']
+    #   interval: 30s
+    #   timeout: 5s
+    #   retries: 3
+
 
   postgresql:
     image: postgres:16.8-alpine
@@ -210,6 +237,8 @@ volumes:
   redis-data:
     driver: local
   s3_data:
+    driver: local
+  nacos-data:
     driver: local
 
 networks:

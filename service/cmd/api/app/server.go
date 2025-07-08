@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,9 +12,12 @@ import (
 	"time"
 
 	"github.com/scienceol/studio/service/internal/configs/webapp"
+	"github.com/scienceol/studio/service/pkg/middleware/auth"
+	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
-	"github.com/scienceol/studio/service/pkg/repository/db"
-	"github.com/scienceol/studio/service/pkg/repository/redis"
+	"github.com/scienceol/studio/service/pkg/middleware/nacos"
+	"github.com/scienceol/studio/service/pkg/middleware/redis"
+	"github.com/scienceol/studio/service/pkg/middleware/trace"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"github.com/scienceol/studio/service/pkg/web"
 
@@ -49,7 +53,6 @@ func initGlobalResource(cmd *cobra.Command, args []string) error {
 		log.Println("No .env file found - using environment variables")
 	}
 
-	fmt.Println(os.LookupEnv("SERVER_PORT"))
 	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 	v.AutomaticEnv()
 
@@ -67,6 +70,45 @@ func initGlobalResource(cmd *cobra.Command, args []string) error {
 			Service:  config.Server.Service,
 			Env:      config.Server.Env,
 		},
+	})
+
+	// 初始化 nacos , 注意初始化时序，请勿在动态配置未初始化时候使用配置
+	if config.Nacos.Enable {
+		nacos.MustInit(cmd.Context(), &nacos.NacoConf{
+			Endpoint:  config.Nacos.Endpoint,
+			User:      config.Nacos.User,
+			Password:  config.Nacos.Password,
+			Port:      config.Nacos.Port,
+			DataID:    config.Nacos.DataID,
+			Group:     config.Nacos.Group,
+			NeedWatch: config.Nacos.NeedWatch,
+		},
+			func(content []byte) error {
+				d := &webapp.DynamicConfig{}
+				if err := json.Unmarshal(content, d); err != nil {
+					logger.Errorf(cmd.Context(),
+						"Unmarshal nacos config fail dataID: %s, Group: %s, err: %+v",
+						config.Nacos.DataID, config.Nacos.Group, err)
+				}
+
+				config.DynamicConfig = d
+				return nil
+			})
+		logger.Infof(cmd.Context(), "Nacos initialized successfully")
+	} else {
+		logger.Infof(cmd.Context(), "Nacos is disabled, skipping initialization")
+	}
+
+	// 初始化 trace
+	trace.InitTrace(cmd.Context(), &trace.TraceConfig{
+		ServiceName:     fmt.Sprintf("%s-%s", config.Server.Service, config.Server.Platform),
+		Version:         config.Trace.Version,
+		TraceEndpoint:   config.Trace.TraceEndpoint,
+		MetricEndpoint:  config.Trace.MetricEndpoint,
+		TraceProject:    config.Trace.TraceProject,
+		TraceInstanceID: config.Trace.TraceInstanceID,
+		TraceAK:         config.Trace.TraceAK,
+		TraceSK:         config.Trace.TraceSK,
 	})
 
 	// 初始化数据库
@@ -89,13 +131,19 @@ func initGlobalResource(cmd *cobra.Command, args []string) error {
 		DB:       config.Redis.DB,
 	})
 
-	return nil
-}
-
-func cleanGlobalResrource(cmd *cobra.Command, args []string) error {
-	// 服务退出清理资源
-	db.ClosePostgres(cmd.Context())
-	redis.CloseRedis(cmd.Context())
+	// 初始化 OAuth2 配置
+	if err := auth.InitOAuth(cmd.Context(), &auth.AuthConfig{
+		ClientID:     config.OAuth2.ClientID,
+		ClientSecret: config.OAuth2.ClientSecret,
+		Scopes:       config.OAuth2.Scopes,
+		TokenURL:     config.OAuth2.TokenURL,
+		AuthURL:      config.OAuth2.AuthURL,
+		RedirectURL:  config.OAuth2.RedirectURL,
+		UserInfoURL:  config.OAuth2.UserInfoURL,
+	}); err != nil {
+		logger.Errorf(cmd.Context(), "Failed to initialize OAuth2: %+v", err)
+		return err
+	}
 
 	return nil
 }
@@ -147,5 +195,14 @@ func newRouter(cmd *cobra.Command, args []string) error {
 	if err := httpServer.Shutdown(ctx); err != nil {
 		fmt.Printf("shut down server err: %+v", err)
 	}
+	return nil
+}
+
+func cleanGlobalResrource(cmd *cobra.Command, args []string) error {
+	// 服务退出清理资源
+	redis.CloseRedis(cmd.Context())
+	db.ClosePostgres(cmd.Context())
+	trace.CloseTrace()
+	logger.Close()
 	return nil
 }

@@ -1,5 +1,5 @@
 package environment
 
 import (
-	_ "go-playground/validator"
+	_ "github.com/go-playground/validator"
 )
