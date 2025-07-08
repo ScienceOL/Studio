@@ -3,6 +3,10 @@ package web
 import (
 	"fmt"
 
+	_ "github.com/scienceol/studio/service/docs" // 导入自动生成的 docs 包
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/scienceol/studio/service/internal/configs/webapp"
@@ -20,14 +24,17 @@ func NewRouter(g *gin.Engine) {
 		})
 	})
 
-	// FIXME: 安装鉴权中间件
+	apiRouter := g.Group("/api")
+	apiRouter.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+
 	{
-		lab := g.Group("/lab")
-		labHandel := views.NewLabHandle()
-		lab.GET("/envs", labHandel.GetEnv)
+		v1 := apiRouter.Group("/v1")
+		{
+			lab := v1.Group("/lab")
+			labHandel := views.NewLabHandle()
+			lab.GET("/envs", labHandel.GetEnv)
+		}
 	}
-
-
 }
 
 func installMiddleware(g *gin.Engine) {
