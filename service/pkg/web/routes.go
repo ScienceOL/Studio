@@ -3,6 +3,10 @@ package web
 import (
 	"fmt"
 
+	_ "github.com/scienceol/studio/service/docs" // 导入自动生成的 docs 包
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/scienceol/studio/service/internal/configs/webapp"
@@ -24,28 +28,22 @@ func NewRouter(g *gin.Engine) {
 		})
 	})
 
+
+	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	// 设置认证相关路由
 	authGroup := api.Group("/auth")
 	// 登录路由 - 使用改进版处理器
 	authGroup.GET("/login", auth.HandleLogin())
-
 	// OAuth2 回调处理路由 - 使用改进版处理器
 	authGroup.GET("/callback/casdoor", auth.HandleCallback())
-
 	// 刷新令牌路由
 	authGroup.POST("/refresh", auth.HandleRefresh())
 
+  v1 := api.Group("/v1")
 	// 设置测试路由
-	fooGroup := api.Group("/foo")
+	fooGroup := v1.Group("/foo")
 	// 设置一个需要认证的路由 - 使用 RequireAuth 中间件进行验证
 	fooGroup.GET("/hello", auth.RequireAuth(), foo.HandleHelloWorld())
-
-	// {
-	// 	lab := g.Group("/lab")
-	// 	labHandel := views.NewLabHandle()
-	// 	lab.GET("/envs", labHandel.GetEnv)
-	// }
-
 }
 
 func installMiddleware(g *gin.Engine) {

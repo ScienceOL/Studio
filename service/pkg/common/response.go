@@ -35,6 +35,7 @@ func ReplyErr(ctx *gin.Context, err error) {
 	})
 }
 
+// 禁止 data 直接返回数组，不方便接口拓展
 func ReplyOk(ctx *gin.Context, data any) {
 	ctx.JSON(http.StatusOK, &Resp{
 		Code: code.Success.Int(),
