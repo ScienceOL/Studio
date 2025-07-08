@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/scienceol/studio/service/internal/configs/webapp"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
+	"github.com/scienceol/studio/service/pkg/middleware/nacos"
 	"github.com/scienceol/studio/service/pkg/middleware/trace"
 	"github.com/scienceol/studio/service/pkg/repository/db"
 	"github.com/scienceol/studio/service/pkg/repository/redis"
@@ -50,7 +52,6 @@ func initGlobalResource(cmd *cobra.Command, args []string) error {
 		log.Println("No .env file found - using environment variables")
 	}
 
-	fmt.Println(os.LookupEnv("SERVER_PORT"))
 	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 	v.AutomaticEnv()
 
@@ -69,6 +70,28 @@ func initGlobalResource(cmd *cobra.Command, args []string) error {
 			Env:      config.Server.Env,
 		},
 	})
+
+	// 初始化 nacos , 注意初始化时序，请勿在动态配置未初始化时候使用配置
+	nacos.MustInit(cmd.Context(), &nacos.NacoConf{
+		Endpoint:  config.Nacos.Endpoint,
+		User:      config.Nacos.User,
+		Password:  config.Nacos.Password,
+		Port:      config.Nacos.Port,
+		DataID:    config.Nacos.DataID,
+		Group:     config.Nacos.Group,
+		NeedWatch: config.Nacos.NeedWatch,
+	},
+		func(content []byte) error {
+			d := &webapp.DynamicConfig{}
+			if err := json.Unmarshal(content, d); err != nil {
+				logger.Errorf(cmd.Context(),
+					"Unmarshal nacos config fail dataID: %s, Group: %s, err: %+v",
+					config.Nacos.DataID, config.Nacos.Group, err)
+			}
+
+			config.DynamicConfig = d
+			return nil
+		})
 
 	// 初始化 trace
 	trace.InitTrace(cmd.Context(), &trace.TraceConfig{

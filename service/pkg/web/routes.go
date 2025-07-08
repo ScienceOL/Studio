@@ -27,6 +27,7 @@ func NewRouter(g *gin.Engine) {
 		lab.GET("/envs", labHandel.GetEnv)
 	}
 
+
 }
 
 func installMiddleware(g *gin.Engine) {

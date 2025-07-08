@@ -1,6 +1,8 @@
 package laboratory
 
-import "context"
+import (
+	"context"
+)
 
 type Laboratory struct{}
 

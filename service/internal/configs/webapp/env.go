@@ -48,3 +48,18 @@ type Trace struct {
 	TraceAK         string `mapstructure:"TRACE_TRACEAK" default:""`
 	TraceSK         string `mapstructure:"TRACE_TRACESK" default:""`
 }
+
+type Nacos struct {
+	Endpoint    string `mapstructure:"NACOS_ENDPOINT" default:"127.0.0.1"`
+	ContextPath string `mapstructure:"NACOS_CONTEXT_PATH" default:"/nacos"`
+	NamespaceID string `mapstructure:"NACOS_NAMESPACE_ID" default:""`
+	AccessKey   string `mapstructure:"NACOS_ACCESS_KEY" default:""`
+	SecretKey   string `mapstructure:"NACOS_SECRET_KEY" default:""`
+	User        string `mapstructure:"NACOS_USER" default:"nacos"`
+	Password    string `mapstructure:"NACOS_PASSWORD" default:"nacos"`
+	Port        int    `mapstructure:"NACOS_PORT" default:"8848"`
+	RegionID    string `mapstructure:"NACOS_REGION_ID" default:""`
+	DataID      string `mapstructure:"NACOS_DATA_ID"`
+	Group       string `mapstructure:"NACOS_GROUP" default:"DEFAULT_GROUP"`
+	NeedWatch   bool   `mapstructure:"NACOS_NEED_WATCH" default:"true"`
+}
