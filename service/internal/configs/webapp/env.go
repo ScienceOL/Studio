@@ -2,11 +2,11 @@ package webapp
 
 // 规划环境变量
 type Database struct {
-	Host     string `mapstructure:"DB_HOST" default:"localhost"`
-	Port     int    `mapstructure:"DB_PORT" default:"5432"`
-	User     string `mapstructure:"DB_USER" default:"postgres"`
-	Password string `mapstructure:"DB_PASSWORD" default:"protium"`
-	Name     string `mapstructure:"DB_NAME" default:"please_change_me"`
+	Host     string `mapstructure:"DATABASE_HOST" default:"localhost"`
+	Port     int    `mapstructure:"DATABASE_PORT" default:"5432"`
+	Name     string `mapstructure:"DATABASE_NAME" default:"studio"`
+	User     string `mapstructure:"DATABASE_USER" default:"postgres"`
+	Password string `mapstructure:"DATABASE_PASSWORD" default:"postgres"`
 }
 
 type Redis struct {
@@ -14,19 +14,20 @@ type Redis struct {
 	Port     int    `mapstructure:"REDIS_PORT" default:"6379"`
 	User     string `mapstructure:"REDIS_USER" `
 	Password string `mapstructure:"REDIS_PASSWORD"`
-	DB       int    `mapstructure:"REDIS_DB"`
+	DB       int    `mapstructure:"REDIS_DB" default:"0"`
 }
 
 type Server struct {
-	Port     int    `mapstructure:"SERVER_PORT" default:"48197"`
-	Platform string `mapstructure:"PLATFORM" default:"uni-lab"` // uni-lab
-	Service  string `mapstructure:"SERVICE" default:"api"`      // api、schedule
-	Env      string `mapstructure:"ENV" default:"dev"`
+	Platform string `mapstructure:"PLATFORM" default:"sciol"` // linux、darwin、windows
+	Service  string `mapstructure:"SERVICE" default:"studio"`      // api、schedule
+	SecretKey string `mapstructure:"SECRET_KEY"`
+	Port   int    `mapstructure:"SERVER_PORT" default:"48197"`
+	Env    string `mapstructure:"ENV" default:"dev"`
 }
 
 type Log struct {
 	LogPath  string `mapstructure:"LOG_PATH" default:"./info.log"`
-	LogLevel string `mapstructure:"LOG_LEVEL" default:"info"` // debug info warn error dpanic panic fatal
+	LogLevel string `mapstructure:"LOG_LEVEL" default:"info"`
 }
 
 type MQTT struct {
