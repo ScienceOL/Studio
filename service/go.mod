@@ -3,7 +3,6 @@ module github.com/scienceol/studio/service
 go 1.24.2
 
 require (
-	git.dp.tech/apexlab/common-sdk v1.4.7
 	github.com/AliwareMQ/mqtt-server-sdk/go/server-sdk v0.0.0-20230316094605-5dfe7ee71c07
 	github.com/creasty/defaults v1.8.0
 	github.com/gin-contrib/cors v1.7.6
@@ -154,6 +153,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250218202821-56aae31c358a // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250313205543-e70fdf4c4cb4 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/clickhouse v0.7.0 // indirect
