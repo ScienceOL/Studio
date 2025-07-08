@@ -11,6 +11,7 @@ type WebGlobalConfig struct {
 	Database      Database `mapstructure:",squash"`
 	Redis         Redis    `mapstructure:",squash"`
 	Server        Server   `mapstructure:",squash"`
+	OAuth2        OAuth2   `mapstructure:",squash"`
 	Log           Log      `mapstructure:",squash"`
 	MQTT          MQTT     `mapstructure:",squash"`
 	Trace         Trace    `mapstructure:",squash"`
