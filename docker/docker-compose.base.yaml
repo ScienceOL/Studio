@@ -10,14 +10,60 @@ services:
       - '${REDIS_PORT:-6379}:6379'
       - '${ELASTICSEARCH_PORT:-9200}:9200'
       - '${CASDOOR_PORT:-8000}:8000'
-      - '${WEB_PORT:-32234}:32234'
-      - '${SERVICE_PORT:-48197}:48197'
+      # - '${WEB_PORT:-32234}:32234'
+      # - '${SERVICE_PORT:-48197}:48197'
       - '${MQTT_PORT:-1883}:1883'
       - '${MQTT_TLS_PORT:-8883}:8883'
       - '${MQTT_WEBSOCKET_PORT:-9002}:9002'
+      - '${NACOS_PORT:-8848}:8848'
+      - '${NACOS_GRPC_PORT:-9848}:9848'
+      - '${NACOS_WEB_PORT:-7848}:8080'
     command: tail -f /dev/null
     networks:
       - sciol-network
+
+  nacos:
+    image: nacos/nacos-server:v3.0.2
+    container_name: sciol-nacos
+    pull_policy: if_not_present
+    network_mode: 'service:network-service'
+    environment:
+      - MODE=standalone
+      - PREFER_HOST_MODE=hostname
+      - NACOS_AUTH_ENABLE=false
+      - NACOS_AUTH_TOKEN=SecretKey012345678901234567890123456789012345678901234567890123456789
+      - NACOS_AUTH_IDENTITY_KEY=serverIdentity
+      - NACOS_AUTH_IDENTITY_VALUE=security
+      # - NACOS_AUTH_ADMIN_USERNAME=nacos
+      # - NACOS_AUTH_ADMIN_PASSWORD=nacos
+    restart: always
+    deploy:
+      replicas: ${NACOS_REPLICAS:-1}
+    volumes:
+      - nacos-data:/home/nacos/data
+      - ../infra/nacos/init.sh:/init.sh
+    entrypoint: >
+        /bin/sh -c "
+          /home/nacos/bin/docker-startup.sh &
+          pid=$$!
+    
+          # 等待 Nacos 启动
+          until curl -i http://localhost:8080 > /dev/null 2>&1; do
+            echo 'Waiting for Nacos to start...'
+            sleep 2
+          done
+    
+          # 执行初始化脚本
+          chmod +x /init.sh
+          /init.sh
+    
+          wait $$pid
+        "
+    healthcheck:
+      test: ['CMD-SHELL', 'curl --fail --silent --max-time 3 http://localhost:8080']
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   postgresql:
     image: postgres:16.8-alpine
@@ -26,14 +72,23 @@ services:
     network_mode: 'service:network-service'
     restart: always
     environment:
-      POSTGRES_DB: ${DATABASE_NAME:-protium}
       POSTGRES_USER: ${DATABASE_USER:-postgres}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-please_change_me}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-studio}
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 5s
       timeout: 5s
       retries: 5
+    entrypoint: >
+      /bin/sh -c "
+        # 创建初始化脚本
+        mkdir -p /docker-entrypoint-initdb.d
+        echo 'CREATE DATABASE studio;' > /docker-entrypoint-initdb.d/init-databases.sql
+        echo 'CREATE DATABASE casdoor;' >> /docker-entrypoint-initdb.d/init-databases.sql
+        
+        # 启动原始的 PostgreSQL 入口点
+        exec /usr/local/bin/docker-entrypoint.sh postgres
+      "
     volumes:
       - db-data:/var/lib/postgresql/data
 
@@ -163,7 +218,7 @@ services:
     environment:
       RUNNING_IN_DOCKER: 'true'
       driverName: 'postgres'
-      dataSourceName: 'user=${DATABASE_USER:-postgres} password=${DATABASE_PASSWORD:-protium} host=localhost port=5432 sslmode=disable dbname=casdoor'
+      dataSourceName: 'user=${DATABASE_USER:-postgres} password=${DATABASE_PASSWORD:-studio} host=localhost port=5432 sslmode=disable dbname=casdoor'
       runmode: 'dev'
     volumes:
       - ../infra/casdoor/init_data.json:/init_data.json
@@ -210,6 +265,8 @@ volumes:
   redis-data:
     driver: local
   s3_data:
+    driver: local
+  nacos-data:
     driver: local
 
 networks:

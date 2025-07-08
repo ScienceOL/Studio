@@ -197,9 +197,17 @@ info: ## 显示项目信息
 	@echo "  系统: $(GOOS)/$(GOARCH)"
 
 # 确保这些目标不被误认为是文件
-.PHONY: all build clean test
+.PHONY: all build clean test generate apiserver migrate
 
 # 生成错误码
 generate:
-	go generate ../pkg/...
+	go generate ./pkg/...
+
+# 运行 migrate 
+migrate:
+	go run cmd/api/main.go migrate
+
+# 运行服务
+apiserver: generate
+	go run cmd/api/main.go apiserver
 

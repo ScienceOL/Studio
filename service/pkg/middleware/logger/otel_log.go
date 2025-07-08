@@ -96,5 +96,7 @@ func getLumberjackConfig(conf *LogConfig) zapcore.WriteSyncer {
 }
 
 func lumberjackLoggerClose() {
-	_ = lumberjackLogger.Close()
+	if lumberjackLogger != nil {
+		_ = lumberjackLogger.Close()
+	}
 }

@@ -1,0 +1,29 @@
+package material
+
+import (
+	"context"
+
+	"github.com/scienceol/studio/service/pkg/middleware/db"
+	"github.com/scienceol/studio/service/pkg/repo"
+	"github.com/scienceol/studio/service/pkg/repo/model"
+)
+
+type materialImpl struct {
+	*db.Datastore
+}
+
+func NewMaterialImpl() repo.MaterialRepo {
+	return &materialImpl{
+		Datastore: db.DB(),
+	}
+}
+
+func (materialimpl *materialImpl) UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode) error {
+	return nil
+}
+func (materialimpl *materialImpl) UpsertMaterialHandle(ctx context.Context, datas []*model.MaterialHandle) error {
+	return nil
+}
+func (materialimpl *materialImpl) UpsertMaterialEdge(ctx context.Context, datas []*model.MaterialEdge) error {
+	return nil
+}

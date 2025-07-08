@@ -34,6 +34,7 @@ type Config struct {
 	User   string
 	PW     string
 	DBName string
+	DryRun bool
 	LogConf
 
 	Conns
@@ -119,6 +120,7 @@ func (conf *Config) SDN() string {
 
 func newInstances(ctx context.Context, conf *Config) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(conf.SDN()), &gorm.Config{
+		DryRun: conf.DryRun,
 		Logger: NewGormLogger(logger.BaseLogger(), conf.LogLevel(), conf.SlowThreshold),
 	})
 	if err != nil {

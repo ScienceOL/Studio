@@ -2,11 +2,11 @@ package webapp
 
 // 规划环境变量
 type Database struct {
-	Host     string `mapstructure:"DB_HOST" default:"localhost"`
-	Port     int    `mapstructure:"DB_PORT" default:"5432"`
-	User     string `mapstructure:"DB_USER" default:"postgres"`
-	Password string `mapstructure:"DB_PASSWORD" default:"protium"`
-	Name     string `mapstructure:"DB_NAME" default:"please_change_me"`
+	Host     string `mapstructure:"DATABASE_HOST" default:"localhost"`
+	Port     int    `mapstructure:"DATABASE_PORT" default:"5432"`
+	Name     string `mapstructure:"DATABASE_NAME" default:"studio"`
+	User     string `mapstructure:"DATABASE_USER" default:"postgres"`
+	Password string `mapstructure:"DATABASE_PASSWORD" default:"studio"`
 }
 
 type Redis struct {
@@ -14,19 +14,30 @@ type Redis struct {
 	Port     int    `mapstructure:"REDIS_PORT" default:"6379"`
 	User     string `mapstructure:"REDIS_USER" `
 	Password string `mapstructure:"REDIS_PASSWORD"`
-	DB       int    `mapstructure:"REDIS_DB"`
+	DB       int    `mapstructure:"REDIS_DB" default:"0"`
 }
 
 type Server struct {
-	Port     int    `mapstructure:"SERVER_PORT" default:"48197"`
-	Platform string `mapstructure:"PLATFORM" default:"uni-lab"` // uni-lab
-	Service  string `mapstructure:"SERVICE" default:"api"`      // api、schedule
-	Env      string `mapstructure:"ENV" default:"dev"`
+	Platform  string `mapstructure:"PLATFORM" default:"sciol"` // linux、darwin、windows
+	Service   string `mapstructure:"SERVICE" default:"studio"` // api、schedule
+	SecretKey string `mapstructure:"SECRET_KEY"`
+	Port      int    `mapstructure:"SERVER_PORT" default:"48197"`
+	Env       string `mapstructure:"ENV" default:"dev"`
+}
+
+type OAuth2 struct {
+	ClientID     string   `mapstructure:"OAUTH2_CLIENT_ID" default:"a387a4892ee19b1a2249"`
+	ClientSecret string   `mapstructure:"OAUTH2_CLIENT_SECRET" default:"f3167664b2c58bca53b04c61807a97db"`
+	Scopes       []string `mapstructure:"OAUTH2_SCOPES" default:"[\"read\",\"write\",\"offline_access\"]"`
+	TokenURL     string   `mapstructure:"OAUTH2_TOKEN_URL" default:"http://localhost:8000/api/login/oauth/access_token"`
+	AuthURL      string   `mapstructure:"OAUTH2_AUTH_URL" default:"http://localhost:8000/login/oauth/authorize"`
+	RedirectURL  string   `mapstructure:"OAUTH2_REDIRECT_URL" default:"http://localhost:48197/api/auth/callback/casdoor"`
+	UserInfoURL  string   `mapstructure:"OAUTH2_USERINFO_URL" default:"http://localhost:8000/api/get-account"`
 }
 
 type Log struct {
 	LogPath  string `mapstructure:"LOG_PATH" default:"./info.log"`
-	LogLevel string `mapstructure:"LOG_LEVEL" default:"info"` // debug info warn error dpanic panic fatal
+	LogLevel string `mapstructure:"LOG_LEVEL" default:"info"`
 }
 
 type MQTT struct {
@@ -47,4 +58,19 @@ type Trace struct {
 	TraceInstanceID string `mapstructure:"TRACE_TRACEINSTANCEID" default:""`
 	TraceAK         string `mapstructure:"TRACE_TRACEAK" default:""`
 	TraceSK         string `mapstructure:"TRACE_TRACESK" default:""`
+}
+
+type Nacos struct {
+	Endpoint    string `mapstructure:"NACOS_ENDPOINT" default:"127.0.0.1"`
+	ContextPath string `mapstructure:"NACOS_CONTEXT_PATH" default:"/nacos"`
+	NamespaceID string `mapstructure:"NACOS_NAMESPACE_ID" default:"public"`
+	AccessKey   string `mapstructure:"NACOS_ACCESS_KEY" default:""`
+	SecretKey   string `mapstructure:"NACOS_SECRET_KEY" default:""`
+	User        string `mapstructure:"NACOS_USER" default:"nacos"`
+	Password    string `mapstructure:"NACOS_PASSWORD" default:"nacos"`
+	Port        int    `mapstructure:"NACOS_PORT" default:"8848"`
+	RegionID    string `mapstructure:"NACOS_REGION_ID" default:""`
+	DataID      string `mapstructure:"NACOS_DATA_ID" default:"studio-config"`
+	Group       string `mapstructure:"NACOS_GROUP" default:"DEFAULT_GROUP"`
+	NeedWatch   bool   `mapstructure:"NACOS_NEED_WATCH" default:"true"`
 }

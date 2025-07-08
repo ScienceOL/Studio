@@ -8,36 +8,47 @@ import (
 )
 
 type Error struct {
-	Msg string `json:"msg"`
+	Msg  string   `json:"msg"`
+	Info []string `json:"info,omitempty"`
 }
 
 type Resp struct {
-	Code  int    `json:"code"`
-	Error *Error `json:"error,omitempty"`
-	Data  any    `json:"data,omitempty"`
+	Code  code.ErrCode `json:"code"`
+	Error *Error       `json:"error,omitempty"`
+	Data  any          `json:"data,omitempty"`
 }
 
-func ReplyErr(ctx *gin.Context, err error) {
-	if errCode, ok := err.(*code.ErrCode); ok {
+func ReplyErr(ctx *gin.Context, err error, msg ...string) {
+	if errCode, ok := err.(code.ErrCode); ok {
 		ctx.JSON(http.StatusOK, &Resp{
-			Code: errCode.Int(),
+			Code: errCode,
 			Error: &Error{
-				Msg: errCode.String(),
+				Msg:  errCode.String(),
+				Info: msg,
 			},
 		})
+		return
 	}
 
 	ctx.JSON(http.StatusOK, &Resp{
-		Code: code.UnDefineErr.Int(),
+		Code: code.UnDefineErr,
 		Error: &Error{
 			Msg: err.Error(),
 		},
 	})
 }
 
-func ReplyOk(ctx *gin.Context, data any) {
+// 禁止 data 直接返回数组，不方便接口拓展
+func ReplyOk(ctx *gin.Context, data ...any) {
+	if len(data) > 0 {
+		ctx.JSON(http.StatusOK, &Resp{
+			Code: code.Success,
+			Data: data[0],
+		})
+		return
+	}
+
 	ctx.JSON(http.StatusOK, &Resp{
-		Code: code.Success.Int(),
-		Data: data,
+		Code: code.Success,
 	})
 }
