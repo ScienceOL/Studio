@@ -30,15 +30,36 @@ services:
     environment:
       - MODE=standalone
       - PREFER_HOST_MODE=hostname
-      - NACOS_AUTH_ENABLE=false
+      - NACOS_AUTH_ENABLE=true
       - NACOS_AUTH_TOKEN=SecretKey012345678901234567890123456789012345678901234567890123456789
       - NACOS_AUTH_IDENTITY_KEY=serverIdentity
       - NACOS_AUTH_IDENTITY_VALUE=security
+      - NACOS_AUTH_SYSTEM_TYPE=nacos
+      - NACOS_AUTH_ADMIN_USERNAME=nacos
+      - NACOS_AUTH_ADMIN_PASSWORD=nacos
     restart: always
     deploy:
       replicas: ${NACOS_REPLICAS:-1}
     volumes:
       - nacos-data:/home/nacos/data
+      - ../infra/nacos/init.sh:/init.sh
+    entrypoint: >
+      /bin/sh -c "
+        /bin/docker-entrypoint.sh nacos-server &
+        pid=$$!
+        
+        # 等待 Nacos 启动
+        until curl -s http://localhost:8848/nacos/v1/ns/operator/servers > /dev/null 2>&1; do
+          echo 'Waiting for Nacos to start...'
+          sleep 2
+        done
+        
+        # 执行初始化脚本
+        chmod +x /init.sh
+        /init.sh
+        
+        wait $$pid
+      "
     # healthcheck:
     #   test: ['CMD-SHELL', 'curl --fail --silent --max-time 3 http://localhost:8848/nacos/v1/ns/operator/servers']
     #   interval: 30s
