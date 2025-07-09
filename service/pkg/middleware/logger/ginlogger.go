@@ -27,6 +27,13 @@ func (w bodyLogWriter) Write(b []byte) (int, error) {
 
 func LogWithWriter() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 检查是否为不适合缓存响应体的请求类型
+		if shouldSkipResponseBodyLogging(c.Request) {
+			logConnectionEstablished(c)
+			c.Next()
+			return
+		}
+
 		// 开始时间
 		startTime := time.Now()
 		if c.Request.Method == http.MethodPut || c.Request.Method == http.MethodPost ||
@@ -90,6 +97,49 @@ func LogWithWriter() gin.HandlerFunc {
 	}
 }
 
+func shouldSkipResponseBodyLogging(req *http.Request) bool {
+	// WebSocket 连接
+	if isWebSocketRequest(req) {
+		return true
+	}
+
+	// SSE 连接
+	if isSSERequest(req) {
+		return true
+	}
+
+	// HTTP CONNECT 方法
+	if req.Method == http.MethodConnect {
+		return true
+	}
+
+	// gRPC 请求
+	if strings.HasPrefix(req.Header.Get("Content-Type"), "application/grpc") {
+		return true
+	}
+
+	// 文件上传/下载（基于 Content-Type）
+	contentType := req.Header.Get("Content-Type")
+	if strings.Contains(contentType, "multipart/form-data") ||
+		strings.Contains(contentType, "application/octet-stream") {
+		return true
+	}
+
+	return false
+}
+
+// 检查是否为 SSE 请求
+func isSSERequest(req *http.Request) bool {
+	accept := req.Header.Get("Accept")
+	return strings.Contains(accept, "text/event-stream")
+}
+
+// 检查是否为 WebSocket 请求
+func isWebSocketRequest(req *http.Request) bool {
+	return strings.ToLower(req.Header.Get("Connection")) == "upgrade" &&
+		strings.ToLower(req.Header.Get("Upgrade")) == "websocket"
+}
+
 func filterSensitiveData(body []byte) []byte {
 	// 示例：过滤密码字段
 	strBody := string(body)
@@ -101,4 +151,18 @@ func filterSensitiveData(body []byte) []byte {
 
 	// 添加其他敏感字段过滤（如信用卡号、token等）
 	return []byte(strBody)
+}
+
+func logConnectionEstablished(c *gin.Context) {
+	var connType string
+	if isWebSocketRequest(c.Request) {
+		connType = "WebSocket"
+	} else if isSSERequest(c.Request) {
+		connType = "SSE"
+	} else {
+		connType = "Special"
+	}
+
+	Infof(c, "%s connection established: %s %s from %s",
+		connType, c.Request.Method, c.Request.RequestURI, c.Request.RemoteAddr)
 }
