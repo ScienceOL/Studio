@@ -13,7 +13,9 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 
+	"github.com/scienceol/studio/service/pkg/web/views"
 	"github.com/scienceol/studio/service/pkg/web/views/foo"
+	"github.com/scienceol/studio/service/pkg/web/views/login"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
@@ -22,22 +24,20 @@ func NewRouter(g *gin.Engine) {
 	InstallURL(g)
 
 	api := g.Group("/api")
-
-	api.GET("/health", func(ctx *gin.Context) {
-		ctx.JSON(200, map[string]any{
-			"success": "ok",
-		})
-	})
-
+	api.GET("/health", views.Health)
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	// 设置认证相关路由
-	authGroup := api.Group("/auth")
-	// 登录路由 - 使用改进版处理器
-	authGroup.GET("/login", auth.HandleLogin())
-	// OAuth2 回调处理路由 - 使用改进版处理器
-	authGroup.GET("/callback/casdoor", auth.HandleCallback())
-	// 刷新令牌路由
-	authGroup.POST("/refresh", auth.HandleRefresh())
+
+	{
+		l := login.NewLogin()
+		// 设置认证相关路由
+		authGroup := api.Group("/auth")
+		// 登录路由 - 使用改进版处理器
+		authGroup.GET("/login", l.Login)
+		// OAuth2 回调处理路由 - 使用改进版处理器
+		authGroup.GET("/callback/casdoor", l.Callback)
+		// 刷新令牌路由
+		authGroup.POST("/refresh", l.Refresh)
+	}
 
 	v1 := api.Group("/v1")
 	// 设置测试路由

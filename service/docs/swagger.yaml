@@ -1,5 +1,5 @@
 basePath: /
-host: localhost:8080
+host: localhost:48197
 info:
   contact:
     email: support@swagger.io
@@ -12,5 +12,21 @@ info:
   termsOfService: http://swagger.io/terms/
   title: Studio API
   version: "1.0"
-paths: {}
+paths:
+  /api/health:
+    get:
+      consumes:
+      - application/json
+      description: 检查服务运行状态
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回成功状态
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 健康检查
+      tags:
+      - health
 swagger: "2.0"

@@ -60,7 +60,7 @@ func ValidateToken(token string, c *gin.Context) (bool, map[string]any, error) {
 	}
 
 	// 解析用户信息
-	var result map[string]interface{}
+	var result map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		logger.Errorf(c.Request.Context(), "Failed to parse user info: %v", err)
 		return false, nil, err
@@ -69,7 +69,7 @@ func ValidateToken(token string, c *gin.Context) (bool, map[string]any, error) {
 	// 检查API调用是否成功
 	if status, ok := result["status"].(string); ok && status == "ok" {
 		// 提取用户数据
-		userData, ok := result["data"].(map[string]interface{})
+		userData, ok := result["data"].(map[string]any)
 		if !ok {
 			logger.Errorf(c.Request.Context(), "Invalid user data format, result: %+v", result)
 			return false, nil, errors.New("invalid user data format")

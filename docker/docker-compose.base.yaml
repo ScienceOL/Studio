@@ -65,7 +65,6 @@ services:
       timeout: 5s
       retries: 3
 
-
   postgresql:
     image: postgres:16.8-alpine
     pull_policy: if_not_present
@@ -73,14 +72,23 @@ services:
     network_mode: 'service:network-service'
     restart: always
     environment:
-      POSTGRES_DB: ${DATABASE_NAME:-studio}
       POSTGRES_USER: ${DATABASE_USER:-postgres}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-studio}
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 5s
       timeout: 5s
       retries: 5
+    entrypoint: >
+      /bin/sh -c "
+        # 创建初始化脚本
+        mkdir -p /docker-entrypoint-initdb.d
+        echo 'CREATE DATABASE studio;' > /docker-entrypoint-initdb.d/init-databases.sql
+        echo 'CREATE DATABASE casdoor;' >> /docker-entrypoint-initdb.d/init-databases.sql
+        
+        # 启动原始的 PostgreSQL 入口点
+        exec /usr/local/bin/docker-entrypoint.sh postgres
+      "
     volumes:
       - db-data:/var/lib/postgresql/data
 
@@ -210,7 +218,7 @@ services:
     environment:
       RUNNING_IN_DOCKER: 'true'
       driverName: 'postgres'
-      dataSourceName: 'user=${DATABASE_USER:-postgres} password=${DATABASE_PASSWORD:-protium} host=localhost port=5432 sslmode=disable dbname=casdoor'
+      dataSourceName: 'user=${DATABASE_USER:-postgres} password=${DATABASE_PASSWORD:-studio} host=localhost port=5432 sslmode=disable dbname=casdoor'
       runmode: 'dev'
     volumes:
       - ../infra/casdoor/init_data.json:/init_data.json

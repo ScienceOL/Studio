@@ -9,19 +9,28 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/scienceol/studio/service/internal/configs/webapp"
+	"github.com/scienceol/studio/service/pkg/common"
+	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
 	"golang.org/x/oauth2"
 )
 
+// @Summary oauth 登录
+// @Description 检查服务运行状态
+// @Tags 认证管理
+// @Accept json
+// @Produce json
+// @Success 302 {string} string "重定向到 OAuth2 提供商的登录页面"
+// @Router /api/auth/login [get]
 // HandleLogin 处理登录请求
 func HandleLogin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取OAuth2配置
 		oauthConfig := GetOAuthConfig()
 		if oauthConfig == nil {
-			logger.Errorf(c.Request.Context(), "OAuth2 configuration not available")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Configuration not available"})
+			logger.Errorf(c, "OAuth2 configuration not available")
+			common.ReplyErr(c, code.LoginConfigErr)
 			return
 		}
 
@@ -30,9 +39,9 @@ func HandleLogin() gin.HandlerFunc {
 
 		// 将state保存到Redis中，设置5分钟过期时间
 		stateKey := fmt.Sprintf("oauth_state:%s", state)
-		if err := redis.GetClient().Set(c.Request.Context(), stateKey, "valid", 5*time.Minute).Err(); err != nil {
-			logger.Errorf(c.Request.Context(), "Failed to save state to Redis: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		if err := redis.GetClient().Set(c, stateKey, "valid", 5*time.Minute).Err(); err != nil {
+			logger.Errorf(c, "Failed to save state to Redis: %v", err)
+			common.ReplyErr(c, code.LoginSetStateErr)
 			return
 		}
 
@@ -48,7 +57,7 @@ func HandleCallback() gin.HandlerFunc {
 		// 获取OAuth2配置
 		oauthConfig := GetOAuthConfig()
 		if oauthConfig == nil {
-			logger.Errorf(c.Request.Context(), "OAuth2 configuration not available")
+			logger.Errorf(c, "OAuth2 configuration not available")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Configuration not available"})
 			return
 		}
@@ -59,31 +68,31 @@ func HandleCallback() gin.HandlerFunc {
 
 		// 验证state是否存在于Redis中
 		stateKey := fmt.Sprintf("oauth_state:%s", state)
-		redisResult := redis.GetClient().Get(c.Request.Context(), stateKey)
+		redisResult := redis.GetClient().Get(c, stateKey)
 		if redisResult.Err() != nil {
-			logger.Errorf(c.Request.Context(), "State validation failed, state not found or expired: %s, error: %v", state, redisResult.Err())
+			logger.Errorf(c, "State validation failed, state not found or expired: %s, error: %v", state, redisResult.Err())
 			c.JSON(http.StatusBadRequest, gin.H{"error": "State validation failed"})
 			return
 		}
 
 		// 删除使用过的state
-		redis.GetClient().Del(c.Request.Context(), stateKey)
+		redis.GetClient().Del(c, stateKey)
 
 		ctx := context.Background()
 
 		// 用授权码交换token
 		token, err := oauthConfig.Exchange(ctx, code, oauth2.AccessTypeOffline)
 		if err != nil {
-			logger.Errorf(c.Request.Context(), "Token exchange failed: %v", err)
+			logger.Errorf(c, "Token exchange failed: %v", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to exchange token"})
 			return
 		}
 
 		// 检查是否收到刷新令牌
 		if token.RefreshToken == "" {
-			logger.Warnf(c.Request.Context(), "No refresh token received from Casdoor")
+			logger.Warnf(c, "No refresh token received from Casdoor")
 		} else {
-			logger.Infof(c.Request.Context(), "Successfully received refresh token from Casdoor")
+			logger.Infof(c, "Successfully received refresh token from Casdoor")
 		}
 
 		// 使用token构建OAuth2客户端
@@ -93,7 +102,7 @@ func HandleCallback() gin.HandlerFunc {
 		config := webapp.Config()
 		resp, err := client.Get(config.OAuth2.UserInfoURL)
 		if err != nil {
-			logger.Errorf(c.Request.Context(), "Failed to get user info: %v", err)
+			logger.Errorf(c, "Failed to get user info: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
 			return
 		}
@@ -102,14 +111,14 @@ func HandleCallback() gin.HandlerFunc {
 		// 解析用户信息
 		var result map[string]interface{}
 		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-			logger.Errorf(c.Request.Context(), "Failed to parse user info: %v", err)
+			logger.Errorf(c, "Failed to parse user info: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user info"})
 			return
 		}
 
 		// 检查API调用是否成功
 		if status, ok := result["status"].(string); !ok || status != "ok" {
-			logger.Errorf(c.Request.Context(), "Failed to get valid user info, result: %+v", result)
+			logger.Errorf(c, "Failed to get valid user info, result: %+v", result)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get valid user info"})
 			return
 		}
@@ -117,7 +126,7 @@ func HandleCallback() gin.HandlerFunc {
 		// 提取用户数据
 		userData, ok := result["data"].(map[string]interface{})
 		if !ok {
-			logger.Errorf(c.Request.Context(), "Invalid user data format, result: %+v", result)
+			logger.Errorf(c, "Invalid user data format, result: %+v", result)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user data format"})
 			return
 		}
@@ -139,7 +148,7 @@ func HandleRefresh() gin.HandlerFunc {
 		// 获取OAuth2配置
 		oauthConfig := GetOAuthConfig()
 		if oauthConfig == nil {
-			logger.Errorf(c.Request.Context(), "OAuth2 configuration not available")
+			logger.Errorf(c, "OAuth2 configuration not available")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Configuration not available"})
 			return
 		}
@@ -147,7 +156,7 @@ func HandleRefresh() gin.HandlerFunc {
 		// 从请求中获取刷新令牌
 		var req RefreshTokenRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			logger.Errorf(c.Request.Context(), "Invalid request format: %v", err)
+			logger.Errorf(c, "Invalid request format: %v", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 			return
 		}
@@ -164,7 +173,7 @@ func HandleRefresh() gin.HandlerFunc {
 		tokenSource := oauthConfig.TokenSource(ctx, expiredToken)
 		newToken, err := tokenSource.Token()
 		if err != nil {
-			logger.Errorf(c.Request.Context(), "Failed to refresh token: %v", err)
+			logger.Errorf(c, "Failed to refresh token: %v", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to refresh token"})
 			return
 		}

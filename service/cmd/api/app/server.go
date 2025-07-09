@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -20,6 +19,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/trace"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"github.com/scienceol/studio/service/pkg/web"
+	"gopkg.in/yaml.v2"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -84,7 +84,7 @@ func initGlobalResource(cmd *cobra.Command, args []string) error {
 	},
 		func(content []byte) error {
 			d := &webapp.DynamicConfig{}
-			if err := json.Unmarshal(content, d); err != nil {
+			if err := yaml.Unmarshal(content, d); err != nil {
 				logger.Errorf(cmd.Context(),
 					"Unmarshal nacos config fail dataID: %s, Group: %s, err: %+v",
 					config.Nacos.DataID, config.Nacos.Group, err)

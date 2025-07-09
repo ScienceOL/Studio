@@ -15,7 +15,32 @@
         },
         "version": "1.0"
     },
-    "host": "localhost:8080",
+    "host": "localhost:48197",
     "basePath": "/",
-    "paths": {}
+    "paths": {
+        "/api/health": {
+            "get": {
+                "description": "检查服务运行状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "健康检查",
+                "responses": {
+                    "200": {
+                        "description": "返回成功状态",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/scienceol/studio/service/cmd/api/app"
+	_ "github.com/scienceol/studio/service/docs" // 导入自动生成的 docs 包
 )
 
 // @title Studio API
@@ -18,7 +19,7 @@ import (
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host localhost:8080
+// @host localhost:48197
 // @BasePath /
 func main() {
 	app := app.NewWeb()

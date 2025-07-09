@@ -125,6 +125,11 @@ func shouldSkipResponseBodyLogging(req *http.Request) bool {
 		return true
 	}
 
+	// 排除 swagger 路由
+	if strings.HasPrefix(req.URL.Path, "/api/swagger/") {
+		return true
+	}
+
 	return false
 }
 

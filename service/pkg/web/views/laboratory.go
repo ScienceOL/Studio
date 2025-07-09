@@ -16,15 +16,6 @@ func NewLabHandle() *Lab {
 	}
 }
 
-// GetEnv 获取环境信息
-// @Summary 获取环境信息
-// @Description 获取实验室环境配置信息
-// @Tags 实验室
-// @Accept json
-// @Produce json
-// @Success 200 {object} common.Resp{data=laboratory.LaboratoryEnv}
-// @Failure 200 {object} common.Resp
-// @Router /api/v1/lab/env [get]
 func (l *Lab) GetEnv(ctx *gin.Context) {
 	resp, err := l.service.GetEnvs(ctx)
 	if err != nil {
