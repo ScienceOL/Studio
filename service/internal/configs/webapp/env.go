@@ -61,10 +61,9 @@ type Trace struct {
 }
 
 type Nacos struct {
-	Enable      bool   `mapstructure:"NACOS_ENABLE" default:"false"`
 	Endpoint    string `mapstructure:"NACOS_ENDPOINT" default:"127.0.0.1"`
 	ContextPath string `mapstructure:"NACOS_CONTEXT_PATH" default:"/nacos"`
-	NamespaceID string `mapstructure:"NACOS_NAMESPACE_ID" default:""`
+	NamespaceID string `mapstructure:"NACOS_NAMESPACE_ID" default:"public"`
 	AccessKey   string `mapstructure:"NACOS_ACCESS_KEY" default:""`
 	SecretKey   string `mapstructure:"NACOS_SECRET_KEY" default:""`
 	User        string `mapstructure:"NACOS_USER" default:"nacos"`

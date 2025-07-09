@@ -73,31 +73,26 @@ func initGlobalResource(cmd *cobra.Command, args []string) error {
 	})
 
 	// 初始化 nacos , 注意初始化时序，请勿在动态配置未初始化时候使用配置
-	if config.Nacos.Enable {
-		nacos.MustInit(cmd.Context(), &nacos.NacoConf{
-			Endpoint:  config.Nacos.Endpoint,
-			User:      config.Nacos.User,
-			Password:  config.Nacos.Password,
-			Port:      config.Nacos.Port,
-			DataID:    config.Nacos.DataID,
-			Group:     config.Nacos.Group,
-			NeedWatch: config.Nacos.NeedWatch,
-		},
-			func(content []byte) error {
-				d := &webapp.DynamicConfig{}
-				if err := json.Unmarshal(content, d); err != nil {
-					logger.Errorf(cmd.Context(),
-						"Unmarshal nacos config fail dataID: %s, Group: %s, err: %+v",
-						config.Nacos.DataID, config.Nacos.Group, err)
-				}
+	nacos.MustInit(cmd.Context(), &nacos.NacoConf{
+		Endpoint:  config.Nacos.Endpoint,
+		User:      config.Nacos.User,
+		Password:  config.Nacos.Password,
+		Port:      config.Nacos.Port,
+		DataID:    config.Nacos.DataID,
+		Group:     config.Nacos.Group,
+		NeedWatch: config.Nacos.NeedWatch,
+	},
+		func(content []byte) error {
+			d := &webapp.DynamicConfig{}
+			if err := json.Unmarshal(content, d); err != nil {
+				logger.Errorf(cmd.Context(),
+					"Unmarshal nacos config fail dataID: %s, Group: %s, err: %+v",
+					config.Nacos.DataID, config.Nacos.Group, err)
+			}
 
-				config.DynamicConfig = d
-				return nil
-			})
-		logger.Infof(cmd.Context(), "Nacos initialized successfully")
-	} else {
-		logger.Infof(cmd.Context(), "Nacos is disabled, skipping initialization")
-	}
+			config.DynamicConfig = d
+			return nil
+		})
 
 	// 初始化 trace
 	trace.InitTrace(cmd.Context(), &trace.TraceConfig{
