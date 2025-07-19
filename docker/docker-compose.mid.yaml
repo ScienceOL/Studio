@@ -45,7 +45,6 @@ services:
     #   timeout: 5s
     #   retries: 3
 
-
   postgresql:
     image: postgres:16.8-alpine
     pull_policy: if_not_present
@@ -190,46 +189,10 @@ services:
     environment:
       RUNNING_IN_DOCKER: 'true'
       driverName: 'postgres'
-      dataSourceName: 'user=${DATABASE_USER:-postgres} password=${DATABASE_PASSWORD:-protium} host=localhost port=5432 sslmode=disable dbname=casdoor'
+      dataSourceName: 'user=${DATABASE_USER:-postgres} password=${DATABASE_PASSWORD:-please_change_me} host=localhost port=5432 sslmode=disable dbname=casdoor'
       runmode: 'dev'
     volumes:
       - ../infra/casdoor/init_data.json:/init_data.json
-
-  service:
-    image: registry.scienceol.tech/base/service
-    pull_policy: if_not_present
-    container_name: sciol-service
-    network_mode: 'service:network-service'
-    restart: unless-stopped
-    depends_on:
-      postgresql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'curl --fail --silent --max-time 3 http://localhost:48197/api/health/',
-        ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-    deploy:
-      replicas: ${SERVICE_REPLICAS:-1}
-
-  web:
-    image: registry.scienceol.tech/base/web
-    pull_policy: if_not_present
-    container_name: sciol-web
-    network_mode: 'service:network-service'
-    restart: unless-stopped
-    depends_on:
-      service:
-        condition: service_healthy
-    deploy:
-      replicas: ${WEB_REPLICAS:-1}
 
 volumes:
   db-data:

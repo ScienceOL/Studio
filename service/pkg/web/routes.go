@@ -28,7 +28,6 @@ func NewRouter(g *gin.Engine) {
 		})
 	})
 
-
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	// 设置认证相关路由
 	authGroup := api.Group("/auth")
@@ -39,7 +38,7 @@ func NewRouter(g *gin.Engine) {
 	// 刷新令牌路由
 	authGroup.POST("/refresh", auth.HandleRefresh())
 
-  v1 := api.Group("/v1")
+	v1 := api.Group("/v1")
 	// 设置测试路由
 	fooGroup := v1.Group("/foo")
 	// 设置一个需要认证的路由 - 使用 RequireAuth 中间件进行验证
