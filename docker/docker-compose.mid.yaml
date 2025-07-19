@@ -106,12 +106,12 @@ services:
         fi
         
         # 创建具有最高权限的访问密钥（如果不存在）
-        if ! mc admin user info myminio ${AWS_ACCESS_KEY_ID} > /dev/null 2>&1; then
+        if ! mc admin user info myminio ${AWS_ACCESS_KEY_ID:-pleasechangetoyourkey} > /dev/null 2>&1; then
           echo 'Creating access key with admin privileges'
-          mc admin user add myminio ${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY}
-          mc admin policy attach myminio readwrite --user ${AWS_ACCESS_KEY_ID}
+          mc admin user add myminio ${AWS_ACCESS_KEY_ID:-pleasechangetoyourkey} ${AWS_SECRET_ACCESS_KEY:-pleasechangetoyoursecret}
+          mc admin policy attach myminio readwrite --user ${AWS_ACCESS_KEY_ID:-pleasechangetoyourkey}
         else
-          echo 'Access key ${AWS_ACCESS_KEY_ID} already exists'
+          echo 'Access key ${AWS_ACCESS_KEY_ID:-pleasechangetoyourkey} already exists'
         fi
         
         wait $$pid
