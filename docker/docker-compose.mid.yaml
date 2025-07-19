@@ -1,7 +1,7 @@
 name: scienceol-protium
 services:
   network-service:
-    image: alpine
+    image: registry.scienceol.tech/library/alpine
     container_name: sciol-network
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
@@ -22,23 +22,23 @@ services:
     networks:
       - sciol-network
 
-  nacos:
-    image: nacos/nacos-server:v3.0.2
-    container_name: sciol-nacos
-    pull_policy: if_not_present
-    network_mode: 'service:network-service'
-    environment:
-      - MODE=standalone
-      - PREFER_HOST_MODE=hostname
-      - NACOS_AUTH_ENABLE=false
-      - NACOS_AUTH_TOKEN=SecretKey012345678901234567890123456789012345678901234567890123456789
-      - NACOS_AUTH_IDENTITY_KEY=serverIdentity
-      - NACOS_AUTH_IDENTITY_VALUE=security
-    restart: always
-    deploy:
-      replicas: ${NACOS_REPLICAS:-1}
-    volumes:
-      - nacos-data:/home/nacos/data
+  # nacos:
+  #   image: registry.scienceol.tech/library/nacos-server:v3.0.2
+  #   container_name: sciol-nacos
+  #   pull_policy: if_not_present
+  #   network_mode: 'service:network-service'
+  #   environment:
+  #     - MODE=standalone
+  #     - PREFER_HOST_MODE=hostname
+  #     - NACOS_AUTH_ENABLE=false
+  #     - NACOS_AUTH_TOKEN=SecretKey012345678901234567890123456789012345678901234567890123456789
+  #     - NACOS_AUTH_IDENTITY_KEY=serverIdentity
+  #     - NACOS_AUTH_IDENTITY_VALUE=security
+  #   restart: always
+  #   deploy:
+  #     replicas: ${NACOS_REPLICAS:-1}
+  #   volumes:
+  #     - nacos-data:/home/nacos/data
     # healthcheck:
     #   test: ['CMD-SHELL', 'curl --fail --silent --max-time 3 http://localhost:8848/nacos/v1/ns/operator/servers']
     #   interval: 30s
@@ -46,7 +46,7 @@ services:
     #   retries: 3
 
   postgresql:
-    image: postgres:16.8-alpine
+    image: registry.scienceol.tech/library/postgres:16.8-alpine
     pull_policy: if_not_present
     container_name: sciol-db
     network_mode: 'service:network-service'
@@ -64,7 +64,7 @@ services:
       - db-data:/var/lib/postgresql/data
 
   minio:
-    image: minio/minio
+    image: registry.scienceol.tech/library/minio
     container_name: sciol-minio
     network_mode: 'service:network-service'
     volumes:
@@ -118,7 +118,7 @@ services:
       "
 
   redis:
-    image: redis:7.4.2-alpine
+    image: registry.scienceol.tech/library/redis:7.4.2-alpine
     container_name: sciol-redis
     network_mode: 'service:network-service'
     restart: always
@@ -133,40 +133,40 @@ services:
     deploy:
       replicas: ${REDIS_REPLICAS:-1}
 
-  elasticsearch:
-    image: elasticsearch:8.18.2
-    container_name: sciol-elasticsearch
-    network_mode: 'service:network-service'
-    restart: unless-stopped
-    environment:
-      - discovery.type=single-node
-      - ELASTIC_USERNAME=${ELASTICSEARCH_USERNAME:-elastic}
-      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD:-please_change_me}
-      - xpack.security.http.ssl.enabled=false
-      - xpack.license.self_generated.type=trial
-      - logger.level=ERROR
-    healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'curl --fail --silent --max-time 3 http://localhost:9200/',
-        ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: '2G'
-        reservations:
-          cpus: '1.0'
-          memory: '1G'
-      replicas: ${ELASTICSEARCH_REPLICAS:-1}
+  # elasticsearch:
+  #   image: registry.scienceol.tech/library/elasticsearch:8.18.2
+  #   container_name: sciol-elasticsearch
+  #   network_mode: 'service:network-service'
+  #   restart: unless-stopped
+  #   environment:
+  #     - discovery.type=single-node
+  #     - ELASTIC_USERNAME=${ELASTICSEARCH_USERNAME:-elastic}
+  #     - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD:-please_change_me}
+  #     - xpack.security.http.ssl.enabled=false
+  #     - xpack.license.self_generated.type=trial
+  #     - logger.level=ERROR
+  #   healthcheck:
+  #     test:
+  #       [
+  #         'CMD-SHELL',
+  #         'curl --fail --silent --max-time 3 http://localhost:9200/',
+  #       ]
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 3
+  #     start_period: 15s
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '1.0'
+  #         memory: '2G'
+  #       reservations:
+  #         cpus: '1.0'
+  #         memory: '1G'
+  #     replicas: ${ELASTICSEARCH_REPLICAS:-1}
 
   mosquitto:
-    image: eclipse-mosquitto:2.0.21
+    image: registry.scienceol.tech/library/eclipse-mosquitto:2.0.21
     container_name: sciol-mosquitto
     restart: unless-stopped
     network_mode: 'service:network-service'
@@ -178,7 +178,7 @@ services:
       replicas: ${MQTT_REPLICAS:-1}
 
   casdoor:
-    image: casbin/casdoor:v1.924.0
+    image: registry.scienceol.tech/library/casdoor:v1.924.0
     container_name: sciol-casdoor
     entrypoint: /bin/sh -c './server --createDatabase=true'
     network_mode: 'service:network-service'
