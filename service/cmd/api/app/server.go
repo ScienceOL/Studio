@@ -32,7 +32,7 @@ func NewWeb() *cobra.Command {
 	rootCommand := &cobra.Command{
 		SilenceUsage:       true,
 		PersistentPreRunE:  initGlobalResource,
-		PersistentPostRunE: cleanGlobalResrource,
+		PersistentPostRunE: cleanGlobalResource,
 	}
 
 	webServer := &cobra.Command{
@@ -226,7 +226,7 @@ func cleanWebResource(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func cleanGlobalResrource(cmd *cobra.Command, args []string) error {
+func cleanGlobalResource(cmd *cobra.Command, args []string) error {
 	// 服务退出清理资源
 	logger.Close()
 	return nil
