@@ -211,7 +211,7 @@ services:
     container_name: sciol-casdoor
     entrypoint: /bin/sh -c './server --createDatabase=true'
     network_mode: 'service:network-service'
-    attach: false
+    # attach: false
     depends_on:
       postgresql:
         condition: service_healthy

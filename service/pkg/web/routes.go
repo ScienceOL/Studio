@@ -64,6 +64,11 @@ func NewRouter(g *gin.Engine) {
 
 	}
 
+	v1 := api.Group("/v1")
+	// 设置测试路由
+	fooGroup := v1.Group("/foo")
+	// 设置一个需要认证的路由 - 使用 RequireAuth 中间件进行验证
+	fooGroup.GET("/hello", auth.RequireAuth(), foo.HandleHelloWorld())
 }
 
 func installMiddleware(g *gin.Engine) {

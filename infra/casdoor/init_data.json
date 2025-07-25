@@ -32,9 +32,9 @@
   "applications": [
     {
       "owner": "admin",
-      "name": "protium",
+      "name": "scienceol",
       "createdTime": "2024-09-09T09:26:06Z",
-      "displayName": "PROTIUM",
+      "displayName": "ScienceOL",
       "logo": "",
       "homepageUrl": "",
       "description": "",
@@ -611,7 +611,7 @@
     },
     {
       "owner": "admin",
-      "name": "protium",
+      "name": "scienceol",
       "createdTime": "2024-09-09T09:26:04Z",
       "displayName": "PROTIUM Organization",
       "websiteUrl": "",
