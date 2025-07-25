@@ -2,6 +2,6 @@ package material
 
 import "context"
 
-type MaterialService interface {
-	CreateMaterial(ctx context.Context, req []*MaterialNode) error
+type Service interface {
+	CreateMaterial(ctx context.Context, req []*Node) error
 }

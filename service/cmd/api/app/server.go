@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -51,10 +50,10 @@ func NewWeb() *cobra.Command {
 		Long:         `api server db migrate`,
 		SilenceUsage: true,
 		PreRunE:      initMigrate,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return migrate.MigrateTable(cmd.Context())
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return migrate.Table(cmd.Context())
 		},
-		PostRunE: func(cmd *cobra.Command, args []string) error {
+		PostRunE: func(cmd *cobra.Command, _ []string) error {
 			db.ClosePostgres(cmd.Context())
 			return nil
 		},
@@ -65,7 +64,7 @@ func NewWeb() *cobra.Command {
 	return rootCommand
 }
 
-func initGlobalResource(cmd *cobra.Command, args []string) error {
+func initGlobalResource(_ *cobra.Command, _ []string) error {
 	// 初始化全局环境变量
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found - using environment variables")
@@ -93,7 +92,7 @@ func initGlobalResource(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func initMigrate(cmd *cobra.Command, args []string) error {
+func initMigrate(cmd *cobra.Command, _ []string) error {
 	config := webapp.Config()
 	// 初始化数据库
 	db.InitPostgres(cmd.Context(), &db.Config{
@@ -110,7 +109,7 @@ func initMigrate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func initWeb(cmd *cobra.Command, args []string) error {
+func initWeb(cmd *cobra.Command, _ []string) error {
 	config := webapp.Config()
 	// 初始化 nacos , 注意初始化时序，请勿在动态配置未初始化时候使用配置
 	nacos.MustInit(cmd.Context(), &nacos.NacoConf{
@@ -135,7 +134,7 @@ func initWeb(cmd *cobra.Command, args []string) error {
 		})
 
 	// 初始化 trace
-	trace.InitTrace(cmd.Context(), &trace.TraceConfig{
+	trace.InitTrace(cmd.Context(), &trace.InitConfig{
 		ServiceName:     fmt.Sprintf("%s-%s", config.Server.Service, config.Server.Platform),
 		Version:         config.Trace.Version,
 		TraceEndpoint:   config.Trace.TraceEndpoint,
@@ -169,7 +168,7 @@ func initWeb(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func newRouter(cmd *cobra.Command, args []string) error {
+func newRouter(cmd *cobra.Command, _ []string) error {
 	router := gin.Default()
 
 	web.NewRouter(router)
@@ -219,14 +218,14 @@ func newRouter(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func cleanWebResource(cmd *cobra.Command, args []string) error {
+func cleanWebResource(cmd *cobra.Command, _ []string) error {
 	redis.CloseRedis(cmd.Context())
 	db.ClosePostgres(cmd.Context())
 	trace.CloseTrace()
 	return nil
 }
 
-func cleanGlobalResource(cmd *cobra.Command, args []string) error {
+func cleanGlobalResource(_ *cobra.Command, _ []string) error {
 	// 服务退出清理资源
 	logger.Close()
 	return nil

@@ -2,7 +2,7 @@ package material
 
 import "gorm.io/datatypes"
 
-type MaterialNode struct {
+type Node struct {
 	ID       string         `json:"id" binding:"required"`
 	Name     string         `json:"name" binding:"required"`
 	Type     string         `json:"type" default:"container"`

@@ -2,7 +2,7 @@ package login
 
 import "github.com/scienceol/studio/service/pkg/middleware/auth"
 
-type LoginResp struct {
+type Resp struct {
 	RedirectURL string `json:"redirect_url"`
 }
 

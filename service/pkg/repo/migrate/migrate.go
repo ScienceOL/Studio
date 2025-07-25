@@ -8,7 +8,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/utils"
 )
 
-func MigrateTable(ctx context.Context) error {
+func Table(_ context.Context) error {
 	return utils.IfErrReturn(func() error {
 		return db.DB().DBIns().AutoMigrate(
 			&model.Laboratory{},

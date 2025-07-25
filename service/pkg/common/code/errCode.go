@@ -5,9 +5,9 @@ package code
 //go:generate stringer -type ErrCode -linecomment -output code_string.go
 type ErrCode int
 
-const (
-	codeSplit = " &_&_& "
-)
+// const (
+// 	codeSplit = " &_&_& "
+// )
 
 func (e ErrCode) Int() int {
 
@@ -49,12 +49,10 @@ const (
 	CreateDataErr  ErrCode = iota + 10000 // dababase create data err
 	UpdateDataErr                         // database update data err
 	RecordNotFound                        // database record not found
-	QueryRecordErr                         // database query err
+	QueryRecordErr                        // database query err
 )
 
 // environment 业务层错误
 const (
-	RegActionNameEmptyErr ErrCode  = iota + 20000 // reg action name empty
+	RegActionNameEmptyErr ErrCode = iota + 20000 // reg action name empty
 )
-
-

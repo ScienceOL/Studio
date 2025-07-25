@@ -188,7 +188,7 @@ func (e *envImpl) GetRegs(ctx context.Context, labID int64, names []string) ([]*
             WHERE lab_id = ? AND name in ? AND status != ?
         ) ranked 
         WHERE rn = 1
-    `, labID, names, model.REG_DEL).Scan(&registries).Error
+    `, labID, names, model.REGDEL).Scan(&registries).Error
 
 	if err != nil {
 		return nil, err

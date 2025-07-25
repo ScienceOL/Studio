@@ -15,13 +15,13 @@ type materialImpl struct {
 	envStore repo.EnvRepo
 }
 
-func NewMaterial() material.MaterialService {
+func NewMaterial() material.Service {
 	return &materialImpl{
 		envStore: eStore.NewEnv(),
 	}
 }
 
-func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.MaterialNode) error {
+func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node) error {
 	// FIXME: 需要在此逻辑位置创建节点模板，暂时不处理
 	/// FIXME: 修复 lab 上传鉴权问题一下 uuid 暂时硬编码
 	uuid := common.BinUUID(datatypes.BinUUIDFromString(""))
@@ -32,7 +32,6 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Mater
 
 	mDatas := make([]*model.MaterialNode, 0, len(req))
 	for _, data := range req {
-
 		mDatas = append(mDatas, &model.MaterialNode{
 			ParentID:             0,
 			LabID:                labData.ID,
@@ -52,6 +51,7 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Mater
 			// Pose                :
 			Model: data.Model,
 		})
+		_ = mDatas
 	}
 
 	return nil

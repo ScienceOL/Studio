@@ -5,8 +5,8 @@ import "gorm.io/datatypes"
 type REGSTATUS string
 
 const (
-	REG_INIT REGSTATUS = "init" // 初始化
-	REG_DEL  REGSTATUS = "del"  // 删除
+	REGINIT REGSTATUS = "init" // 初始化
+	REGDEL  REGSTATUS = "del"  // 删除
 )
 
 // 注册表

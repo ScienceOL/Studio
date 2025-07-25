@@ -14,7 +14,7 @@ type BaseModel struct {
 	UpdatedAt time.Time      `gorm:"not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
-func (b *BaseModel) BeforeUpdate(tx *gorm.DB) error {
+func (b *BaseModel) BeforeUpdate(_ *gorm.DB) error {
 	b.UpdatedAt = time.Now()
 	return nil
 }
@@ -25,7 +25,7 @@ type BaseModelNoUUID struct {
 	UpdatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
-func (b *BaseModelNoUUID) BeforeUpdate(tx *gorm.DB) error {
+func (b *BaseModelNoUUID) BeforeUpdate(_ *gorm.DB) error {
 	b.UpdatedAt = time.Now()
 	return nil
 }

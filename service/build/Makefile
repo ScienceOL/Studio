@@ -197,7 +197,7 @@ info: ## 显示项目信息
 	@echo "  系统: $(GOOS)/$(GOARCH)"
 
 # 确保这些目标不被误认为是文件
-.PHONY: all build clean test generate apiserver migrate
+.PHONY: all build clean test generate apiserver migrate lint
 
 # 生成错误码
 generate:
@@ -211,3 +211,9 @@ migrate:
 apiserver: generate
 	go run cmd/api/main.go apiserver
 
+
+lint-install:
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.3.0
+
+lint: lint-install
+	golangci-lint run -v --max-same-issues=0 --timeout=5m --tests=false -c .golangci.yaml  ./...

@@ -13,13 +13,13 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type login struct {
+type Login struct {
 	oauthConfig *oauth2.Config
-	lService    ls.LoginService
+	lService    ls.Service
 }
 
-func NewLogin() *login {
-	return &login{
+func NewLogin() *Login {
+	return &Login{
 		oauthConfig: auth.GetOAuthConfig(),
 		lService:    casdoor.NewCasDoorLogin(),
 	}
@@ -33,7 +33,7 @@ func NewLogin() *login {
 // @Success 302 {string} string "重定向到OAuth2授权页面"
 // @Header 302 {string} Location "重定向的授权URL地址"
 // @Router /api/auth/login [get]
-func (l *login) Login(ctx *gin.Context) {
+func (l *Login) Login(ctx *gin.Context) {
 	resp, err := l.lService.Login(ctx)
 	if err != nil {
 		common.ReplyErr(ctx, err)
@@ -52,7 +52,7 @@ func (l *login) Login(ctx *gin.Context) {
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "参数错误 code = 1011"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "刷新 token 失败 code = 1002"
 // @Router /api/auth/refresh [post]
-func (l *login) Refresh(ctx *gin.Context) {
+func (l *Login) Refresh(ctx *gin.Context) {
 	// 从请求中获取刷新令牌
 	req := &ls.RefreshTokenReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -80,7 +80,7 @@ func (l *login) Refresh(ctx *gin.Context) {
 // @Success 200 {object} common.Resp "回调成功"
 // @Failure 200 {object} common.Resp "服务器内部错误"
 // @Router /api/auth/callback/casdoor [get]
-func (l *login) Callback(ctx *gin.Context) {
+func (l *Login) Callback(ctx *gin.Context) {
 	req := &ls.CallbackReq{}
 	if err := ctx.ShouldBindQuery(req); err != nil {
 		logger.Errorf(ctx, "callback param err: %+v", err)

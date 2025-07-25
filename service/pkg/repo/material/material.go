@@ -19,11 +19,14 @@ func NewMaterialImpl() repo.MaterialRepo {
 }
 
 func (materialimpl *materialImpl) UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode) error {
+	_, _ = ctx, datas
 	return nil
 }
 func (materialimpl *materialImpl) UpsertMaterialHandle(ctx context.Context, datas []*model.MaterialHandle) error {
+	_, _ = ctx, datas
 	return nil
 }
 func (materialimpl *materialImpl) UpsertMaterialEdge(ctx context.Context, datas []*model.MaterialEdge) error {
+	_, _ = ctx, datas
 	return nil
 }

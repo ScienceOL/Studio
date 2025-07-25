@@ -21,14 +21,14 @@ type casdoorLogin struct {
 	oauthConfig *oauth2.Config
 }
 
-func NewCasDoorLogin() login.LoginService {
+func NewCasDoorLogin() login.Service {
 	return &casdoorLogin{
 		Client:      redis.GetClient(),
 		oauthConfig: auth.GetOAuthConfig(),
 	}
 }
 
-func (c *casdoorLogin) Login(ctx context.Context) (*login.LoginResp, error) {
+func (c *casdoorLogin) Login(ctx context.Context) (*login.Resp, error) {
 	state := fmt.Sprintf("%d", time.Now().UnixNano())
 	// 将state保存到Redis中，设置5分钟过期时间
 	stateKey := fmt.Sprintf("oauth_state:%s", state)
@@ -39,7 +39,7 @@ func (c *casdoorLogin) Login(ctx context.Context) (*login.LoginResp, error) {
 
 	// 构建授权URL并重定向用户到OAuth2提供商登录页面
 	authURL := c.oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
-	return &login.LoginResp{RedirectURL: authURL}, nil
+	return &login.Resp{RedirectURL: authURL}, nil
 }
 
 func (c *casdoorLogin) Refresh(ctx context.Context, req *login.RefreshTokenReq) (*login.RefreshTokenResp, error) {

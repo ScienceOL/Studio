@@ -24,7 +24,7 @@ type UserInfo struct {
 	Data   *UserData `json:"data,omitempty"`
 }
 
-type AuthConfig struct {
+type Config struct {
 	ClientID     string
 	ClientSecret string
 	Scopes       []string

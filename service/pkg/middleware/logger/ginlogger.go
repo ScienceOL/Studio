@@ -77,7 +77,7 @@ func LogWithWriter() gin.HandlerFunc {
 		httpVersion := c.Request.Proto
 
 		// 请求路由
-		reqUri := c.Request.RequestURI
+		reqURL := c.Request.RequestURI
 
 		// 状态码
 		statusCode := c.Writer.Status()
@@ -90,7 +90,7 @@ func LogWithWriter() gin.HandlerFunc {
 			latencyTime,
 			clientIP,
 			reqMethod,
-			reqUri,
+			reqURL,
 			blw.body.String(),
 			httpVersion,
 		)

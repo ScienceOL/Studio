@@ -8,23 +8,22 @@ import (
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/material"
-	m "github.com/scienceol/studio/service/pkg/core/material"
 	impl "github.com/scienceol/studio/service/pkg/core/material/material"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 )
 
-type materialHandle struct {
-	mService m.MaterialService
+type Handle struct {
+	mService material.Service
 }
 
-func NewMaterialHandle() *materialHandle {
-	return &materialHandle{
+func NewMaterialHandle() *Handle {
+	return &Handle{
 		mService: impl.NewMaterial(),
 	}
 }
 
-func (m *materialHandle) CreateLabMaterial(ctx *gin.Context) {
-	reqs := make([]*material.MaterialNode, 0, 1)
+func (m *Handle) CreateLabMaterial(ctx *gin.Context) {
+	reqs := make([]*material.Node, 0, 1)
 	if err := ctx.ShouldBindJSON(&reqs); err != nil {
 		logger.Errorf(ctx, "parse CreateLabMaterial param err: %+v", err.Error())
 		common.ReplyErr(ctx, code.ParamErr, err.Error())
@@ -40,10 +39,11 @@ func (m *materialHandle) CreateLabMaterial(ctx *gin.Context) {
 	common.ReplyOk(ctx)
 }
 
-func (m *materialHandle) LabMaterial(ctx *gin.Context) {
+func (m *Handle) LabMaterial(ctx *gin.Context) {
 	var upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			// 允许跨域连接 TODO: 生产环境严格限制
+			_ = r
 			return true
 		},
 	}

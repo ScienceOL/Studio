@@ -2,7 +2,6 @@ package laboratory
 
 import (
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-playground/validator/v10"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/environment"
@@ -10,17 +9,17 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 )
 
-type envHandle struct {
+type EnvHandle struct {
 	envService environment.EnvService
 }
 
-func NewEnvironment() *envHandle {
-	return &envHandle{
+func NewEnvironment() *EnvHandle {
+	return &EnvHandle{
 		envService: laboratory.NewLab(),
 	}
 }
 
-func (l *envHandle) CreateLabEnv(ctx *gin.Context) {
+func (l *EnvHandle) CreateLabEnv(ctx *gin.Context) {
 	req := &environment.LaboratoryEnvReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		logger.Errorf(ctx, "parse body err: %+v", err)
@@ -38,7 +37,7 @@ func (l *envHandle) CreateLabEnv(ctx *gin.Context) {
 	common.ReplyOk(ctx, resp)
 }
 
-func (l *envHandle) UpdateLabEnv(ctx *gin.Context) {
+func (l *EnvHandle) UpdateLabEnv(ctx *gin.Context) {
 	req := &environment.UpdateEnvReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		logger.Errorf(ctx, "parse body err: %+v", err)
@@ -57,7 +56,7 @@ func (l *envHandle) UpdateLabEnv(ctx *gin.Context) {
 }
 
 // 创建注册表
-func (l *envHandle) CreateLabReg(ctx *gin.Context) {
+func (l *EnvHandle) CreateLabReg(ctx *gin.Context) {
 	req := &environment.RegistryReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		logger.Errorf(ctx, "parse body err: %+v", err)
@@ -75,5 +74,5 @@ func (l *envHandle) CreateLabReg(ctx *gin.Context) {
 	common.ReplyOk(ctx)
 }
 
-func (l *envHandle) LabMaterial(ctx *gin.Context) {
+func (l *EnvHandle) LabMaterial(_ *gin.Context) {
 }

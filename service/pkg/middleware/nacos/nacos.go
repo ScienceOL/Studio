@@ -32,7 +32,7 @@ type NacoConf struct {
 	SecretKey   string
 	User        string
 	Password    string
-	Port        int
+	Port        uint64
 	RegionID    string
 	DataID      string // naco key
 	Group       string // naco group
@@ -78,7 +78,7 @@ func (conf *NacoConf) checkParam() error {
 }
 
 // 如果初始化化失败，会直接退出进程
-func MustInit(ctx context.Context, conf *NacoConf, onContent func(content []byte) error) error {
+func MustInit(ctx context.Context, conf *NacoConf, onContent func(content []byte) error) {
 	n := &nacosClient{Ctx: ctx, NacoConf: conf}
 
 	if err := conf.checkParam(); err != nil {
@@ -96,17 +96,18 @@ func MustInit(ctx context.Context, conf *NacoConf, onContent func(content []byte
 		os.Exit(1)
 	}
 
-	return nil
 }
 
 func (nc *nacosClient) getConf(ctx context.Context, onContent func(content []byte) error) error {
 	content, err := nc.get()
 	if err != nil {
-		return fmt.Errorf("get dynamic config failed, err: %v \n", err)
+
+		return fmt.Errorf("get dynamic config failed, err: %v", err)
 	}
 
 	if err := onContent([]byte(content)); err != nil {
-		return fmt.Errorf("nacos content onchange err: %v \n", err)
+
+		return fmt.Errorf("nacos content onchange err: %v", err)
 	}
 
 	if nc.NeedWatch {
@@ -120,7 +121,7 @@ func (nc *nacosClient) getConf(ctx context.Context, onContent func(content []byt
 
 func (nc *nacosClient) initClient(_ context.Context) error {
 	sc := []constant.ServerConfig{
-		*constant.NewServerConfig(nc.Endpoint, uint64(nc.Port), constant.WithContextPath(nc.ContextPath)),
+		*constant.NewServerConfig(nc.Endpoint, nc.Port, constant.WithContextPath(nc.ContextPath)),
 	}
 
 	opts := make([]constant.ClientOption, 0, 20)
@@ -160,7 +161,7 @@ func (nc *nacosClient) initClient(_ context.Context) error {
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("init nacos err: %v\n", err)
+		return fmt.Errorf("init nacos err: %v", err)
 	}
 	nc.client = client
 

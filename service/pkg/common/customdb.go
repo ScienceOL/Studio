@@ -12,26 +12,30 @@ import (
 	"gorm.io/gorm/schema"
 )
 
+const (
+	BINARY = "BINARY(16)"
+)
+
 type BinUUID datatypes.BinUUID
 
-func (b BinUUID) MarshalJSON() ([]byte, error) {
-	return json.Marshal(datatypes.BinUUID(b).String())
+func (u BinUUID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(datatypes.BinUUID(u).String())
 }
 
-func (b *BinUUID) UnmarshalJSON(data []byte) error {
+func (u *BinUUID) UnmarshalJSON(data []byte) error {
 	var str string
 	if err := json.Unmarshal(data, &str); err != nil {
 		return err
 	}
 
 	if str == "" {
-		*b = BinUUID{}
+		*u = BinUUID{}
 		return nil
 	}
 
 	uuid := datatypes.BinUUIDFromString(str)
 
-	*b = BinUUID(uuid)
+	*u = BinUUID(uuid)
 	return nil
 }
 
@@ -51,18 +55,18 @@ func (b *BinUUID) UnmarshalJSON(data []byte) error {
 // }
 
 func (BinUUID) GormDataType() string {
-	return "BINARY(16)"
+	return BINARY
 }
 
 // GormDBDataType gorm db data type.
-func (BinUUID) GormDBDataType(db *gorm.DB, field *schema.Field) string {
-	switch db.Dialector.Name() {
+func (BinUUID) GormDBDataType(db *gorm.DB, _ *schema.Field) string {
+	switch db.Name() {
 	case "mysql":
-		return "BINARY(16)"
+		return BINARY
 	case "postgres":
 		return "BYTEA"
 	case "sqlserver":
-		return "BINARY(16)"
+		return BINARY
 	case "sqlite":
 		return "BLOB"
 	default:

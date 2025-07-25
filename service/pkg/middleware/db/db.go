@@ -85,16 +85,16 @@ func (conf *Config) parseConf() error {
 		return fmt.Errorf("postgres database name is empty")
 	}
 
-	if conf.Conns.MaxOpenConn == 0 {
-		conf.Conns.MaxOpenConn = maxOpenConn
+	if conf.MaxOpenConn == 0 {
+		conf.MaxOpenConn = maxOpenConn
 	}
 
-	if conf.Conns.MaxIdleConn == 0 {
-		conf.Conns.MaxIdleConn = maxIdleConn
+	if conf.MaxIdleConn == 0 {
+		conf.MaxIdleConn = maxIdleConn
 	}
 
-	if conf.Conns.TimeoutIdle == time.Duration(0) {
-		conf.Conns.TimeoutIdle = timeoutIdel
+	if conf.TimeoutIdle == time.Duration(0) {
+		conf.TimeoutIdle = timeoutIdel
 	}
 
 	return nil
@@ -134,9 +134,9 @@ func newInstances(ctx context.Context, conf *Config) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	sqlDB.SetMaxIdleConns(conf.Conns.MaxIdleConn)
-	sqlDB.SetMaxOpenConns(conf.Conns.MaxOpenConn)
-	sqlDB.SetConnMaxLifetime(conf.Conns.TimeoutIdle)
+	sqlDB.SetMaxIdleConns(conf.MaxIdleConn)
+	sqlDB.SetMaxOpenConns(conf.MaxOpenConn)
+	sqlDB.SetConnMaxLifetime(conf.TimeoutIdle)
 
 	return db, nil
 }

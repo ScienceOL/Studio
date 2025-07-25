@@ -89,7 +89,7 @@ func (lab *lab) CreateReg(ctx context.Context, req *environment.RegistryReq) err
 	regData := &model.Registry{
 		Name:   req.RegName,
 		LabID:  labData.ID,
-		Status: model.REG_INIT,
+		Status: model.REGINIT,
 		Module: req.Class.Module,
 		// FIXME: 未查询到数据从哪获取
 		// Model      : datatypes.JSON(req.Class.Module), // @世xiang
