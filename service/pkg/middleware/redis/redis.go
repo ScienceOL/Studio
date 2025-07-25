@@ -17,7 +17,7 @@ func InitRedis(ctx context.Context, conf *Redis) {
 	}
 }
 
-func CloseRedis(ctx context.Context) {
+func CloseRedis(_ context.Context) {
 	if redisClient != nil {
 		redisClient.Close()
 	}

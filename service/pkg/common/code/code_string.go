@@ -10,15 +10,54 @@ func _() {
 	var x [1]struct{}
 	_ = x[Success-0]
 	_ = x[UnDefineErr-0]
+	_ = x[ParamErr-1000]
+	_ = x[LoginConfigErr-5000]
+	_ = x[LoginSetStateErr-5001]
+	_ = x[RefreshTokenErr-5002]
+	_ = x[LoginStateErr-5003]
+	_ = x[ExchangeTokenErr-5004]
+	_ = x[CallbackParamErr-5005]
+	_ = x[LoginGetUserInfoErr-5006]
+	_ = x[LoginCallbackErr-5007]
+	_ = x[UnLogin-5008]
+	_ = x[LoginFormatErr-5009]
+	_ = x[InvalidToken-5010]
+	_ = x[RefreshTokenParamErr-5011]
+	_ = x[CreateDataErr-10000]
+	_ = x[UpdateDataErr-10001]
+	_ = x[RecordNotFound-10002]
+	_ = x[QueryRecordErr-10003]
+	_ = x[RegActionNameEmptyErr-20000]
 }
 
-const _ErrCode_name = "成功"
+const (
+	_ErrCode_name_0 = "成功"
+	_ErrCode_name_1 = "parse parameter error"
+	_ErrCode_name_2 = "登录配置错误设置登录状态错误刷新 token 失败state 验证失败交换 token 失败回调参数错误获取用户信息失败登录处理用户信息失败未登录状态登录验证格式错误无效 token刷新 token 参数错误"
+	_ErrCode_name_3 = "dababase create data errdatabase update data errdatabase record not founddatabase query err"
+	_ErrCode_name_4 = "reg action name empty"
+)
 
-var _ErrCode_index = [...]uint8{0, 6}
+var (
+	_ErrCode_index_2 = [...]uint8{0, 18, 42, 61, 79, 98, 116, 140, 170, 185, 209, 221, 246}
+	_ErrCode_index_3 = [...]uint8{0, 24, 48, 73, 91}
+)
 
 func (i ErrCode) String() string {
-	if i < 0 || i >= ErrCode(len(_ErrCode_index)-1) {
+	switch {
+	case i == 0:
+		return _ErrCode_name_0
+	case i == 1000:
+		return _ErrCode_name_1
+	case 5000 <= i && i <= 5011:
+		i -= 5000
+		return _ErrCode_name_2[_ErrCode_index_2[i]:_ErrCode_index_2[i+1]]
+	case 10000 <= i && i <= 10003:
+		i -= 10000
+		return _ErrCode_name_3[_ErrCode_index_3[i]:_ErrCode_index_3[i+1]]
+	case i == 20000:
+		return _ErrCode_name_4
+	default:
 		return "ErrCode(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _ErrCode_name[_ErrCode_index[i]:_ErrCode_index[i+1]]
 }

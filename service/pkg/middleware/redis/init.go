@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-redis/redis/extra/redisotel/v8"
 	"github.com/go-redis/redis/v8"
-	r "github.com/go-redis/redis/v8"
 	semconv "go.opentelemetry.io/otel/semconv/v1.20.0"
 )
 
@@ -18,7 +17,7 @@ type Redis struct {
 }
 
 // Init 初始化redis连接
-func initRedis(conf *Redis) (*r.Client, error) {
+func initRedis(conf *Redis) (*redis.Client, error) {
 	addr := fmt.Sprintf("%s:%d", conf.Host, conf.Port)
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,

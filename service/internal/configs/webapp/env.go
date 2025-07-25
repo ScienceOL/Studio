@@ -6,7 +6,7 @@ type Database struct {
 	Port     int    `mapstructure:"DATABASE_PORT" default:"5432"`
 	Name     string `mapstructure:"DATABASE_NAME" default:"studio"`
 	User     string `mapstructure:"DATABASE_USER" default:"postgres"`
-	Password string `mapstructure:"DATABASE_PASSWORD" default:"postgres"`
+	Password string `mapstructure:"DATABASE_PASSWORD" default:"studio"`
 }
 
 type Redis struct {
@@ -43,7 +43,7 @@ type Log struct {
 type MQTT struct {
 	AccessKey  string `mapstructure:"MQTT_ACCESS_KEY" default:""`
 	SecretKey  string `mapstructure:"MQTT_SECRET_KEY" default:""`
-	InstanceId string `mapstructure:"MQTT_INSTANCEID" default:"mqtt-cn-kjp48jwyv01"`
+	InstanceID string `mapstructure:"MQTT_INSTANCEID" default:"mqtt-cn-kjp48jwyv01"`
 	Domain     string `mapstructure:"MQTT_DOMAIN" default:"mqtt-cn-kjp48jwyv01-server.mqtt.aliyuncs.com"`
 	Port       int16  `mapstructure:"MQTT_PORT" default:"5672"`
 	Topic      string `mapstructure:"MQTT_TOPIC" default:"labs"`
@@ -61,15 +61,14 @@ type Trace struct {
 }
 
 type Nacos struct {
-	Enable      bool   `mapstructure:"NACOS_ENABLE" default:"false"`
 	Endpoint    string `mapstructure:"NACOS_ENDPOINT" default:"127.0.0.1"`
 	ContextPath string `mapstructure:"NACOS_CONTEXT_PATH" default:"/nacos"`
-	NamespaceID string `mapstructure:"NACOS_NAMESPACE_ID" default:""`
+	NamespaceID string `mapstructure:"NACOS_NAMESPACE_ID" default:"public"`
 	AccessKey   string `mapstructure:"NACOS_ACCESS_KEY" default:""`
 	SecretKey   string `mapstructure:"NACOS_SECRET_KEY" default:""`
 	User        string `mapstructure:"NACOS_USER" default:"nacos"`
 	Password    string `mapstructure:"NACOS_PASSWORD" default:"nacos"`
-	Port        int    `mapstructure:"NACOS_PORT" default:"8848"`
+	Port        uint64 `mapstructure:"NACOS_PORT" default:"8848"`
 	RegionID    string `mapstructure:"NACOS_REGION_ID" default:""`
 	DataID      string `mapstructure:"NACOS_DATA_ID" default:"studio-config"`
 	Group       string `mapstructure:"NACOS_GROUP" default:"DEFAULT_GROUP"`

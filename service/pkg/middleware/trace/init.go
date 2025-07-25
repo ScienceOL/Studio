@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-type TraceConfig struct {
+type InitConfig struct {
 	ServiceName     string
 	Version         string
 	TraceEndpoint   string
@@ -19,7 +19,7 @@ type TraceConfig struct {
 var client *Config
 
 // 不做强制要求
-func InitTrace(ctx context.Context, conf *TraceConfig) {
+func InitTrace(_ context.Context, conf *InitConfig) {
 	if conf.ServiceName == "" ||
 		conf.TraceEndpoint == "" ||
 		conf.MetricEndpoint == "" ||

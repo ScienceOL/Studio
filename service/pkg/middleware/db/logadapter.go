@@ -20,7 +20,7 @@ func NewGormLogger(logger *otelzap.Logger, level gormLogger.LogLevel, slowThresh
 	return &gormLoggerAdapter{
 		zapLogger:     logger,
 		slowThreshold: slowThreshold,
-		logLevel:      gormLogger.Warn, // 默认日志级别
+		logLevel:      level, // 默认日志级别
 	}
 }
 
