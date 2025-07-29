@@ -226,7 +226,7 @@ func (c *Config) initOtelExporter(otlpEndpoint string, insecure bool) (oteltrace
 	var metricsExporter metric.Exporter
 	var err error
 
-	var exporterStop = func() {
+	exporterStop := func() {
 		if traceExporter != nil {
 			_ = traceExporter.Shutdown(context.Background())
 		}

@@ -197,7 +197,7 @@ info: ## 显示项目信息
 	@echo "  系统: $(GOOS)/$(GOARCH)"
 
 # 确保这些目标不被误认为是文件
-.PHONY: all build clean test generate apiserver migrate lint
+.PHONY: all build clean test generate apiserver migrate lint fmt-install fmt build-web
 
 # 生成错误码
 generate:
@@ -211,9 +211,22 @@ migrate:
 apiserver: generate
 	go run cmd/api/main.go apiserver
 
+fmt-install:
+	go install mvdan.cc/gofumpt@v0.8.0
 
-lint-install:
+fmt-go: fmt-install
+	gofumpt -l -w ./pkg ./cmd ./internal
+	go fmt ./pkg/... ./cmd/... ./internal/...
+	goimports -w ./pkg ./cmd ./internal/...
+
+
+lint-install-go:
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.3.0
 
-lint: lint-install
+lint-go: fmt-go lint-install-go
 	golangci-lint run -v --max-same-issues=0 --timeout=5m --tests=false -c .golangci.yaml  ./...
+
+
+build-web: fmt 
+	go build -o ./bin/web cmd/api/main.go
+

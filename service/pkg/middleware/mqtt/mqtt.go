@@ -40,8 +40,8 @@ func (s *StatusProcessor) Process(statusNotice *m.StatusNotice) error {
 }
 
 func InitPublish(_ context.Context, conf *Config) func(msg []byte) (msgID string, err error) {
-	var serverProducer = &m.ServerProducer{}
-	var channelConfig = &m.ChannelConfig{
+	serverProducer := &m.ServerProducer{}
+	channelConfig := &m.ChannelConfig{
 		AccessKey:  conf.AccessKey,
 		SecretKey:  conf.SecretKey,
 		InstanceId: conf.InstanceID,
@@ -61,8 +61,8 @@ func InitPublish(_ context.Context, conf *Config) func(msg []byte) (msgID string
 }
 
 func InitSubscribe(_ context.Context, conf *Config, handle func(msgID string, messageProperties *m.MessageProperties, body []byte) error) error {
-	var serverConsumer = &m.ServerConsumer{}
-	var channelConfig = &m.ChannelConfig{
+	serverConsumer := &m.ServerConsumer{}
+	channelConfig := &m.ChannelConfig{
 		AccessKey:  conf.AccessKey,
 		SecretKey:  conf.SecretKey,
 		InstanceId: conf.InstanceID,

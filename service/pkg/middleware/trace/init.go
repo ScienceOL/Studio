@@ -44,12 +44,10 @@ func InitTrace(_ context.Context, conf *InitConfig) {
 		fmt.Printf("init trace provider err: %s\n", err.Error())
 		client = nil
 	}
-
 }
 
 func CloseTrace() {
 	if client != nil {
 		Shutdown(client)
 	}
-
 }

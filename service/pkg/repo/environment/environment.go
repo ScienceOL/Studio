@@ -177,21 +177,36 @@ func (e *envImpl) UpsertDeviceParamTemplate(ctx context.Context, datas []*model.
 	return nil
 }
 
-func (e *envImpl) GetRegs(ctx context.Context, labID int64, names []string) ([]*model.Registry, error) {
-	var registries []*model.Registry
-
+func (e *envImpl) GetRegs(ctx context.Context, labID int64, names []string) (map[string]*repo.RegDeviceInfo, error) {
+	regs := make([]*repo.RegDeviceInfo, 0, len(names))
 	err := e.DBWithContext(ctx).Raw(`
-        SELECT * FROM (
-            SELECT *, 
-                   ROW_NUMBER() OVER (PARTITION BY name ORDER BY version DESC) as rn
-            FROM registry 
-            WHERE lab_id = ? AND name in ? AND status != ?
-        ) ranked 
-        WHERE rn = 1
-    `, labID, names, model.REGDEL).Scan(&registries).Error
-
+   		SELECT ranked.name as reg_name, ranked.id as reg_id, device_node_template.id as device_node_template_id FROM (
+       SELECT id, name, 
+              ROW_NUMBER() OVER (PARTITION BY name ORDER BY version DESC) as rn
+       FROM registry 
+       WHERE lab_id = ? AND name in ? AND status != ? 
+   ) ranked join device_node_template on device_node_template.reg_id = ranked.id WHERE ranked.rn = 1;
+    `, labID, names, model.REGDEL).Scan(&regs).Error
 	if err != nil {
-		return nil, err
+		logger.Errorf(ctx, "GetRegs lab id: %d, names: %+v, err: %+v", labID, names, err)
+		return nil, code.QueryRecordErr
 	}
-	return nil, nil
+
+	regMap := make(map[string]*repo.RegDeviceInfo, len(names))
+	for _, reg := range regs {
+		regMap[reg.RegName] = reg
+	}
+
+	return regMap, nil
+}
+
+func (e *envImpl) GetDeviceTemplateHandels(ctx context.Context, deviceNodeID int64) ([]*model.DeviceNodeHandleTemplate, error) {
+	handles := make([]*model.DeviceNodeHandleTemplate, 0, 1)
+	statement := e.DBWithContext(ctx).Where("node_id = ?", deviceNodeID).Find(&handles)
+	if statement.Error != nil {
+		logger.Errorf(ctx, "GetDeviceTemplateHandels node id: %d, err: %+v", deviceNodeID, statement.Error)
+		return nil, code.QueryRecordErr
+	}
+
+	return handles, nil
 }

@@ -7,6 +7,12 @@ import (
 	"github.com/scienceol/studio/service/pkg/repo/model"
 )
 
+type RegDeviceInfo struct {
+	RegName              string
+	RegID                int64
+	DeviceNodeTemplateID int64
+}
+
 type EnvRepo interface {
 	CreateLaboratoryEnv(ctx context.Context, data *model.Laboratory) error
 	GetLabByUUID(ctx context.Context, UUID common.BinUUID) (*model.Laboratory, error)
@@ -16,5 +22,6 @@ type EnvRepo interface {
 	UpsertDeviceTemplate(ctx context.Context, data *model.DeviceNodeTemplate) error
 	UpsertDeviceHandleTemplate(ctx context.Context, data []*model.DeviceNodeHandleTemplate) error
 	UpsertDeviceParamTemplate(ctx context.Context, data []*model.DeviceNodeParamTemplate) error
-	GetRegs(ctx context.Context, labID int64, names []string) ([]*model.Registry, error)
+	GetRegs(ctx context.Context, labID int64, names []string) (map[string]*RegDeviceInfo, error)
+	GetDeviceTemplateHandels(ctx context.Context, deviceNodeID int64) ([]*model.DeviceNodeHandleTemplate, error)
 }

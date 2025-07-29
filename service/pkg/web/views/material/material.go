@@ -40,7 +40,7 @@ func (m *Handle) CreateLabMaterial(ctx *gin.Context) {
 }
 
 func (m *Handle) LabMaterial(ctx *gin.Context) {
-	var upgrader = websocket.Upgrader{
+	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			// 允许跨域连接 TODO: 生产环境严格限制
 			_ = r

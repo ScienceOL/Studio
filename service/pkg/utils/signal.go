@@ -8,9 +8,11 @@ import (
 	"syscall"
 )
 
-var shutdownSignals = []os.Signal{os.Interrupt, syscall.SIGTERM}
-var onlyOneSignalHandler = make(chan struct{})
-var shutdownHandler chan os.Signal
+var (
+	shutdownSignals      = []os.Signal{os.Interrupt, syscall.SIGTERM}
+	onlyOneSignalHandler = make(chan struct{})
+	shutdownHandler      chan os.Signal
+)
 
 func SetupSignalHandler() <-chan struct{} {
 	return SetupSignalContext().Done()

@@ -95,18 +95,15 @@ func MustInit(ctx context.Context, conf *NacoConf, onContent func(content []byte
 		logger.Fatalf(ctx, "初始化 naco 失败 err: %v\n", err)
 		os.Exit(1)
 	}
-
 }
 
 func (nc *nacosClient) getConf(ctx context.Context, onContent func(content []byte) error) error {
 	content, err := nc.get()
 	if err != nil {
-
 		return fmt.Errorf("get dynamic config failed, err: %v", err)
 	}
 
 	if err := onContent([]byte(content)); err != nil {
-
 		return fmt.Errorf("nacos content onchange err: %v", err)
 	}
 

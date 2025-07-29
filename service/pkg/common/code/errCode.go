@@ -10,7 +10,6 @@ type ErrCode int
 // )
 
 func (e ErrCode) Int() int {
-
 	return int(e)
 }
 
@@ -55,4 +54,9 @@ const (
 // environment 业务层错误
 const (
 	RegActionNameEmptyErr ErrCode = iota + 20000 // reg action name empty
+)
+
+// material 业务错误
+const (
+	REGNOTEXISTErr ErrCode = iota + 22000 // registry not exist
 )
