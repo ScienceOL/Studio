@@ -23,5 +23,5 @@ type EnvRepo interface {
 	UpsertDeviceHandleTemplate(ctx context.Context, data []*model.DeviceNodeHandleTemplate) error
 	UpsertDeviceParamTemplate(ctx context.Context, data []*model.DeviceNodeParamTemplate) error
 	GetRegs(ctx context.Context, labID int64, names []string) (map[string]*RegDeviceInfo, error)
-	GetDeviceTemplateHandels(ctx context.Context, deviceNodeID int64) ([]*model.DeviceNodeHandleTemplate, error)
+	GetDeviceTemplateHandels(ctx context.Context, deviceIDs []int64) (map[int64][]*model.DeviceNodeHandleTemplate, error)
 }

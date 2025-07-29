@@ -200,13 +200,21 @@ func (e *envImpl) GetRegs(ctx context.Context, labID int64, names []string) (map
 	return regMap, nil
 }
 
-func (e *envImpl) GetDeviceTemplateHandels(ctx context.Context, deviceNodeID int64) ([]*model.DeviceNodeHandleTemplate, error) {
+func (e *envImpl) GetDeviceTemplateHandels(ctx context.Context, deviceIDs []int64) (map[int64][]*model.DeviceNodeHandleTemplate, error) {
+	if len(deviceIDs) == 0 {
+		return make(map[int64][]*model.DeviceNodeHandleTemplate), nil
+	}
+
 	handles := make([]*model.DeviceNodeHandleTemplate, 0, 1)
-	statement := e.DBWithContext(ctx).Where("node_id = ?", deviceNodeID).Find(&handles)
+	statement := e.DBWithContext(ctx).Where("node_id in ?", deviceIDs).Find(&handles)
 	if statement.Error != nil {
-		logger.Errorf(ctx, "GetDeviceTemplateHandels node id: %d, err: %+v", deviceNodeID, statement.Error)
+		logger.Errorf(ctx, "GetDeviceTemplateHandels node id: %+v, err: %+v", deviceIDs, statement.Error)
 		return nil, code.QueryRecordErr
 	}
 
-	return handles, nil
+	res := make(map[int64][]*model.DeviceNodeHandleTemplate)
+	for _, h := range handles {
+		res[h.NodeID] = append(res[h.NodeID], h)
+	}
+	return res, nil
 }

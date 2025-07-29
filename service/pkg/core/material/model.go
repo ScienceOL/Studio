@@ -6,7 +6,7 @@ import (
 )
 
 type Node struct {
-	ID       string           `json:"id" binding:"required"`
+	DeviceID string           `json:"id" binding:"required"`
 	Name     string           `json:"name" binding:"required"`
 	Type     model.DEVICETYPE `json:"type" binding:"required"`
 	Class    string           `json:"class" binding:"required"`

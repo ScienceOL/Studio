@@ -30,7 +30,6 @@ func NewMaterial() material.Service {
 }
 
 func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node) error {
-	// FIXME: 需要在此逻辑位置创建节点模板，暂时不处理
 	uuid := common.BinUUID(datatypes.BinUUIDFromString(""))
 	labData, err := m.envStore.GetLabByUUID(ctx, uuid)
 	if err != nil {
@@ -49,22 +48,24 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node)
 	if err != nil {
 		return err
 	}
+
 	// 强制校验注册表是否存在
 	if len(regMap) != len(regNames) {
 		return code.REGNOTEXISTErr
 	}
 
 	levelNodes := sortNodeLevel(ctx, req)
-
 	nodeMap := make(map[string]*model.MaterialNode)
 	return db.DB().ExecTx(ctx, func(txCtx context.Context) error {
 		for _, nodes := range levelNodes {
 			datas := make([]*model.MaterialNode, 0, len(nodes))
+			deviceTemplateIDs := make([]int64, 0, len(nodes))
+			handleNodes := make(map[int64]*model.MaterialNode)
 			for _, n := range nodes {
 				data := &model.MaterialNode{
 					ParentID:             0,
 					LabID:                labData.ID,
-					Name:                 n.ID,
+					Name:                 n.DeviceID,
 					DisplayName:          n.Name,
 					Description:          n.Description,
 					Type:                 n.Type,
@@ -78,23 +79,55 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node)
 					// Pose                :
 					Model: n.Model,
 				}
-				node := nodeMap[n.Parent]
-				if node != nil {
+				if node := nodeMap[n.Parent]; node != nil {
 					data.ParentID = node.ID
 				}
+				if regInfo := regMap[n.DeviceID]; regInfo != nil {
+					deviceTemplateIDs = utils.AppendUniqSlice(deviceTemplateIDs, regInfo.DeviceNodeTemplateID)
+					data.RegID = regInfo.RegID
+					data.DeviceNodeTemplateID = regInfo.DeviceNodeTemplateID
+					handleNodes[regInfo.DeviceNodeTemplateID] = data
+				}
+
 				datas = append(datas, data)
-				nodeMap[n.ID] = data
+				nodeMap[n.DeviceID] = data
 			}
 
 			if err := m.materialStore.UpsertMaterialNode(txCtx, datas); err != nil {
 				return err
 			}
 
+			deviceTemplateHandles, err := m.envStore.GetDeviceTemplateHandels(txCtx, deviceTemplateIDs)
+			if err != nil {
+				return err
+			}
+			materialHandles := make([]*model.MaterialHandle, 0, 10)
+			for templateNodeID, templateHandles := range deviceTemplateHandles {
+				materialNode, ok := handleNodes[templateNodeID]
+				if !ok {
+					continue
+				}
+				for _, h := range templateHandles {
+					handleData := &model.MaterialHandle{
+						NodeID:      materialNode.ID,
+						DisplayName: utils.Or(h.DisplayName, h.Key),
+						Type:        h.Type,
+						IOType:      h.IOType,
+						Source:      h.Source,
+						Key:         h.Key,
+						Side:        utils.Or(h.Side, "WEST"),
+						Connected:   false,
+						Required:    false,
+					}
+					materialHandles = append(materialHandles, handleData)
+				}
+			}
+			if err := m.materialStore.UpsertMaterialHandle(txCtx, materialHandles); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
-
-	return nil
 }
 
 func sortNodeLevel(ctx context.Context, nodes []*material.Node) [][]*material.Node {

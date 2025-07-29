@@ -21,11 +21,11 @@ const (
 // TODO: 字段是否有部分可以删除，或者是合并到一个 json 字段内
 type MaterialNode struct {
 	BaseModel
-	ParentID             int64          `gorm:"type:bigint" json:"parent_id"`
-	LabID                int64          `gorm:"type:bigint;not null;uniqueIndex:idx_ln,priority:1" json:"lab_id"`
-	Name                 string         `gorm:"type:varchar(255);not null;uniqueIndex:idx_ln,priority:2" json:"name"`
-	DisplayName          string         `gorm:"type:varchar(255);not null" json:"display_name"`
-	Description          *string        `gorm:"type:text" json:"description"`
+	ParentID    int64   `gorm:"type:bigint" json:"parent_id"`
+	LabID       int64   `gorm:"type:bigint;not null;uniqueIndex:idx_ln,priority:1" json:"lab_id"`
+	Name        string  `gorm:"type:varchar(255);not null;uniqueIndex:idx_ln,priority:2" json:"name"`
+	DisplayName string  `gorm:"type:varchar(255);not null" json:"display_name"`
+	Description *string `gorm:"type:text" json:"description"`
 	// Status               string         `gorm:"type:varchar(20);not null;default:'idle'" json:"status"`
 	Type                 DEVICETYPE     `gorm:"type:varchar(20);not null" json:"type"`
 	DeviceNodeTemplateID int64          `gorm:"type:bigint;index:idx_template" json:"device_node_template_id"`
@@ -45,14 +45,13 @@ func (*MaterialNode) TableName() string {
 
 type MaterialHandle struct {
 	BaseModel
-	NodeID      int64  `gorm:"type:bigint;not null;index:idx_node_id" json:"node_id"`
-	Name        string `gorm:"type:varchar(100);not null" json:"name"`
+	NodeID      int64  `gorm:"type:bigint;not null;uniqueIndex:idx_nks,priority:1" json:"node_id"`
 	DisplayName string `gorm:"type:text" json:"display_name"`
 	Type        string `gorm:"type:varchar(100);not null;default:'any'" json:"type"`
 	IOType      string `gorm:"type:varchar(20);not null" json:"io_type"`
 	Source      string `gorm:"type:varchar(100)" json:"source"`
-	Key         string `gorm:"type:varchar(100);not null" json:"key"`
-	Side        string `gorm:"type:varchar(20);not null" json:"side"`
+	Key         string `gorm:"type:varchar(100);not null;uniqueIndex:idx_nks,priority:2" json:"key"`
+	Side        string `gorm:"type:varchar(20);not null;uniqueIndex:idx_nks,priority:3" json:"side"`
 	Connected   bool   `gorm:"default:false" json:"connected"`
 	Required    bool   `gorm:"default:false" json:"required"`
 }
