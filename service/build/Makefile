@@ -197,10 +197,13 @@ info: ## 显示项目信息
 	@echo "  系统: $(GOOS)/$(GOARCH)"
 
 # 确保这些目标不被误认为是文件
-.PHONY: all build clean test generate apiserver migrate lint fmt-install fmt build-web
+.PHONY: all build clean test generate apiserver migrate lint fmt-install fmt build-web stringer-install
 
+
+stringer-install:
+	go install golang.org/x/tools/cmd/stringer@latest
 # 生成错误码
-generate:
+generate: stringer-install
 	go generate ./pkg/...
 
 # 运行 migrate 
