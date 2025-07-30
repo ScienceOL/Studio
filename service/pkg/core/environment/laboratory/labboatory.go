@@ -86,105 +86,107 @@ func (lab *lab) CreateReg(ctx context.Context, req *environment.RegistryReq) err
 		return err
 	}
 
-	regData := &model.Registry{
-		Name:   req.RegName,
-		LabID:  labData.ID,
-		Status: model.REGINIT,
-		Module: req.Class.Module,
-		// FIXME: 未查询到数据从哪获取
-		// Model      : datatypes.JSON(req.Class.Module), // @世xiang
-		Type:         req.Class.Type,
-		RegsitryType: req.RegistryType,
-		Version:      req.Version,
-		StatusTypes:  req.Class.StatusTypes,
-		Icon:         req.Icon,
-		Description:  req.Description,
-	}
-
 	// 处理 action
 
 	return db.DB().ExecTx(ctx, func(txCtx context.Context) error {
-		if err := lab.envStore.CreateReg(txCtx, regData); err != nil {
-			return err
-		}
-
-		actions := make([]*model.RegAction, 0, len(req.Class.ActionValueMappings))
-		for actionName, action := range req.Class.ActionValueMappings {
-			if actionName == "" {
-				return code.RegActionNameEmptyErr
+		for _, reg := range req.Registries {
+			regData := &model.Registry{
+				Name:   reg.RegName,
+				LabID:  labData.ID,
+				Status: model.REGINIT,
+				Module: reg.Class.Module,
+				// FIXME: 未查询到数据从哪获取
+				// Model      : datatypes.JSON(req.Class.Module), // @世xiang
+				Type:         reg.Class.Type,
+				RegsitryType: reg.RegistryType,
+				Version:      reg.Version,
+				StatusTypes:  reg.Class.StatusTypes,
+				Icon:         reg.Icon,
+				Description:  reg.Description,
 			}
 
-			actions = append(actions, &model.RegAction{
+			if err := lab.envStore.CreateReg(txCtx, regData); err != nil {
+				return err
+			}
+
+			actions := make([]*model.RegAction, 0, len(reg.Class.ActionValueMappings))
+			for actionName, action := range reg.Class.ActionValueMappings {
+				if actionName == "" {
+					return code.RegActionNameEmptyErr
+				}
+
+				actions = append(actions, &model.RegAction{
+					RegID:       regData.ID,
+					Name:        actionName,
+					Goal:        action.Goal,
+					GoalDefault: action.GoalDefault,
+					Feedback:    action.Feedback,
+					Result:      action.Result,
+					Schema:      action.Schema,
+					Type:        action.Type,
+					Handles:     action.Handles,
+				})
+			}
+
+			if err := lab.envStore.UpsertRegAction(txCtx, actions); err != nil {
+				return err
+			}
+
+			deviceData := &model.DeviceNodeTemplate{
+				Name:        reg.RegName,
+				LabID:       labData.ID,
 				RegID:       regData.ID,
-				Name:        actionName,
-				Goal:        action.Goal,
-				GoalDefault: action.GoalDefault,
-				Feedback:    action.Feedback,
-				Result:      action.Result,
-				Schema:      action.Schema,
-				Type:        action.Type,
-				Handles:     action.Handles,
-			})
-		}
+				UserID:      userIfo.ID,
+				Header:      regData.Name,
+				Footer:      "",
+				Version:     regData.Version,
+				Icon:        regData.Icon,
+				Description: regData.Description,
+			}
+			if err := lab.envStore.UpsertDeviceTemplate(txCtx, deviceData); err != nil {
+				return err
+			}
 
-		if err := lab.envStore.UpsertRegAction(txCtx, actions); err != nil {
-			return err
-		}
+			handles := make([]*model.DeviceNodeHandleTemplate, 0, len(reg.Handles))
+			for _, handle := range reg.Handles {
+				handles = append(handles, &model.DeviceNodeHandleTemplate{
+					NodeID:      deviceData.ID,
+					Name:        handle.HandlerKey,
+					DisplayName: handle.Label,
+					Type:        handle.DataType,
+					IOType:      handle.IoType,
+					Source:      handle.DataSource,
+					Key:         handle.DataKey,
+					Side:        handle.Side,
+				})
+			}
+			if err := lab.envStore.UpsertDeviceHandleTemplate(txCtx, handles); err != nil {
+				return err
+			}
 
-		deviceData := &model.DeviceNodeTemplate{
-			Name:        req.RegName,
-			LabID:       labData.ID,
-			RegID:       regData.ID,
-			UserID:      userIfo.ID,
-			Header:      regData.Name,
-			Footer:      "",
-			Version:     regData.Version,
-			Icon:        regData.Icon,
-			Description: regData.Description,
-		}
-		if err := lab.envStore.UpsertDeviceTemplate(txCtx, deviceData); err != nil {
-			return err
-		}
+			deviceSchemas := make([]*model.DeviceNodeParamTemplate, 0, 2)
+			if reg.InitParamSchema.Data != nil {
+				deviceSchemas = append(deviceSchemas, &model.DeviceNodeParamTemplate{
+					NodeID:      deviceData.ID,
+					Name:        "data",
+					Type:        "DEFAULT",
+					Placeholder: "设备初始化参数配置",
+					Schema:      reg.InitParamSchema.Data.Properties,
+				})
+			}
 
-		handles := make([]*model.DeviceNodeHandleTemplate, 0, len(req.Handles))
-		for _, handle := range req.Handles {
-			handles = append(handles, &model.DeviceNodeHandleTemplate{
-				NodeID:      deviceData.ID,
-				Name:        handle.HandlerKey,
-				DisplayName: handle.Label,
-				Type:        handle.DataType,
-				IOType:      handle.IoType,
-				Source:      handle.DataSource,
-				Key:         handle.DataKey,
-				Side:        handle.Side,
-			})
-		}
-		if err := lab.envStore.UpsertDeviceHandleTemplate(txCtx, handles); err != nil {
-			return err
-		}
-
-		deviceSchemas := make([]*model.DeviceNodeParamTemplate, 0, 2)
-		if req.InitParamSchema.Data != nil {
-			deviceSchemas = append(deviceSchemas, &model.DeviceNodeParamTemplate{
-				NodeID:      deviceData.ID,
-				Name:        "data",
-				Type:        "DEFAULT",
-				Placeholder: "设备初始化参数配置",
-				Schema:      req.InitParamSchema.Data.Properties,
-			})
-		}
-
-		if req.InitParamSchema.Config != nil {
-			deviceSchemas = append(deviceSchemas, &model.DeviceNodeParamTemplate{
-				NodeID:      deviceData.ID,
-				Name:        "config",
-				Type:        "DEFAULT",
-				Placeholder: "设备初始化参数配置",
-				Schema:      req.InitParamSchema.Config.Properties,
-			})
-		}
-		if err := lab.envStore.UpsertDeviceParamTemplate(txCtx, deviceSchemas); err != nil {
-			return err
+			if reg.InitParamSchema.Config != nil {
+				deviceSchemas = append(deviceSchemas, &model.DeviceNodeParamTemplate{
+					NodeID:      deviceData.ID,
+					Name:        "config",
+					Type:        "DEFAULT",
+					Placeholder: "设备初始化参数配置",
+					Schema:      reg.InitParamSchema.Config.Properties,
+				})
+			}
+			if err := lab.envStore.UpsertDeviceParamTemplate(txCtx, deviceSchemas); err != nil {
+				return err
+			}
 		}
 		return nil
 	})

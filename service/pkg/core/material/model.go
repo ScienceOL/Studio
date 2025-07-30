@@ -20,3 +20,12 @@ type Node struct {
 	Description *string        `json:"description,omitempty"`
 	Model       string         `json:"model"`
 }
+
+type Edge struct {
+	Source string `json:"source"`
+	Target string `json:"target"`
+	// FIXME: 下面两个字段命令 unilab 需求
+	SourceHandle string `json:"sourceHandle"`
+	TargetHandle string `json:"targetHandle"`
+	Type         string `json:"type"`
+}

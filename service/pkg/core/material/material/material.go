@@ -30,7 +30,7 @@ func NewMaterial() material.Service {
 }
 
 func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node) error {
-	uuid := common.BinUUID(datatypes.BinUUIDFromString(""))
+	uuid := common.BinUUID(datatypes.BinUUIDFromString("c27803de35134e5ca2bf40cef7b654c4"))
 	labData, err := m.envStore.GetLabByUUID(ctx, uuid)
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node)
 				if node := nodeMap[n.Parent]; node != nil {
 					data.ParentID = node.ID
 				}
-				if regInfo := regMap[n.DeviceID]; regInfo != nil {
+				if regInfo := regMap[n.Class]; regInfo != nil {
 					deviceTemplateIDs = utils.AppendUniqSlice(deviceTemplateIDs, regInfo.DeviceNodeTemplateID)
 					data.RegID = regInfo.RegID
 					data.DeviceNodeTemplateID = regInfo.DeviceNodeTemplateID
@@ -110,6 +110,7 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node)
 				for _, h := range templateHandles {
 					handleData := &model.MaterialHandle{
 						NodeID:      materialNode.ID,
+						Name:        h.Name,
 						DisplayName: utils.Or(h.DisplayName, h.Key),
 						Type:        h.Type,
 						IOType:      h.IOType,
@@ -133,7 +134,7 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node)
 func sortNodeLevel(ctx context.Context, nodes []*material.Node) [][]*material.Node {
 	nodeMap := make(map[string]*material.Node)
 	for _, node := range nodes {
-		nodeMap[node.Name] = node
+		nodeMap[node.DeviceID] = node
 	}
 
 	mapLevel := make(map[string]int)
@@ -173,29 +174,29 @@ func sortNodeLevel(ctx context.Context, nodes []*material.Node) [][]*material.No
 
 func getNodeLevel(ctx context.Context, cache map[string]int, nodeMap map[string]*material.Node, node *material.Node) int {
 	if node.Parent == "" {
-		cache[node.Name] = 0
+		cache[node.DeviceID] = 0
 		return 0
 	}
 
-	cacheNodeLevel, ok := cache[node.Name]
+	cacheNodeLevel, ok := cache[node.DeviceID]
 	if ok {
 		return cacheNodeLevel
 	}
 
 	parentNodeLevel, ok := cache[node.Parent]
 	if ok {
-		cache[node.Name] = parentNodeLevel + 1
+		cache[node.DeviceID] = parentNodeLevel + 1
 		return 0
 	}
 
 	parentNode, ok := nodeMap[node.Parent]
 	if !ok {
 		logger.Warnf(ctx, "node parent invalidate node name: %s, node parent name: %s", node.Name, node.Parent)
-		cache[node.Name] = 0
+		cache[node.DeviceID] = 0
 		return 0
 	}
 
 	parentLevel := getNodeLevel(ctx, cache, nodeMap, parentNode)
-	cache[node.Name] = parentLevel + 1
-	return cache[node.Name]
+	cache[node.DeviceID] = parentLevel + 1
+	return cache[node.DeviceID]
 }

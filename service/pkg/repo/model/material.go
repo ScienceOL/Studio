@@ -45,13 +45,14 @@ func (*MaterialNode) TableName() string {
 
 type MaterialHandle struct {
 	BaseModel
-	NodeID      int64  `gorm:"type:bigint;not null;uniqueIndex:idx_nks,priority:1" json:"node_id"`
+	NodeID      int64  `gorm:"type:bigint;not null;uniqueIndex:idx_nns,priority:1" json:"node_id"`
+	Name        string `gorm:"type:varchar(20);not null;uniqueIndex:idx_nns,priority:2" json:"name"`
+	Side        string `gorm:"type:varchar(20);not null;uniqueIndex:idx_nns,priority:3" json:"side"`
 	DisplayName string `gorm:"type:text" json:"display_name"`
 	Type        string `gorm:"type:varchar(100);not null;default:'any'" json:"type"`
 	IOType      string `gorm:"type:varchar(20);not null" json:"io_type"`
 	Source      string `gorm:"type:varchar(100)" json:"source"`
-	Key         string `gorm:"type:varchar(100);not null;uniqueIndex:idx_nks,priority:2" json:"key"`
-	Side        string `gorm:"type:varchar(20);not null;uniqueIndex:idx_nks,priority:3" json:"side"`
+	Key         string `gorm:"type:varchar(100);not null" json:"key"`
 	Connected   bool   `gorm:"default:false" json:"connected"`
 	Required    bool   `gorm:"default:false" json:"required"`
 }

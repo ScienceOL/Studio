@@ -71,8 +71,12 @@ type RegInitParamSchema struct {
 }
 
 type RegistryReq struct {
-	LabUUID         common.BinUUID     `json:"lab_uuid" binding:"required"`
-	RegName         string             `json:"reg_name" binding:"required"`
+	LabUUID    common.BinUUID `json:"lab_uuid" binding:"required"`
+	Registries []Registry     `json:"registries"`
+}
+
+type Registry struct {
+	RegName         string             `json:"id" binding:"required"`
 	Description     *string            `json:"description,omitempty"`
 	Icon            string             `json:"icon,omitempty"`
 	RegistryType    string             `json:"registry_type" binding:"required"`

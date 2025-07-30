@@ -60,7 +60,33 @@ func (m *materialImpl) UpsertMaterialNode(ctx context.Context, datas []*model.Ma
 }
 
 func (m *materialImpl) UpsertMaterialHandle(ctx context.Context, datas []*model.MaterialHandle) error {
-	_, _ = ctx, datas
+	if len(datas) == 0 {
+		return nil
+	}
+
+	statement := m.DBWithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "node_id"},
+			{Name: "name"},
+			{Name: "side"},
+		},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"display_name",
+			"type",
+			"io_type",
+			"source",
+			"key",
+			"connected",
+			"required",
+			"updated_at",
+		}),
+	}).Create(datas)
+
+	if statement.Error != nil {
+		logger.Errorf(ctx, "UpsertMaterialHandle err: %+v", statement.Error)
+		return code.CreateDataErr
+	}
+
 	return nil
 }
 

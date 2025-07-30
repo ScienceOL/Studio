@@ -28,6 +28,7 @@ func _() {
 	_ = x[RecordNotFound-10002]
 	_ = x[QueryRecordErr-10003]
 	_ = x[RegActionNameEmptyErr-20000]
+	_ = x[REGNOTEXISTErr-22000]
 }
 
 const (
@@ -36,6 +37,7 @@ const (
 	_ErrCode_name_2 = "登录配置错误设置登录状态错误刷新 token 失败state 验证失败交换 token 失败回调参数错误获取用户信息失败登录处理用户信息失败未登录状态登录验证格式错误无效 token刷新 token 参数错误"
 	_ErrCode_name_3 = "dababase create data errdatabase update data errdatabase record not founddatabase query err"
 	_ErrCode_name_4 = "reg action name empty"
+	_ErrCode_name_5 = "registry not exist"
 )
 
 var (
@@ -57,6 +59,8 @@ func (i ErrCode) String() string {
 		return _ErrCode_name_3[_ErrCode_index_3[i]:_ErrCode_index_3[i+1]]
 	case i == 20000:
 		return _ErrCode_name_4
+	case i == 22000:
+		return _ErrCode_name_5
 	default:
 		return "ErrCode(" + strconv.FormatInt(int64(i), 10) + ")"
 	}

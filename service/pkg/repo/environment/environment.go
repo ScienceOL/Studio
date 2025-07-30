@@ -127,6 +127,10 @@ func (e *envImpl) UpsertDeviceTemplate(ctx context.Context, data *model.DeviceNo
 }
 
 func (e *envImpl) UpsertDeviceHandleTemplate(ctx context.Context, datas []*model.DeviceNodeHandleTemplate) error {
+	if len(datas) == 0 {
+		return nil
+	}
+
 	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{
 			{Name: "node_id"},
