@@ -76,7 +76,6 @@ func (m *materialImpl) UpsertMaterialHandle(ctx context.Context, datas []*model.
 		Columns: []clause.Column{
 			{Name: "node_id"},
 			{Name: "name"},
-			{Name: "side"},
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"display_name",
@@ -132,9 +131,9 @@ func (m *materialImpl) GetNodeHandles(
 	if err := m.DBWithContext(ctx).Table("material_node as n").
 		Select("n.uuid as node_uuid, n.name as node_name, h.uuid as handle_uuid, h.name as handle_name").
 		Joins("inner join material_handle as h on n.id = h.node_id").
-		Where("n.name in ? and h.name in ?", nodeNames, handleNames).
+		Where("n.lab_id = ? and n.name in ? and h.name in ?", labID, nodeNames, handleNames).
 		Find(&res).Error; err != nil {
-		logger.Errorf(ctx, "GetNodeHandles fail lab id: %d, node names: %+v, handle names: %+v", labID, nodeNames, handleNames)
+		logger.Errorf(ctx, "GetNodeHandles fail lab id: %d, node names: %+v, handle names: %+v, err: %+v", labID, nodeNames, handleNames, err)
 
 		return nil, code.QueryRecordErr
 	}

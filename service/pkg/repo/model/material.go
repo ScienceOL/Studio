@@ -66,7 +66,7 @@ type MaterialEdge struct {
 	SourceNodeUUID   common.BinUUID `gorm:"type:varchar(36);not null;uniqueIndex:idx_me_stst,priority:1" json:"source_node_uuid"`
 	TargetNodeUUID   common.BinUUID `gorm:"type:varchar(36);not null;uniqueIndex:idx_me_stst,priority:2" json:"target_node_uuid"`
 	SourceHandleUUID common.BinUUID `gorm:"type:varchar(36);not null;uniqueIndex:idx_me_stst,priority:3" json:"source_handle_uuid"`
-	TargetHandleUUID common.BinUUID `gorm:"type:varchar(36);not null:uniqueIndex:idx_me_stst,priority:4" json:"target_handle_uuid"`
+	TargetHandleUUID common.BinUUID `gorm:"type:varchar(36);not null;uniqueIndex:idx_me_stst,priority:4" json:"target_handle_uuid"`
 }
 
 func (*MaterialEdge) TableName() string {

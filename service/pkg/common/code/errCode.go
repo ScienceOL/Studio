@@ -28,7 +28,7 @@ func (e ErrCodeWithMsg) Msgs() string {
 // )
 
 func (e ErrCode) WithMsg(msgs ...string) error {
-	return &ErrCodeWithMsg{ErrCode: e, msgs: msgs}
+	return ErrCodeWithMsg{ErrCode: e, msgs: msgs}
 }
 
 func (e ErrCode) Int() int {

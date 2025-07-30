@@ -31,7 +31,7 @@ func NewMaterial() material.Service {
 }
 
 func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node) error {
-	uuid := common.BinUUID(datatypes.BinUUIDFromString("c27803de35134e5ca2bf40cef7b654c4"))
+	uuid := common.BinUUID(datatypes.BinUUIDFromString("ee801e5019c0413a827b17cad00543cd"))
 	labData, err := m.envStore.GetLabByUUID(ctx, uuid)
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node)
 		for _, nodes := range levelNodes {
 			datas := make([]*model.MaterialNode, 0, len(nodes))
 			deviceTemplateIDs := make([]int64, 0, len(nodes))
-			handleNodes := make(map[int64]*model.MaterialNode)
+			handleNodes := make(map[int64][]*model.MaterialNode)
 			for _, n := range nodes {
 				data := &model.MaterialNode{
 					ParentID:             0,
@@ -84,10 +84,13 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node)
 					data.ParentID = node.ID
 				}
 				if regInfo := regMap[n.Class]; regInfo != nil {
+					if n.Class == "virtual_transfer_pump" {
+						fmt.Println(n.Class)
+					}
 					deviceTemplateIDs = utils.AppendUniqSlice(deviceTemplateIDs, regInfo.DeviceNodeTemplateID)
 					data.RegID = regInfo.RegID
 					data.DeviceNodeTemplateID = regInfo.DeviceNodeTemplateID
-					handleNodes[regInfo.DeviceNodeTemplateID] = data
+					handleNodes[regInfo.DeviceNodeTemplateID] = append(handleNodes[regInfo.DeviceNodeTemplateID], data)
 				}
 
 				datas = append(datas, data)
@@ -104,24 +107,26 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node)
 			}
 			materialHandles := make([]*model.MaterialHandle, 0, 10)
 			for templateNodeID, templateHandles := range deviceTemplateHandles {
-				materialNode, ok := handleNodes[templateNodeID]
+				materialNodes, ok := handleNodes[templateNodeID]
 				if !ok {
 					continue
 				}
-				for _, h := range templateHandles {
-					handleData := &model.MaterialHandle{
-						NodeID:      materialNode.ID,
-						Name:        h.Name,
-						DisplayName: utils.Or(h.DisplayName, h.Key),
-						Type:        h.Type,
-						IOType:      h.IOType,
-						Source:      h.Source,
-						Key:         h.Key,
-						Side:        utils.Or(h.Side, "WEST"),
-						Connected:   false,
-						Required:    false,
+				for _, node := range materialNodes {
+					for _, h := range templateHandles {
+						handleData := &model.MaterialHandle{
+							NodeID:      node.ID,
+							Name:        h.Name,
+							DisplayName: utils.Or(h.DisplayName, h.Key),
+							Type:        h.Type,
+							IOType:      h.IOType,
+							Source:      h.Source,
+							Key:         h.Key,
+							Side:        utils.Or(h.Side, "WEST"),
+							Connected:   false,
+							Required:    false,
+						}
+						materialHandles = append(materialHandles, handleData)
 					}
-					materialHandles = append(materialHandles, handleData)
 				}
 			}
 			if err := m.materialStore.UpsertMaterialHandle(txCtx, materialHandles); err != nil {
@@ -203,7 +208,7 @@ func getNodeLevel(ctx context.Context, cache map[string]int, nodeMap map[string]
 }
 
 func (m *materialImpl) CreateEdge(ctx context.Context, req []*material.Edge) error {
-	uuid := common.BinUUID(datatypes.BinUUIDFromString("c27803de35134e5ca2bf40cef7b654c4"))
+	uuid := common.BinUUID(datatypes.BinUUIDFromString("ee801e5019c0413a827b17cad00543cd"))
 	labData, err := m.envStore.GetLabByUUID(ctx, uuid)
 	if err != nil {
 		return err
@@ -243,6 +248,7 @@ func (m *materialImpl) CreateEdge(ctx context.Context, req []*material.Edge) err
 		if !ok {
 			logger.Errorf(ctx, "CreateEdge target not exist lab id: %d, target node name: %s", labData.ID, edge.Target)
 			return code.EdgeNodeNotExistErr.WithMsg(fmt.Sprintf("lab id: %d, target node name: %s", labData.ID, edge.Target))
+
 		}
 		targetHandle, ok := targetNode[edge.TargetHandle]
 		if !ok {
