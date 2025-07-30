@@ -1,13 +1,30 @@
 package auth
 
 import (
-	"context"
-	"sync"
-
+	"github.com/scienceol/studio/service/internal/configs/webapp"
 	"golang.org/x/oauth2"
 )
 
-type AuthConfig struct {
+type UserData struct {
+	Owner             string `json:"owner"`
+	Name              string `json:"name"`
+	ID                string `json:"id"`
+	Avatar            string `json:"avatar"`
+	Type              string `json:"type"`
+	DisplayName       string `json:"display_name"`
+	SignupApplication string `json:"signup_application"`
+	AccessToken       string `json:"access_token"`
+}
+
+type UserInfo struct {
+	Status string    `json:"status"`
+	Msg    string    `json:"msg"`
+	Sub    string    `json:"sub"`
+	Name   string    `json:"name"`
+	Data   *UserData `json:"data,omitempty"`
+}
+
+type Config struct {
 	ClientID     string
 	ClientSecret string
 	Scopes       []string
@@ -19,28 +36,25 @@ type AuthConfig struct {
 
 var (
 	oauthConfig *oauth2.Config
-	once        sync.Once
-)
 
-// InitOAuth 初始化OAuth2配置
-func InitOAuth(ctx context.Context, config *AuthConfig) error {
-	var initErr error
-	once.Do(func() {
-		oauthConfig = &oauth2.Config{
-			ClientID:     config.ClientID,
-			ClientSecret: config.ClientSecret,
-			Scopes:       config.Scopes,
-			Endpoint: oauth2.Endpoint{
-				TokenURL: config.TokenURL,
-				AuthURL:  config.AuthURL,
-			},
-			RedirectURL: config.RedirectURL,
-		}
-	})
-	return initErr
-}
+	USERKEY = "AUTH_USER_KEY"
+)
 
 // GetOAuthConfig 获取OAuth2配置
 func GetOAuthConfig() *oauth2.Config {
+	if oauthConfig == nil {
+		authConf := webapp.Config().OAuth2
+		oauthConfig = &oauth2.Config{
+			ClientID:     authConf.ClientID,
+			ClientSecret: authConf.ClientSecret,
+			Scopes:       authConf.Scopes,
+			Endpoint: oauth2.Endpoint{
+				TokenURL: authConf.TokenURL,
+				AuthURL:  authConf.AuthURL,
+			},
+			RedirectURL: authConf.RedirectURL,
+		}
+	}
+
 	return oauthConfig
 }

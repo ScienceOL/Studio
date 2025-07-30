@@ -15,17 +15,17 @@ var (
 	consumers []*m.ServerConsumer
 )
 
-type MQTTConfig struct {
+type Config struct {
 	AccessKey  string
 	SecretKey  string
-	InstanceId string
+	InstanceID string
 	Domain     string
 	Port       int16
 	Topic      string
 }
 
 type MessageProcessor struct {
-	handle func(msgId string, messageProperties *m.MessageProperties, body []byte) error
+	handle func(msgID string, messageProperties *m.MessageProperties, body []byte) error
 }
 
 func (t *MessageProcessor) Process(msgID string, Properties *m.MessageProperties, body []byte) error {
@@ -35,16 +35,16 @@ func (t *MessageProcessor) Process(msgID string, Properties *m.MessageProperties
 type StatusProcessor struct{}
 
 func (s *StatusProcessor) Process(statusNotice *m.StatusNotice) error {
-	fmt.Printf("status: clientId=%s,channelId=%s,eventType=%s\n", statusNotice.ClientID, statusNotice.ChannelID, statusNotice.EventType)
+	fmt.Printf("status: clientID=%s,channelID=%s,eventType=%s\n", statusNotice.ClientID, statusNotice.ChannelID, statusNotice.EventType)
 	return nil
 }
 
-func InitPublish(ctx context.Context, conf *MQTTConfig) func(msg []byte) (msgID string, err error) {
-	var serverProducer = &m.ServerProducer{}
-	var channelConfig = &m.ChannelConfig{
+func InitPublish(_ context.Context, conf *Config) func(msg []byte) (msgID string, err error) {
+	serverProducer := &m.ServerProducer{}
+	channelConfig := &m.ChannelConfig{
 		AccessKey:  conf.AccessKey,
 		SecretKey:  conf.SecretKey,
-		InstanceId: conf.InstanceId,
+		InstanceId: conf.InstanceID,
 		Domain:     conf.Domain,
 		Port:       conf.Port,
 	}
@@ -60,12 +60,12 @@ func InitPublish(ctx context.Context, conf *MQTTConfig) func(msg []byte) (msgID 
 	}
 }
 
-func InitSubscribe(ctx context.Context, conf *MQTTConfig, handle func(msgId string, messageProperties *m.MessageProperties, body []byte)) error {
-	var serverConsumer = &m.ServerConsumer{}
-	var channelConfig = &m.ChannelConfig{
+func InitSubscribe(_ context.Context, conf *Config, handle func(msgID string, messageProperties *m.MessageProperties, body []byte) error) error {
+	serverConsumer := &m.ServerConsumer{}
+	channelConfig := &m.ChannelConfig{
 		AccessKey:  conf.AccessKey,
 		SecretKey:  conf.SecretKey,
-		InstanceId: conf.InstanceId,
+		InstanceId: conf.InstanceID,
 		Domain:     conf.Domain,
 		Port:       conf.Port,
 	}
@@ -73,5 +73,5 @@ func InitSubscribe(ctx context.Context, conf *MQTTConfig, handle func(msgId stri
 	consumers = append(consumers, serverConsumer)
 	// 可以订阅状态通知，后面根据需要订阅
 	// serverConsumer.SubscribeTopic(conf.Topic, &MessageProcessor{})
-	return serverConsumer.SubscribeTopic(conf.Topic, &MessageProcessor{})
+	return serverConsumer.SubscribeTopic(conf.Topic, &MessageProcessor{handle: handle})
 }

@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [{
+    "name": "migrate",
+    "type": "dlv_spawn",
+    "request": "launch",
+    "program": "${workspaceFolder}/cmd/api/main.go",
+    "args": ["migrate"],
+    "env": {}
+  },
+  {
+    "name": "apiserver",
+    "type": "dlv_spawn",
+    "request": "launch",
+    "program": "${workspaceFolder}/cmd/api/main.go",
+    "args": ["apiserver"],
+    "env": {}
+  }]
+}

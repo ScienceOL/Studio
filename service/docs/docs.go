@@ -23,13 +23,253 @@ const docTemplate = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {}
+    "paths": {
+        "/api/auth/callback/casdoor": {
+            "get": {
+                "description": "处理OAuth2授权回调",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "登录模块"
+                ],
+                "summary": "OAuth2回调",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "授权码",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "防CSRF攻击的状态码",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/common.Resp"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/login": {
+            "get": {
+                "description": "检查服务运行状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "登录模块"
+                ],
+                "summary": "登录",
+                "responses": {
+                    "302": {
+                        "description": "重定向到OAuth2授权页面",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string",
+                                "description": "重定向的授权URL地址"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/refresh": {
+            "post": {
+                "description": "刷新OAuth2令牌",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "登录模块"
+                ],
+                "summary": "刷新令牌",
+                "parameters": [
+                    {
+                        "description": "刷新令牌请求",
+                        "name": "refresh_token",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.RefreshTokenReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "刷新 token 失败 code = 1002",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/health": {
+            "get": {
+                "description": "检查服务运行状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "健康检查",
+                "responses": {
+                    "200": {
+                        "description": "返回成功状态",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "code.ErrCode": {
+            "type": "integer",
+            "enum": [
+                0,
+                0,
+                1000,
+                1001,
+                1002,
+                1003,
+                1004,
+                1005,
+                1006,
+                1007,
+                1008,
+                1009,
+                1010,
+                1011
+            ],
+            "x-enum-comments": {
+                "CallbackParamErr": "回调参数错误",
+                "ExchangeTokenErr": "交换 token 失败",
+                "InvalidToken": "无效 token",
+                "LoginCallbackErr": "登录处理用户信息失败",
+                "LoginConfigErr": "登录配置错误",
+                "LoginFormatErr": "登录验证格式错误",
+                "LoginGetUserInfoErr": "获取用户信息失败",
+                "LoginSetStateErr": "设置登录状态错误",
+                "LoginStateErr": "state 验证失败",
+                "RefreshTokenErr": "刷新 token 失败",
+                "RefreshTokenParamErr": "刷新 token 参数错误",
+                "Success": "成功",
+                "UnDefineErr": "未定义",
+                "UnLogin": "未登录状态"
+            },
+            "x-enum-varnames": [
+                "Success",
+                "UnDefineErr",
+                "LoginConfigErr",
+                "LoginSetStateErr",
+                "RefreshTokenErr",
+                "LoginStateErr",
+                "ExchangeTokenErr",
+                "CallbackParamErr",
+                "LoginGetUserInfoErr",
+                "LoginCallbackErr",
+                "UnLogin",
+                "LoginFormatErr",
+                "InvalidToken",
+                "RefreshTokenParamErr"
+            ]
+        },
+        "common.Error": {
+            "type": "object",
+            "properties": {
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.Resp": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "$ref": "#/definitions/code.ErrCode"
+                },
+                "data": {},
+                "error": {
+                    "$ref": "#/definitions/common.Error"
+                }
+            }
+        },
+        "types.RefreshTokenReq": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.RefreshTokenResp": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        }
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
+	Host:             "localhost:48197",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Studio API",

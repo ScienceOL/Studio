@@ -6,16 +6,15 @@ import (
 
 	"github.com/scienceol/studio/service/pkg/common/constant"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
-	"go.uber.org/zap/zapcore"
 )
 
 var (
-	path             string
-	maxSize                        = 50
-	maxBackups                     = 10
-	maxAge                         = 7
-	compress                       = false
-	traceLogMinLevel zapcore.Level = zapcore.InfoLevel
+	// path       string
+	maxSize    = 50
+	maxBackups = 10
+	maxAge     = 7
+	// compress   = false
+	// traceLogMinLevel zapcore.Level = zapcore.InfoLevel
 )
 
 type ServiceEnv struct {
