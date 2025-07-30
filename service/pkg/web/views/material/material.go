@@ -1,10 +1,8 @@
 package material
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
+	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/material"
@@ -57,37 +55,7 @@ func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
 }
 
 func (m *Handle) LabMaterial(ctx *gin.Context) {
-	upgrader := websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			// 允许跨域连接 TODO: 生产环境严格限制
-			_ = r
-			return true
-		},
-	}
-	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
-	if err != nil {
-		logger.Errorf(ctx, "WebSocket upgrade failed: %v", err)
-		return
-	}
-	defer conn.Close()
-
-	// WebSocket 连接处理逻辑
-	for {
-		messageType, message, err := conn.ReadMessage()
-		if err != nil {
-			logger.Errorf(ctx, "WebSocket read error: %v", err)
-			break
-		}
-
-		// 处理接收到的消息
-		logger.Infof(ctx, "Received: %s", message)
-
-		// 回显消息，消息不是线程安全的，需要封装 channel
-		// github.com/olahol/melody
-		err = conn.WriteMessage(messageType, message)
-		if err != nil {
-			logger.Errorf(ctx, "WebSocket write error: %v", err)
-			break
-		}
-	}
+	// https://github.com/googollee/go-socket.io
+	wsMelody := melody.New()
+	wsMelody.BroadcastMultiple
 }
