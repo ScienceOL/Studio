@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	r "github.com/go-redis/redis/v8"
+	r "github.com/redis/go-redis/v9"
 	"github.com/scienceol/studio/service/internal/configs/webapp"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/login"

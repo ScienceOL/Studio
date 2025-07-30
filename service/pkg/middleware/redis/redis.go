@@ -3,7 +3,7 @@ package redis
 import (
 	"context"
 
-	r "github.com/go-redis/redis/v8"
+	r "github.com/redis/go-redis/v9"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 )
 

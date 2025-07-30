@@ -54,8 +54,7 @@ func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
 	common.ReplyOk(ctx)
 }
 
-func (m *Handle) LabMaterial(ctx *gin.Context) {
-	// https://github.com/googollee/go-socket.io
+func (m *Handle) LabMaterial(_ *gin.Context) {
 	wsMelody := melody.New()
-	wsMelody.BroadcastMultiple
+	_ = wsMelody
 }
