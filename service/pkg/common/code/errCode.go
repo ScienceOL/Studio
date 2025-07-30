@@ -1,13 +1,35 @@
 package code
 
+import (
+	"fmt"
+	"strings"
+)
+
 // "golang.org/x/tools/cmd/stringer"
 
 //go:generate stringer -type ErrCode -linecomment -output code_string.go
 type ErrCode int
 
+type ErrCodeWithMsg struct {
+	ErrCode
+	msgs []string
+}
+
+func (e ErrCodeWithMsg) String() string {
+	return fmt.Sprintf("code: %d, msgs: %+v", e.ErrCode, e.msgs)
+}
+
+func (e ErrCodeWithMsg) Msgs() string {
+	return strings.Join(e.msgs, "\t\t\t")
+}
+
 // const (
 // 	codeSplit = " &_&_& "
 // )
+
+func (e ErrCode) WithMsg(msgs ...string) error {
+	return &ErrCodeWithMsg{ErrCode: e, msgs: msgs}
+}
 
 func (e ErrCode) Int() int {
 	return int(e)
@@ -22,7 +44,7 @@ const (
 	UnDefineErr             // 未定义
 )
 
-// view 展示层工工资错误
+// view 展示层错误
 const (
 	ParamErr ErrCode = iota + 1000 // parse parameter error
 )
@@ -58,5 +80,7 @@ const (
 
 // material 业务错误
 const (
-	REGNOTEXISTErr ErrCode = iota + 22000 // registry not exist
+	RegNotExistErr        ErrCode = iota + 22000 // registry not exist
+	EdgeNodeNotExistErr                          // edge node not exist
+	EdgeHandleNotExistErr                        // node handle not exist
 )

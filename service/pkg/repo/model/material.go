@@ -22,8 +22,8 @@ const (
 type MaterialNode struct {
 	BaseModel
 	ParentID    int64   `gorm:"type:bigint" json:"parent_id"`
-	LabID       int64   `gorm:"type:bigint;not null;uniqueIndex:idx_ln,priority:1" json:"lab_id"`
-	Name        string  `gorm:"type:varchar(255);not null;uniqueIndex:idx_ln,priority:2" json:"name"`
+	LabID       int64   `gorm:"type:bigint;not null;uniqueIndex:idx_mn_ln,priority:1" json:"lab_id"`
+	Name        string  `gorm:"type:varchar(255);not null;uniqueIndex:idx_mn_ln,priority:2" json:"name"`
 	DisplayName string  `gorm:"type:varchar(255);not null" json:"display_name"`
 	Description *string `gorm:"type:text" json:"description"`
 	// Status               string         `gorm:"type:varchar(20);not null;default:'idle'" json:"status"`
@@ -45,9 +45,9 @@ func (*MaterialNode) TableName() string {
 
 type MaterialHandle struct {
 	BaseModel
-	NodeID      int64  `gorm:"type:bigint;not null;uniqueIndex:idx_nns,priority:1" json:"node_id"`
-	Name        string `gorm:"type:varchar(20);not null;uniqueIndex:idx_nns,priority:2" json:"name"`
-	Side        string `gorm:"type:varchar(20);not null;uniqueIndex:idx_nns,priority:3" json:"side"`
+	NodeID      int64  `gorm:"type:bigint;not null;uniqueIndex:idx_mh_nns,priority:1" json:"node_id"`
+	Name        string `gorm:"type:varchar(20);not null;uniqueIndex:idx_mh_nns,priority:2" json:"name"`
+	Side        string `gorm:"type:varchar(20);not null" json:"side"`
 	DisplayName string `gorm:"type:text" json:"display_name"`
 	Type        string `gorm:"type:varchar(100);not null;default:'any'" json:"type"`
 	IOType      string `gorm:"type:varchar(20);not null" json:"io_type"`
@@ -63,10 +63,10 @@ func (*MaterialHandle) TableName() string {
 
 type MaterialEdge struct {
 	BaseModelNoUUID
-	SourceNodeUUID   common.BinUUID `gorm:"type:varchar(36);not null;index:idx_source_target" json:"source_node_uuid"`
-	TargetNodeUUID   common.BinUUID `gorm:"type:varchar(36);not null;index:idx_source_target" json:"target_node_uuid"`
-	SourceHandleUUID common.BinUUID `gorm:"type:varchar(36);not null" json:"source_handle_uuid"`
-	TargetHandleUUID common.BinUUID `gorm:"type:varchar(36);not null" json:"target_handle_uuid"`
+	SourceNodeUUID   common.BinUUID `gorm:"type:varchar(36);not null;uniqueIndex:idx_me_stst,priority:1" json:"source_node_uuid"`
+	TargetNodeUUID   common.BinUUID `gorm:"type:varchar(36);not null;uniqueIndex:idx_me_stst,priority:2" json:"target_node_uuid"`
+	SourceHandleUUID common.BinUUID `gorm:"type:varchar(36);not null;uniqueIndex:idx_me_stst,priority:3" json:"source_handle_uuid"`
+	TargetHandleUUID common.BinUUID `gorm:"type:varchar(36);not null:uniqueIndex:idx_me_stst,priority:4" json:"target_handle_uuid"`
 }
 
 func (*MaterialEdge) TableName() string {

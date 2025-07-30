@@ -31,6 +31,17 @@ func ReplyErr(ctx *gin.Context, err error, msg ...string) {
 		return
 	}
 
+	if errCode, ok := err.(code.ErrCodeWithMsg); ok {
+		ctx.JSON(http.StatusOK, &Resp{
+			Code: errCode.ErrCode,
+			Error: &Error{
+				Msg:  errCode.Msgs(),
+				Info: msg,
+			},
+		})
+		return
+	}
+
 	ctx.JSON(http.StatusOK, &Resp{
 		Code: code.UnDefineErr,
 		Error: &Error{

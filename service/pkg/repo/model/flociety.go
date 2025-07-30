@@ -4,13 +4,13 @@ import "gorm.io/datatypes"
 
 type DeviceNodeTemplate struct {
 	BaseModel
-	Name        string  `gorm:"type:varchar(255);not null;uniqueIndex:idx_lrnv,priority:3" json:"name"`
-	LabID       int64   `gorm:"type:bigint;not null;uniqueIndex:idx_lrnv,priority:1" json:"lab_id"`
-	RegID       int64   `gorm:"type:bigint;not null;uniqueIndex:idx_lrnv,priority:2" json:"reg_id"`
+	Name        string  `gorm:"type:varchar(255);not null;uniqueIndex:idx_dnt_lrnv,priority:3" json:"name"`
+	LabID       int64   `gorm:"type:bigint;not null;uniqueIndex:idx_dnt_lrnv,priority:1" json:"lab_id"`
+	RegID       int64   `gorm:"type:bigint;not null;uniqueIndex:idx_dnt_lrnv,priority:2" json:"reg_id"`
 	UserID      string  `gorm:"type:varchar(120);not null" json:"user_id"`
 	Header      string  `gorm:"type:text" json:"header"`
 	Footer      string  `gorm:"type:text" json:"footer"`
-	Version     string  `gorm:"type:varchar(50);not null;default:'1.0.0';uniqueIndex:idx_lrnv,priority:4" json:"version"`
+	Version     string  `gorm:"type:varchar(50);not null;default:'1.0.0';uniqueIndex:idx_dnt_lrnv,priority:4" json:"version"`
 	Icon        string  `gorm:"type:text" json:"icon"`
 	Description *string `gorm:"type:text" json:"description"`
 }
@@ -21,8 +21,8 @@ func (*DeviceNodeTemplate) TableName() string {
 
 type DeviceNodeHandleTemplate struct {
 	BaseModelNoUUID
-	NodeID      int64  `gorm:"type:bigint;not null;uniqueIndex:idx_dnhtnn,priority:1" json:"node_id"`
-	Name        string `gorm:"type:varchar(255);not null;uniqueIndex:idx_dnhtnn,priority:2" json:"name"`
+	NodeID      int64  `gorm:"type:bigint;not null;uniqueIndex:idx_dnht_dnhtnn,priority:1" json:"node_id"`
+	Name        string `gorm:"type:varchar(255);not null;uniqueIndex:idx_dnht_dnhtnn,priority:2" json:"name"`
 	DisplayName string `gorm:"type:varchar(255);not null" json:"display_name"`
 	Type        string `gorm:"type:varchar(50);not null" json:"type"`
 	IOType      string `gorm:"type:varchar(20);not null" json:"io_type"`
@@ -37,8 +37,8 @@ func (*DeviceNodeHandleTemplate) TableName() string {
 
 type DeviceNodeParamTemplate struct {
 	BaseModelNoUUID
-	NodeID      int64  `gorm:"type:bigint;not null;uniqueIndex:idx_dnptnn,priority:1" json:"node_id"`
-	Name        string `gorm:"type:varchar(255);not null;uniqueIndex:idx_dnptnn,priority:2" json:"name"`
+	NodeID      int64  `gorm:"type:bigint;not null;uniqueIndex:idx_dnpt_dnptnn,priority:1" json:"node_id"`
+	Name        string `gorm:"type:varchar(255);not null;uniqueIndex:idx_dnpt_dnptnn,priority:2" json:"name"`
 	Type        string `gorm:"type:varchar(50);not null" json:"type"`
 	Placeholder string `gorm:"type:varchar(500)" json:"placeholder"`
 	// InputData   datatypes.JSON `gorm:"type:json" json:"input_data"`

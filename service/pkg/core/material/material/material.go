@@ -2,6 +2,7 @@ package material
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"github.com/scienceol/studio/service/pkg/common"
@@ -51,7 +52,7 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node)
 
 	// 强制校验注册表是否存在
 	if len(regMap) != len(regNames) {
-		return code.REGNOTEXISTErr
+		return code.RegNotExistErr
 	}
 
 	levelNodes := sortNodeLevel(ctx, req)
@@ -199,4 +200,68 @@ func getNodeLevel(ctx context.Context, cache map[string]int, nodeMap map[string]
 	parentLevel := getNodeLevel(ctx, cache, nodeMap, parentNode)
 	cache[node.DeviceID] = parentLevel + 1
 	return cache[node.DeviceID]
+}
+
+func (m *materialImpl) CreateEdge(ctx context.Context, req []*material.Edge) error {
+	uuid := common.BinUUID(datatypes.BinUUIDFromString("c27803de35134e5ca2bf40cef7b654c4"))
+	labData, err := m.envStore.GetLabByUUID(ctx, uuid)
+	if err != nil {
+		return err
+	}
+	nodeNames := make([]string, 0, 2*len(req))
+	handleNames := make([]string, 0, 2*len(req))
+
+	for _, edge := range req {
+		nodeNames = utils.AppendUniqSlice(nodeNames, edge.Source)
+		nodeNames = utils.AppendUniqSlice(nodeNames, edge.Target)
+
+		handleNames = utils.AppendUniqSlice(handleNames, edge.SourceHandle)
+		handleNames = utils.AppendUniqSlice(handleNames, edge.TargetHandle)
+	}
+
+	edgeInfo, err := m.materialStore.GetNodeHandles(ctx, labData.ID, nodeNames, handleNames)
+	if err != nil {
+		return err
+	}
+
+	edgeDatas := make([]*model.MaterialEdge, 0, len(req))
+	for _, edge := range req {
+		sourceNode, ok := edgeInfo[edge.Source]
+		if !ok {
+			logger.Errorf(ctx, "CreateEdge source not exist lab id: %d, source node name: %s", labData.ID, edge.Source)
+			return code.EdgeNodeNotExistErr.WithMsg(fmt.Sprintf("lab id: %d, source node name: %s", labData.ID, edge.Source))
+		}
+		sourceHandle, ok := sourceNode[edge.SourceHandle]
+		if !ok {
+			logger.Errorf(ctx, "CreateEdge source handle not exist lab id: %d, source node name: %s, handle name: %s",
+				labData.ID, edge.Source, edge.SourceHandle)
+			return code.EdgeHandleNotExistErr.WithMsg(fmt.Sprintf("lab id: %d, source node name: %s, handle name: %s",
+				labData.ID, edge.Source, edge.SourceHandle))
+		}
+
+		targetNode, ok := edgeInfo[edge.Target]
+		if !ok {
+			logger.Errorf(ctx, "CreateEdge target not exist lab id: %d, target node name: %s", labData.ID, edge.Target)
+			return code.EdgeNodeNotExistErr.WithMsg(fmt.Sprintf("lab id: %d, target node name: %s", labData.ID, edge.Target))
+		}
+		targetHandle, ok := targetNode[edge.TargetHandle]
+		if !ok {
+			logger.Errorf(ctx, "CreateEdge target handle not exist lab id: %d, node name: %s", labData.ID, edge.Target)
+			return code.EdgeHandleNotExistErr.WithMsg(fmt.Sprintf("lab id: %d, target node name: %s, handle name: %s",
+				labData.ID, edge.Target, edge.TargetHandle))
+		}
+
+		edgeDatas = append(edgeDatas, &model.MaterialEdge{
+			SourceNodeUUID:   sourceHandle.NodeUUID,
+			SourceHandleUUID: sourceHandle.HandleUUID,
+			TargetNodeUUID:   targetHandle.NodeUUID,
+			TargetHandleUUID: targetHandle.HandleUUID,
+		})
+	}
+
+	if err := m.materialStore.UpsertMaterialEdge(ctx, edgeDatas); err != nil {
+		return err
+	}
+
+	return nil
 }

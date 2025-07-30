@@ -4,4 +4,5 @@ import "context"
 
 type Service interface {
 	CreateMaterial(ctx context.Context, req []*Node) error
+	CreateEdge(ctx context.Context, req []*Edge) error
 }

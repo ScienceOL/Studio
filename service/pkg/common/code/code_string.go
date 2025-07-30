@@ -28,7 +28,7 @@ func _() {
 	_ = x[RecordNotFound-10002]
 	_ = x[QueryRecordErr-10003]
 	_ = x[RegActionNameEmptyErr-20000]
-	_ = x[REGNOTEXISTErr-22000]
+	_ = x[RegNotExistErr-22000]
 }
 
 const (

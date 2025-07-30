@@ -40,14 +40,14 @@ func (m *Handle) CreateLabMaterial(ctx *gin.Context) {
 }
 
 func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
-	reqs := make([]*material.Node, 0, 1)
+	reqs := make([]*material.Edge, 0, 1)
 	if err := ctx.ShouldBindJSON(&reqs); err != nil {
-		logger.Errorf(ctx, "parse CreateLabMaterial param err: %+v", err.Error())
+		logger.Errorf(ctx, "parse CreateMaterialEdge param err: %+v", err.Error())
 		common.ReplyErr(ctx, code.ParamErr, err.Error())
 		return
 	}
-	if err := m.mService.CreateMaterial(ctx, reqs); err != nil {
-		logger.Errorf(ctx, "CreateMaterial err: %+v", err)
+	if err := m.mService.CreateEdge(ctx, reqs); err != nil {
+		logger.Errorf(ctx, "CreateMaterialEdge err: %+v", err)
 		common.ReplyErr(ctx, err)
 
 		return
