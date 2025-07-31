@@ -1,12 +1,16 @@
 package material
 
 import (
+	"context"
+
 	"github.com/gin-gonic/gin"
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/material"
 	impl "github.com/scienceol/studio/service/pkg/core/material/material"
+	"github.com/scienceol/studio/service/pkg/core/notify"
+	"github.com/scienceol/studio/service/pkg/core/notify/events"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 )
 
@@ -15,8 +19,10 @@ type Handle struct {
 }
 
 func NewMaterialHandle() *Handle {
+	mService := impl.NewMaterial()
+	events.NewEvents().Registry(context.Background(), notify.MaterialModify, mService.HandleNotify)
 	return &Handle{
-		mService: impl.NewMaterial(),
+		mService: mService,
 	}
 }
 

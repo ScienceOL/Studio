@@ -29,12 +29,12 @@ func NewMaterial() material.Service {
 		materialStore: mStore.NewMaterialImpl(),
 	}
 
-
 	return m
 }
 
 func (m *materialImpl) HandleNotify(ctx context.Context, msg string) error {
-
+	logger.Infof(ctx, "msg: %s", msg)
+	return nil
 }
 
 func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node) error {
