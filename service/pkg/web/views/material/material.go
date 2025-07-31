@@ -54,7 +54,8 @@ func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
 	common.ReplyOk(ctx)
 }
 
-func (m *Handle) LabMaterial(_ *gin.Context) {
+func (m *Handle) LabMaterial(ctx *gin.Context) {
 	wsMelody := melody.New()
+	melody.New()
 	_ = wsMelody
 }

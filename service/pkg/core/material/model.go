@@ -24,10 +24,7 @@ type Node struct {
 type Edge struct {
 	Source string `json:"source"`
 	Target string `json:"target"`
-	// FIXME: 下面两个字段命令 unilab 需求
-	// FIXME: handle 是按照 node ID、handle key、side 作为唯一主键的，
-	// 这个连接信息缺少 side 信息，有 bug，
-	// 不知道真实的连线是连接到哪个 side 的 handle key
+	// FIXME: 下面两个字段命令 unilab 需要修改命名称
 	SourceHandle string `json:"sourceHandle"`
 	TargetHandle string `json:"targetHandle"`
 	Type         string `json:"type"`

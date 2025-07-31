@@ -24,10 +24,17 @@ type materialImpl struct {
 }
 
 func NewMaterial() material.Service {
-	return &materialImpl{
+	m := &materialImpl{
 		envStore:      eStore.NewEnv(),
 		materialStore: mStore.NewMaterialImpl(),
 	}
+
+
+	return m
+}
+
+func (m *materialImpl) HandleNotify(ctx context.Context, msg string) error {
+
 }
 
 func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node) error {

@@ -84,3 +84,10 @@ const (
 	EdgeNodeNotExistErr                          // edge node not exist
 	EdgeHandleNotExistErr                        // node handle not exist
 )
+
+// notidy 业务错误
+const (
+	NotifyActionAlreadyRegistryErr ErrCode = iota + 24000 // notify action already registry
+	NotifySubscribeChannelErr                             // notify subscribe channel fail
+	NotifySendMsgErr                                      // notify send message err
+)
