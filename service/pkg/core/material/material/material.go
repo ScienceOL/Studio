@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/material"
@@ -21,20 +22,17 @@ import (
 type materialImpl struct {
 	envStore      repo.EnvRepo
 	materialStore repo.MaterialRepo
+	wsClient      *melody.Melody
 }
 
-func NewMaterial() material.Service {
+func NewMaterial(wsClient *melody.Melody) material.Service {
 	m := &materialImpl{
 		envStore:      eStore.NewEnv(),
 		materialStore: mStore.NewMaterialImpl(),
+		wsClient:      wsClient,
 	}
 
 	return m
-}
-
-func (m *materialImpl) HandleNotify(ctx context.Context, msg string) error {
-	logger.Infof(ctx, "msg: %s", msg)
-	return nil
 }
 
 func (m *materialImpl) CreateMaterial(ctx context.Context, req []*material.Node) error {
@@ -275,6 +273,42 @@ func (m *materialImpl) CreateEdge(ctx context.Context, req []*material.Edge) err
 	if err := m.materialStore.UpsertMaterialEdge(ctx, edgeDatas); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (m *materialImpl) HandleWSMsg(ctx context.Context, s *melody.Session, b []byte) error {
+	// client 发送过来的消息
 
 	return nil
+}
+
+func (m *materialImpl) getSession(_ context.Context, key string, value any) *melody.Session {
+	sessions, err := m.wsClient.Sessions()
+	if err != nil {
+		return nil
+	}
+	for _, s := range sessions {
+		sessionValue, exist := s.Get(key)
+		if !exist {
+			continue
+		}
+		if utils.Compare(sessionValue, value) {
+			return s
+		}
+	}
+
+	return nil
+}
+
+// 接受到 redis 广播通知消息
+func (m *materialImpl) HandleNotify(ctx context.Context, msg string) error {
+	logger.Infof(ctx, "msg: %s", msg)
+
+	return m.wsClient.BroadcastFilter([]byte(""), func(s *melody.Session) bool {
+		sessionValue, ok := s.Get("lab id")
+		if !ok {
+			return false
+		}
+		return utils.Compare(sessionValue, "lab id")
+	})
 }
