@@ -73,3 +73,8 @@ func (events *Events) Broadcast(ctx context.Context, msg *notify.SendMsg) error 
 
 	return nil
 }
+
+func (events *Events) Close(ctx context.Context) error {
+	// FIXME: 修复关闭时关闭订阅
+	return nil
+}

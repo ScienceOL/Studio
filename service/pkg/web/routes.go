@@ -73,7 +73,7 @@ func InstallURL(g *gin.Engine) {
 			materialHandle := material.NewMaterialHandle()
 			labRouter.POST("/material", materialHandle.CreateLabMaterial)
 			labRouter.POST("/material/edge", materialHandle.CreateMaterialEdge)
-			labRouter.GET("/material/ws", materialHandle.LabMaterial)
+			labRouter.GET("/material/ws/:lab_uuid", materialHandle.LabMaterial)
 		}
 	}
 }

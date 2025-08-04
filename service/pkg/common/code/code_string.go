@@ -31,6 +31,9 @@ func _() {
 	_ = x[RegNotExistErr-22000]
 	_ = x[EdgeNodeNotExistErr-22001]
 	_ = x[EdgeHandleNotExistErr-22002]
+	_ = x[NotifyActionAlreadyRegistryErr-24000]
+	_ = x[NotifySubscribeChannelErr-24001]
+	_ = x[NotifySendMsgErr-24002]
 }
 
 const (
@@ -40,12 +43,14 @@ const (
 	_ErrCode_name_3 = "dababase create data errdatabase update data errdatabase record not founddatabase query err"
 	_ErrCode_name_4 = "reg action name empty"
 	_ErrCode_name_5 = "registry not existedge node not existnode handle not exist"
+	_ErrCode_name_6 = "notify action already registrynotify subscribe channel failnotify send message err"
 )
 
 var (
 	_ErrCode_index_2 = [...]uint8{0, 18, 42, 61, 79, 98, 116, 140, 170, 185, 209, 221, 246}
 	_ErrCode_index_3 = [...]uint8{0, 24, 48, 73, 91}
 	_ErrCode_index_5 = [...]uint8{0, 18, 37, 58}
+	_ErrCode_index_6 = [...]uint8{0, 30, 59, 82}
 )
 
 func (i ErrCode) String() string {
@@ -65,6 +70,9 @@ func (i ErrCode) String() string {
 	case 22000 <= i && i <= 22002:
 		i -= 22000
 		return _ErrCode_name_5[_ErrCode_index_5[i]:_ErrCode_index_5[i+1]]
+	case 24000 <= i && i <= 24002:
+		i -= 24000
+		return _ErrCode_name_6[_ErrCode_index_6[i]:_ErrCode_index_6[i+1]]
 	default:
 		return "ErrCode(" + strconv.FormatInt(int64(i), 10) + ")"
 	}

@@ -24,4 +24,5 @@ type SendMsg struct {
 type MsgCenter interface {
 	Registry(ctx context.Context, msgName Action, handleFunc func(ctx context.Context, msg string) error) error
 	Broadcast(ctx context.Context, msg *SendMsg) error
+	Close(ctx context.Context) error
 }

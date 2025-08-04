@@ -59,6 +59,11 @@
           "name": "Password",
           "displayName": "Password",
           "rule": "All"
+        },
+        {
+          "name": "API Key",
+          "displayName": "API Key",
+          "rule": "All"
         }
       ],
       "signupItems": [
@@ -606,6 +611,13 @@
           "viewRule": "Self",
           "modifyRule": "Self",
           "regex": ""
+        },
+        {
+          "name": "API Key",
+          "visible": true,
+          "viewRule": "Self",
+          "modifyRule": "Self",
+          "regex": ""
         }
       ]
     },
@@ -871,6 +883,13 @@
           "viewRule": "Self",
           "modifyRule": "Self",
           "regex": ""
+        },
+        {
+          "name": "API Key",
+          "visible": true,
+          "viewRule": "Self",
+          "modifyRule": "Self",
+          "regex": ""
         }
       ]
     }
@@ -1055,7 +1074,10 @@
       "invitationCode": "",
       "faceIds": null,
       "ldap": "",
-      "properties": {},
+      "properties": {
+        "apiKey": "studio",
+        "apiKeyEnabled": "true"
+      },
       "roles": null,
       "permissions": null,
       "groups": null,

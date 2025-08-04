@@ -14,6 +14,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/core/notify/events"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
+	"gorm.io/datatypes"
 )
 
 type Handle struct {
@@ -24,21 +25,26 @@ type Handle struct {
 func NewMaterialHandle() *Handle {
 	wsClient := melody.New()
 	mService := impl.NewMaterial(wsClient)
+	// 注册集群通知
 	events.NewEvents().Registry(context.Background(), notify.MaterialModify, mService.HandleNotify)
-	return &Handle{
+
+	h := &Handle{
 		mService: mService,
 		wsClient: wsClient,
 	}
+
+	h.initMaterialWebSocket()
+	return h
 }
 
 func (m *Handle) CreateLabMaterial(ctx *gin.Context) {
-	reqs := make([]*material.Node, 0, 1)
-	if err := ctx.ShouldBindJSON(&reqs); err != nil {
+	req := &material.GraphNode{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
 		logger.Errorf(ctx, "parse CreateLabMaterial param err: %+v", err.Error())
 		common.ReplyErr(ctx, code.ParamErr, err.Error())
 		return
 	}
-	if err := m.mService.CreateMaterial(ctx, reqs); err != nil {
+	if err := m.mService.CreateMaterial(ctx, req); err != nil {
 		logger.Errorf(ctx, "CreateMaterial err: %+v", err)
 		common.ReplyErr(ctx, err)
 
@@ -49,13 +55,13 @@ func (m *Handle) CreateLabMaterial(ctx *gin.Context) {
 }
 
 func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
-	reqs := make([]*material.Edge, 0, 1)
-	if err := ctx.ShouldBindJSON(&reqs); err != nil {
+	req := &material.GraphEdge{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
 		logger.Errorf(ctx, "parse CreateMaterialEdge param err: %+v", err.Error())
 		common.ReplyErr(ctx, code.ParamErr, err.Error())
 		return
 	}
-	if err := m.mService.CreateEdge(ctx, reqs); err != nil {
+	if err := m.mService.CreateEdge(ctx, req); err != nil {
 		logger.Errorf(ctx, "CreateMaterialEdge err: %+v", err)
 		common.ReplyErr(ctx, err)
 
@@ -65,30 +71,36 @@ func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
 	common.ReplyOk(ctx)
 }
 
-func (m *Handle) LabMaterial(ctx *gin.Context) {
+func (m *Handle) initMaterialWebSocket() {
 	m.wsClient.HandleClose(func(s *melody.Session, i int, s2 string) error {
-		logger.Infof(ctx, "client close keys: %+v", s.Keys)
+		if ctx, ok := s.Get("ctx"); ok {
+			logger.Infof(ctx.(context.Context), "client close keys: %+v", s.Keys)
+		}
 		return nil
 	})
 
 	m.wsClient.HandleDisconnect(func(s *melody.Session) {
-		logger.Infof(ctx, "client closed keys: %+v", s.Keys)
+		if ctx, ok := s.Get("ctx"); ok {
+			logger.Infof(ctx.(context.Context), "client closed keys: %+v", s.Keys)
+		}
 	})
 
 	m.wsClient.HandleError(func(s *melody.Session, err error) {
 		if errors.Is(err, melody.ErrMessageBufferFull) {
 			return
 		}
-
-		logger.Errorf(ctx, "websocket find keys: %+v, err: %+v", s.Keys, err)
+		if ctx, ok := s.Get("ctx"); ok {
+			logger.Errorf(ctx.(context.Context), "websocket find keys: %+v, err: %+v", s.Keys, err)
+		}
 	})
 
 	m.wsClient.HandleConnect(func(s *melody.Session) {
-		logger.Errorf(ctx, "websocket connect keys: %+v", s.Keys)
+		if ctx, ok := s.Get("ctx"); ok {
+			logger.Infof(ctx.(context.Context), "websocket connect keys: %+v", s.Keys)
+		}
 	})
 
 	m.wsClient.HandleMessage(func(s *melody.Session, b []byte) {
-		// TODO: 连接发送消息
 		ctxI, ok := s.Get("ctx")
 		if !ok {
 			s.CloseWithMsg([]byte("no ctx"))
@@ -108,11 +120,18 @@ func (m *Handle) LabMaterial(ctx *gin.Context) {
 		// 发送完二进制消息后的回调
 		// 如果发送的是字符串消息，上面的 HandleSentMessage 也会被回调
 	})
+}
 
+func (m *Handle) LabMaterial(ctx *gin.Context) {
+	req := &material.LabWS{}
+	labUUIDStr := ctx.Param("lab_uuid")
+	req.LabUUID = common.BinUUID(datatypes.BinUUIDFromString(labUUIDStr))
 	userInfo := auth.GetCurrentUser(ctx)
+
 	// 阻塞运行
 	m.wsClient.HandleRequestWithKeys(ctx.Writer, ctx.Request, map[string]any{
 		auth.USERKEY: userInfo.ID,
 		"ctx":        ctx,
+		"lab_uuid":   req.LabUUID,
 	})
 }

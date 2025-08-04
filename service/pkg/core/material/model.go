@@ -1,9 +1,16 @@
 package material
 
 import (
+	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	"gorm.io/datatypes"
 )
+
+type GraphNode struct {
+	LabUUID common.BinUUID `json:"lab_uuid" binding:"required"`
+	Nodes   []*Node        `json:"nodes"`
+	Edges   []*Edge        `json:"edges"`
+}
 
 type Node struct {
 	DeviceID string           `json:"id" binding:"required"`
@@ -21,6 +28,11 @@ type Node struct {
 	Model       string         `json:"model"`
 }
 
+type GraphEdge struct {
+	LabUUID common.BinUUID `json:"lab_uuid" binding:"required"`
+	Edges   []*Edge        `json:"edges"`
+}
+
 type Edge struct {
 	Source string `json:"source"`
 	Target string `json:"target"`
@@ -28,4 +40,8 @@ type Edge struct {
 	SourceHandle string `json:"sourceHandle"`
 	TargetHandle string `json:"targetHandle"`
 	Type         string `json:"type"`
+}
+
+type LabWS struct {
+	LabUUID common.BinUUID `uri:"lab_uuid" binding:"required"`
 }
