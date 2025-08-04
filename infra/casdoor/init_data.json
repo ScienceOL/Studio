@@ -38,7 +38,7 @@
       "logo": "",
       "homepageUrl": "",
       "description": "",
-      "organization": "",
+      "organization": "scienceol",
       "cert": "cert-built-in",
       "headerHtml": "",
       "enablePassword": true,
@@ -58,11 +58,6 @@
         {
           "name": "Password",
           "displayName": "Password",
-          "rule": "All"
-        },
-        {
-          "name": "API Key",
-          "displayName": "API Key",
           "rule": "All"
         }
       ],
@@ -613,10 +608,10 @@
           "regex": ""
         },
         {
-          "name": "API Key",
+          "name": "API key",
           "visible": true,
-          "viewRule": "Self",
-          "modifyRule": "Self",
+          "viewRule": "Admin",
+          "modifyRule": "Admin",
           "regex": ""
         }
       ]
@@ -885,7 +880,7 @@
           "regex": ""
         },
         {
-          "name": "API Key",
+          "name": "API key",
           "visible": true,
           "viewRule": "Self",
           "modifyRule": "Self",
