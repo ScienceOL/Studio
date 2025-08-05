@@ -60,11 +60,11 @@ func InstallURL(g *gin.Engine) {
 		// 设置测试路由
 		fooGroup := v1.Group("/foo")
 		// 设置一个需要认证的路由 - 使用 RequireAuth 中间件进行验证
-		fooGroup.GET("/hello", auth.Auth, foo.HandleHelloWorld)
+		fooGroup.GET("/hello", auth.Auth(), foo.HandleHelloWorld)
 
 		// 环境相关
 		{
-			labRouter := v1.Group("/lab", auth.Auth)
+			labRouter := v1.Group("/lab", auth.Auth())
 			labHandle := laboratory.NewEnvironment()
 			labRouter.POST("", labHandle.CreateLabEnv)
 			labRouter.PATCH("", labHandle.UpdateLabEnv)
@@ -73,7 +73,7 @@ func InstallURL(g *gin.Engine) {
 			materialHandle := material.NewMaterialHandle()
 			labRouter.POST("/material", materialHandle.CreateLabMaterial)
 			labRouter.POST("/material/edge", materialHandle.CreateMaterialEdge)
-			labRouter.GET("/material/ws/:lab_uuid", materialHandle.LabMaterial)
+			labRouter.GET("/ws/material/:lab_uuid", materialHandle.LabMaterial)
 		}
 	}
 }

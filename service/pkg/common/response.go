@@ -2,9 +2,12 @@
 package common
 
 import (
+	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common/code"
 )
 
@@ -14,9 +17,10 @@ type Error struct {
 }
 
 type Resp struct {
-	Code  code.ErrCode `json:"code"`
-	Error *Error       `json:"error,omitempty"`
-	Data  any          `json:"data,omitempty"`
+	Code      code.ErrCode `json:"code"`
+	Error     *Error       `json:"error,omitempty"`
+	Data      any          `json:"data,omitempty"`
+	Timestamp int64        `json:"timestamp,omitempty"`
 }
 
 func ReplyErr(ctx *gin.Context, err error, msg ...string) {
@@ -63,4 +67,61 @@ func ReplyOk(ctx *gin.Context, data ...any) {
 	ctx.JSON(http.StatusOK, &Resp{
 		Code: code.Success,
 	})
+}
+
+func ReplyWSOk(s *melody.Session, data ...any) error {
+	if len(data) > 0 {
+		data := &Resp{
+			Code:      code.Success,
+			Data:      data[0],
+			Timestamp: time.Now().Unix(),
+		}
+		v, _ := json.Marshal(data)
+		return s.Write(v)
+	}
+
+	v, _ := json.Marshal(&Resp{
+		Code:      code.Success,
+		Timestamp: time.Now().Unix(),
+	})
+	return s.Write(v)
+}
+
+func ReplyWSErr(s *melody.Session, err error, msg ...string) error {
+	if errCode, ok := err.(code.ErrCode); ok {
+		d := &Resp{
+			Code: errCode,
+			Error: &Error{
+				Msg:  errCode.String(),
+				Info: msg,
+			},
+			Timestamp: time.Now().Unix(),
+		}
+
+		b, _ := json.Marshal(d)
+		return s.Write(b)
+	}
+
+	if errCode, ok := err.(code.ErrCodeWithMsg); ok {
+		d := &Resp{
+			Code: errCode.ErrCode,
+			Error: &Error{
+				Msg:  errCode.Msgs(),
+				Info: msg,
+			},
+			Timestamp: time.Now().Unix(),
+		}
+		b, _ := json.Marshal(d)
+		return s.Write(b)
+	}
+
+	d := &Resp{
+		Code: code.UnDefineErr,
+		Error: &Error{
+			Msg: err.Error(),
+		},
+		Timestamp: time.Now().Unix(),
+	}
+	b, _ := json.Marshal(d)
+	return s.Write(b)
 }

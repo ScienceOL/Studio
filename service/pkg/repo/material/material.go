@@ -151,3 +151,88 @@ func (m *materialImpl) GetNodeHandles(
 
 	return resMap, nil
 }
+
+// delete nodes、handles、edges
+func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []common.BinUUID) (*repo.DelNodeInfo, error) {
+	if len(nodeUUIDs) == 0 {
+		return &repo.DelNodeInfo{}, nil
+	}
+
+	res := &repo.DelNodeInfo{}
+	if err := m.ExecTx(ctx, func(txCtx context.Context) error {
+		// 获取所有删除 id 的 node id 和 uuid
+		// TODO: node 的 parent id 如果被删除了，所有子 node 要删除么？目前处理是吧 parent id 设置为 0
+		delNodes := []*model.MaterialNode{}
+		if err := m.DBWithContext(txCtx).
+			Select("id, uuid").
+			Where("uuid in ?", nodeUUIDs).
+			Find(&delNodes).Error; err != nil {
+			logger.Errorf(ctx, "DelNodes query node fail uuids: %+v, err: %+v", nodeUUIDs, err)
+			return code.QueryRecordErr
+		}
+
+		nodeIDs := make([]int64, 0, len(delNodes))
+		nodeUUIDs := make([]common.BinUUID, 0, len(delNodes))
+		for _, n := range delNodes {
+			nodeIDs = append(nodeIDs, n.ID)
+			nodeUUIDs = append(nodeUUIDs, n.UUID)
+		}
+		if len(nodeIDs) == 0 {
+			return nil
+		}
+
+		// 获取所有待删除的 node 的 handle id 和 uuid
+		delNodeHandles := []*model.MaterialHandle{}
+		if err := m.DBWithContext(txCtx).
+			Select("id, node_id, uuid").
+			Where("node_id in ?", nodeIDs).
+			Find(&delNodeHandles).Error; err != nil {
+			logger.Errorf(ctx, "DelNodes query handle fail uuids: %+v, err: %+v", nodeUUIDs, err)
+			return code.QueryRecordErr
+		}
+		handleUUIDs := make([]common.BinUUID, 0, 2*len(delNodeHandles))
+		for _, h := range delNodeHandles {
+			handleUUIDs = append(handleUUIDs, h.UUID)
+		}
+
+		delNodeEdges := []*model.MaterialEdge{}
+		if err := m.DBWithContext(txCtx).
+			Select("id, uuid").
+			Where("source_node_uuid in ? or target_node_uuid in ? ", nodeUUIDs, nodeUUIDs).
+			Find(&delNodeEdges).Error; err != nil {
+			logger.Errorf(ctx, "DelNodes query edge fail uuids: %+v, err: %+v", nodeUUIDs, err)
+			return code.QueryRecordErr
+		}
+		edgeIDs := make([]int64, 0, len(delNodeEdges))
+		edgeUUIDs := make([]common.BinUUID, 0, len(delNodeEdges))
+		for _, e := range delNodeEdges {
+			edgeIDs = append(edgeIDs, e.ID)
+			edgeUUIDs = append(edgeUUIDs, e.UUID)
+		}
+
+		// 删除节点
+		if err := m.DBWithContext(txCtx).Delete(&model.MaterialNode{}, nodeIDs).Error; err != nil {
+			logger.Errorf(txCtx, "DelNodes fail ids: %+v, err: %+v", nodeIDs, err)
+			return code.DeleteDateErr.WithMsg(err.Error())
+		}
+		// 删除 handle
+		if err := m.DBWithContext(txCtx).Where("node_id in ?", nodeIDs).Delete(&model.MaterialHandle{}).Error; err != nil {
+			logger.Errorf(txCtx, "DelNodes fail ids: %+v, err: %+v", nodeIDs, err)
+			return code.DeleteDateErr.WithMsg(err.Error())
+		}
+
+		// 删除 edge
+		if err := m.DBWithContext(txCtx).Where("id in ?", edgeIDs).Delete(&model.MaterialEdge{}).Error; err != nil {
+			logger.Errorf(txCtx, "DelNodes fail ids: %+v, err: %+v", nodeIDs, err)
+			return code.DeleteDateErr.WithMsg(err.Error())
+		}
+		res.NodeUUID = nodeUUIDs
+		res.EdgeUUID = edgeUUIDs
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

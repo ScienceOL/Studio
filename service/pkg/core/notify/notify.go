@@ -1,6 +1,10 @@
 package notify
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 /*
 	该模块功能主要是把个 pod 之间消息分布式广播通知，消息可以横向水平拓展
@@ -17,8 +21,10 @@ const (
 )
 
 type SendMsg struct {
-	Action Action `json:"action"`
-	Data   any    `json:"data"`
+	Action    Action    `json:"action"`
+	Data      any       `json:"data"`
+	UUID      uuid.UUID `json:"uuid"`
+	Timestamp int64     `json:"timestamp"`
 }
 
 type MsgCenter interface {

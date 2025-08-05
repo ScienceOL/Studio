@@ -71,6 +71,7 @@ const (
 	UpdateDataErr                         // database update data err
 	RecordNotFound                        // database record not found
 	QueryRecordErr                        // database query err
+	DeleteDateErr                         // database delete err
 )
 
 // environment 业务层错误
@@ -78,16 +79,24 @@ const (
 	RegActionNameEmptyErr ErrCode = iota + 20000 // reg action name empty
 )
 
-// material 业务错误
+// material 物料模块错误
 const (
 	RegNotExistErr        ErrCode = iota + 22000 // registry not exist
 	EdgeNodeNotExistErr                          // edge node not exist
 	EdgeHandleNotExistErr                        // node handle not exist
+	UnknowWSActionErr                            // unkonw material websocket action
+	UnmarshalWSDataErr                           // unmarshal material websocket data err
 )
 
-// notidy 业务错误
+// notify 通知模块错误
 const (
 	NotifyActionAlreadyRegistryErr ErrCode = iota + 24000 // notify action already registry
 	NotifySubscribeChannelErr                             // notify subscribe channel fail
 	NotifySendMsgErr                                      // notify send message err
+)
+
+// rpc casdoor 模块错误
+const (
+	CasDoorCreateLabUserErr ErrCode = iota + 26000 // create lab user err
+	CasDoorQueryLabUserErr                         // query lab user err
 )

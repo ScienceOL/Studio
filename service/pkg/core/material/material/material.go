@@ -2,12 +2,17 @@ package material
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 
 	"github.com/olahol/melody"
+	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/material"
+	"github.com/scienceol/studio/service/pkg/core/notify"
+	"github.com/scienceol/studio/service/pkg/core/notify/events"
+	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/repo"
@@ -21,6 +26,7 @@ type materialImpl struct {
 	envStore      repo.EnvRepo
 	materialStore repo.MaterialRepo
 	wsClient      *melody.Melody
+	msgCenter     notify.MsgCenter
 }
 
 func NewMaterial(wsClient *melody.Melody) material.Service {
@@ -28,17 +34,24 @@ func NewMaterial(wsClient *melody.Melody) material.Service {
 		envStore:      eStore.NewEnv(),
 		materialStore: mStore.NewMaterialImpl(),
 		wsClient:      wsClient,
+		msgCenter:     events.NewEvents(),
 	}
+	events.NewEvents().Registry(context.Background(), notify.MaterialModify, m.HandleNotify)
 
 	return m
 }
 
 func (m *materialImpl) CreateMaterial(ctx context.Context, req *material.GraphNode) error {
+	labUser := auth.GetCurrentUser(ctx)
+	if labUser == nil {
+		return code.UnLogin
+	}
+
 	if len(req.Nodes) == 0 {
 		return nil
 	}
 
-	labData, err := m.envStore.GetLabByUUID(ctx, req.LabUUID)
+	labData, err := m.envStore.GetLabByAkSk(ctx, labUser.AccessKey, labUser.AccessSecret)
 	if err != nil {
 		return err
 	}
@@ -220,7 +233,11 @@ func getNodeLevel(ctx context.Context, cache map[string]int, nodeMap map[string]
 }
 
 func (m *materialImpl) CreateEdge(ctx context.Context, req *material.GraphEdge) error {
-	labData, err := m.envStore.GetLabByUUID(ctx, req.LabUUID)
+	labUser := auth.GetCurrentUser(ctx)
+	if labUser == nil {
+		return code.UnLogin
+	}
+	labData, err := m.envStore.GetLabByAkSk(ctx, labUser.AccessKey, labUser.AccessSecret)
 	if err != nil {
 		return err
 	}
@@ -301,33 +318,99 @@ func (m *materialImpl) addEdges(ctx context.Context, labID int64, edges []*mater
 }
 
 func (m *materialImpl) HandleWSMsg(ctx context.Context, s *melody.Session, b []byte) error {
-	// client 发送过来的消息
-	fmt.Println(string(b))
+	msgType := &material.WsMsgType{}
+	err := json.Unmarshal(b, msgType)
+	if err != nil {
+		return err
+	}
+
+	switch msgType.Action {
+	case material.FetchNodes:
+		return m.fetchGraph(ctx, s)
+	case material.BatchCreateNode:
+		return m.batchCreateNodes(ctx, s, b)
+	case material.BatchUpdateNode:
+		return m.batchUpateNode(ctx, s, b)
+	case material.BatchDelNode:
+		return m.batchDelNode(ctx, s, b)
+	case material.BatchCreateEdge:
+		return m.batchCreateEdge(ctx, s, b)
+	case material.BatchDelEdge:
+		return m.batchDelEdge(ctx, s, b)
+	default:
+		return common.ReplyWSErr(s, code.UnknowWSActionErr.WithMsg(string(msgType.Action)))
+	}
+}
+
+func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session) error {
+	// TODO: 获取组态图
+	return nil
+}
+
+func (m *materialImpl) batchCreateNodes(ctx context.Context, s *melody.Session, b []byte) error {
+	data := &material.WSData[material.WSNodes]{}
+	err := json.Unmarshal(b, data)
+	if err != nil {
+		logger.Errorf(ctx, "batchCreateNodes unmarshal data err: %+v", err)
+		return code.UnmarshalWSDataErr.WithMsg(err.Error())
+	}
+	// TODO: 补充代码逻辑
 
 	return nil
 }
 
-func (m *materialImpl) getSession(_ context.Context, key string, value any) *melody.Session {
-	sessions, err := m.wsClient.Sessions()
+func (m *materialImpl) batchUpateNode(ctx context.Context, s *melody.Session, b []byte) error {
+
+	return nil
+}
+
+func (m *materialImpl) batchDelNode(ctx context.Context, s *melody.Session, b []byte) error {
+	data := &material.WSData[material.WSDelNodes]{}
+	err := json.Unmarshal(b, data)
 	if err != nil {
-		return nil
+		logger.Errorf(ctx, "batchDelNode unmarshal data err: %+v", err)
+		return code.UnmarshalWSDataErr.WithMsg(err.Error())
 	}
-	for _, s := range sessions {
-		sessionValue, exist := s.Get(key)
-		if !exist {
-			continue
-		}
-		if utils.Compare(sessionValue, value) {
-			return s
-		}
+
+	res, err := m.materialStore.DelNodes(ctx, data.Data.NodeUUIDs)
+	if err != nil {
+		common.ReplyWSErr(s, err)
+		return err
 	}
+
+	resData := &material.WSData[*repo.DelNodeInfo]{
+		WsMsgType: material.WsMsgType{Action: data.Action},
+		UUID:      data.UUID,
+		Data:      res,
+	}
+
+	common.ReplyWSOk(s, data)
+	// 广播
+	m.msgCenter.Broadcast(ctx, &notify.SendMsg{
+		Action: notify.MaterialModify,
+		Data:   resData,
+	})
+
+	return nil
+}
+
+func (m *materialImpl) batchCreateEdge(ctx context.Context, s *melody.Session, b []byte) error {
+
+	return nil
+}
+
+func (m *materialImpl) batchUpateEdge(ctx context.Context, s *melody.Session, b []byte) error {
+
+	return nil
+}
+
+func (m *materialImpl) batchDelEdge(ctx context.Context, s *melody.Session, b []byte) error {
 
 	return nil
 }
 
 // 接受到 redis 广播通知消息
 func (m *materialImpl) HandleNotify(ctx context.Context, msg string) error {
-
 	return m.wsClient.BroadcastFilter([]byte(msg), func(s *melody.Session) bool {
 		return true
 		sessionValue, ok := s.Get("lab id")

@@ -19,3 +19,17 @@ func Or[T comparable](values ...T) T {
 	}
 	return zero
 }
+
+func RemoveDuplicates[T comparable](slice []T) []T {
+	keys := make(map[T]bool)
+	result := []T{}
+
+	for _, item := range slice {
+		if !keys[item] {
+			keys[item] = true
+			result = append(result, item)
+		}
+	}
+
+	return result
+}

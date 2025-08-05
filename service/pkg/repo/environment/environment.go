@@ -222,3 +222,21 @@ func (e *envImpl) GetDeviceTemplateHandels(ctx context.Context, deviceIDs []int6
 	}
 	return res, nil
 }
+
+func (e *envImpl) GetLabByAkSk(ctx context.Context, accessKey string, accessSecret string) (*model.Laboratory, error) {
+	data := &model.Laboratory{}
+	statement := e.DBWithContext(ctx).Where("access_key= ? and access_secret = ?", accessKey, accessSecret).First(data)
+	if statement.Error != nil {
+		if errors.Is(statement.Error, gorm.ErrRecordNotFound) {
+			logger.Errorf(ctx, "GetLabByAkSk not found")
+			return nil, code.RecordNotFound
+		}
+
+		logger.Errorf(ctx, "GetLabByAkSk sql: %+s, err: %+v",
+			statement.Statement.SQL.String(),
+			statement.Error)
+		return nil, code.QueryRecordErr
+	}
+
+	return data, nil
+}

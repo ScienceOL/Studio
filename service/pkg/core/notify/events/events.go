@@ -2,8 +2,11 @@ package events
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
+	"time"
 
+	"github.com/google/uuid"
 	r "github.com/redis/go-redis/v9"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/notify"
@@ -65,7 +68,13 @@ func (events *Events) Registry(ctx context.Context, msgName notify.Action, handl
 }
 
 func (events *Events) Broadcast(ctx context.Context, msg *notify.SendMsg) error {
-	ret := events.client.Publish(ctx, string(msg.Action), msg)
+	msg.Timestamp = time.Now().Unix()
+	if msg.UUID == uuid.Nil {
+		msg.UUID, _ = uuid.NewUUID()
+	}
+
+	data, _ := json.Marshal(msg)
+	ret := events.client.Publish(ctx, string(msg.Action), data)
 	if ret.Err() != nil {
 		logger.Errorf(ctx, "send msg fail action: %s", msg.Action)
 		return code.NotifySendMsgErr

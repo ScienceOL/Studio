@@ -13,6 +13,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
+	"github.com/scienceol/studio/service/pkg/repo/model"
 	"golang.org/x/oauth2"
 )
 
@@ -102,7 +103,7 @@ func (c *casdoorLogin) Callback(ctx context.Context, req *login.CallbackReq) (*l
 	defer resp.Body.Close()
 
 	// 解析用户信息
-	result := &auth.UserInfo{}
+	result := &model.UserInfo{}
 	if err := json.NewDecoder(resp.Body).Decode(result); err != nil || result.Status != "ok" {
 		logger.Errorf(ctx, "Failed to parse user info: %v", err)
 		return nil, code.LoginCallbackErr

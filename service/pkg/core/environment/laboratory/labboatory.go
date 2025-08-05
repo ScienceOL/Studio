@@ -2,24 +2,29 @@ package laboratory
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/environment"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/repo"
+	"github.com/scienceol/studio/service/pkg/repo/casdoor"
 	eStore "github.com/scienceol/studio/service/pkg/repo/environment"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 )
 
 type lab struct {
-	envStore repo.EnvRepo
+	envStore      repo.EnvRepo
+	accountClient repo.Account
 }
 
 func NewLab() environment.EnvService {
 	return &lab{
-		envStore: eStore.NewEnv(),
+		envStore:      eStore.NewEnv(),
+		accountClient: casdoor.NewCasClient(),
 	}
 }
 
@@ -29,11 +34,30 @@ func (lab *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Labora
 		return nil, code.UnLogin
 	}
 
+	ak := uuid.NewString()
+	sk := uuid.NewString()
+	err := lab.accountClient.CreateLabUser(ctx, &model.LabInfo{
+		AccessKey:         ak,
+		AccessSecret:      sk,
+		Name:              fmt.Sprintf("%s-%s", req.Name, uuid.NewString()),
+		DisplayName:       req.Name,
+		Avatar:            "https://cdn.casbin.org/img/casbin.svg",
+		Owner:             "scienceol",
+		Type:              model.LABTYPE,
+		Password:          "lab-user",
+		SignupApplication: "scienceol",
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	data := &model.Laboratory{
-		Name:        req.Name,
-		UserID:      userInfo.ID,
-		Status:      model.INIT,
-		Description: req.Description,
+		Name:         req.Name,
+		UserID:       userInfo.ID,
+		Status:       model.INIT,
+		AccessKey:    ak,
+		AccessSecret: sk,
+		Description:  req.Description,
 		BaseModel: model.BaseModel{
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -77,11 +101,11 @@ func (lab *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.Update
 }
 
 func (lab *lab) CreateReg(ctx context.Context, req *environment.RegistryReq) error {
-	userIfo := auth.GetCurrentUser(ctx)
-	if userIfo == nil {
+	labInfo := auth.GetCurrentUser(ctx)
+	if labInfo == nil {
 		return code.UnLogin
 	}
-	labData, err := lab.envStore.GetLabByUUID(ctx, req.LabUUID)
+	labData, err := lab.envStore.GetLabByAkSk(ctx, labInfo.AccessKey, labInfo.AccessSecret)
 	if err != nil {
 		return err
 	}
@@ -136,7 +160,7 @@ func (lab *lab) CreateReg(ctx context.Context, req *environment.RegistryReq) err
 				Name:        reg.RegName,
 				LabID:       labData.ID,
 				RegID:       regData.ID,
-				UserID:      userIfo.ID,
+				UserID:      labInfo.ID,
 				Header:      regData.Name,
 				Footer:      "",
 				Version:     regData.Version,

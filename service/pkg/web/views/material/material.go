@@ -10,8 +10,6 @@ import (
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/material"
 	impl "github.com/scienceol/studio/service/pkg/core/material/material"
-	"github.com/scienceol/studio/service/pkg/core/notify"
-	"github.com/scienceol/studio/service/pkg/core/notify/events"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"gorm.io/datatypes"
@@ -26,7 +24,6 @@ func NewMaterialHandle() *Handle {
 	wsClient := melody.New()
 	mService := impl.NewMaterial(wsClient)
 	// 注册集群通知
-	events.NewEvents().Registry(context.Background(), notify.MaterialModify, mService.HandleNotify)
 
 	h := &Handle{
 		mService: mService,
@@ -130,7 +127,7 @@ func (m *Handle) LabMaterial(ctx *gin.Context) {
 
 	// 阻塞运行
 	m.wsClient.HandleRequestWithKeys(ctx.Writer, ctx.Request, map[string]any{
-		auth.USERKEY: userInfo.ID,
+		auth.USERKEY: userInfo,
 		"ctx":        ctx,
 		"lab_uuid":   req.LabUUID,
 	})

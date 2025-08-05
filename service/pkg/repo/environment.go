@@ -16,6 +16,7 @@ type RegDeviceInfo struct {
 type EnvRepo interface {
 	CreateLaboratoryEnv(ctx context.Context, data *model.Laboratory) error
 	GetLabByUUID(ctx context.Context, UUID common.BinUUID) (*model.Laboratory, error)
+	GetLabByAkSk(ctx context.Context, accessKey string, accessSecret string) (*model.Laboratory, error)
 	UpdateLaboratoryEnv(ctx context.Context, data *model.Laboratory) error
 	CreateReg(ctx context.Context, data *model.Registry) error
 	UpsertRegAction(ctx context.Context, datas []*model.RegAction) error
