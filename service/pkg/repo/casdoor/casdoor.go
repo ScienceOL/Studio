@@ -33,7 +33,6 @@ func (c *casClient) CreateLabUser(ctx context.Context, user *model.LabInfo) erro
 		SetResult(resData).
 		SetBasicAuth(conf.ClientID, conf.ClientSecret).
 		SetResult(nil).Post("/api/add-user")
-
 	if err != nil {
 		logger.Errorf(ctx, "CreateLabUser err: %+v user: %+v", err, user)
 		return code.CasDoorCreateLabUserErr.WithMsg(err.Error())
@@ -61,7 +60,6 @@ func (c *casClient) GetLabUserInfo(ctx context.Context, req *model.LabAkSk) (*mo
 			"accessSecret": req.AccessSecret,
 		}).
 		SetResult(resData).Get("/api/get-account")
-
 	if err != nil {
 		logger.Errorf(ctx, "GetLabUserInfo err: %+v req: %+v", err, req)
 		return nil, code.CasDoorQueryLabUserErr.WithMsg(err.Error())

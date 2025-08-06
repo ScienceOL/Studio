@@ -3,7 +3,7 @@ package material
 import (
 	"context"
 
-	"github.com/scienceol/studio/service/pkg/common"
+	"github.com/gofrs/uuid/v5"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
@@ -13,10 +13,10 @@ import (
 )
 
 type NodeHandleInfo struct {
-	NodeName   string         `gorm:"column:node_name"`
-	NodeUUID   common.BinUUID `gorm:"column:node_uuid"`
-	HandleName string         `gorm:"column:handle_name"`
-	HandleUUID common.BinUUID `gorm:"column:handle_uuid"`
+	NodeName   string    `gorm:"column:node_name"`
+	NodeUUID   uuid.UUID `gorm:"column:node_uuid"`
+	HandleName string    `gorm:"column:handle_name"`
+	HandleUUID uuid.UUID `gorm:"column:handle_uuid"`
 }
 
 type materialImpl struct {
@@ -126,7 +126,8 @@ func (m *materialImpl) GetNodeHandles(
 	ctx context.Context,
 	labID int64,
 	nodeNames []string,
-	handleNames []string) (map[string]map[string]repo.NodeInfo, error) {
+	handleNames []string,
+) (map[string]map[string]repo.NodeInfo, error) {
 	res := make([]*NodeHandleInfo, 0, len(handleNames))
 	if err := m.DBWithContext(ctx).Table("material_node as n").
 		Select("n.uuid as node_uuid, n.name as node_name, h.uuid as handle_uuid, h.name as handle_name").
@@ -152,8 +153,40 @@ func (m *materialImpl) GetNodeHandles(
 	return resMap, nil
 }
 
+// 根据 uuid 获取到所有 node 和 handle
+func (m *materialImpl) GetNodeHandlesByUUID(ctx context.Context, nodeUUIDs []uuid.UUID) (map[uuid.UUID]map[uuid.UUID]repo.NodeInfo, error) {
+	if len(nodeUUIDs) == 0 {
+		return make(map[uuid.UUID]map[uuid.UUID]repo.NodeInfo), nil
+	}
+
+	res := make([]*NodeHandleInfo, 0, len(nodeUUIDs))
+	if err := m.DBWithContext(ctx).Table("material_node as n").
+		Select("n.uuid as node_uuid, h.uuid as handle_uui").
+		Joins("inner join material_handle as h on n.id = h.node_id").
+		Where("n.uuid in ?", nodeUUIDs).
+		Find(&res).Error; err != nil {
+		logger.Errorf(ctx, "GetNodeHandlesByUUID fail node uuids: %+v, err: %+v", nodeUUIDs, err)
+
+		return nil, code.QueryRecordErr
+	}
+
+	resMap := make(map[uuid.UUID]map[uuid.UUID]repo.NodeInfo)
+	for _, info := range res {
+		if _, ok := resMap[info.NodeUUID]; !ok {
+			resMap[info.NodeUUID] = make(map[uuid.UUID]repo.NodeInfo)
+		}
+		resMap[info.NodeUUID][info.HandleUUID] = repo.NodeInfo{
+			NodeUUID:   info.NodeUUID,
+			HandleUUID: info.HandleUUID,
+		}
+	}
+
+	return resMap, nil
+
+}
+
 // delete nodes、handles、edges
-func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []common.BinUUID) (*repo.DelNodeInfo, error) {
+func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []uuid.UUID) (*repo.DelNodeInfo, error) {
 	if len(nodeUUIDs) == 0 {
 		return &repo.DelNodeInfo{}, nil
 	}
@@ -172,10 +205,10 @@ func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []common.BinUUID)
 		}
 
 		nodeIDs := make([]int64, 0, len(delNodes))
-		nodeUUIDs := make([]common.BinUUID, 0, len(delNodes))
+		queryNodeUUIDs := make([]uuid.UUID, 0, len(delNodes))
 		for _, n := range delNodes {
 			nodeIDs = append(nodeIDs, n.ID)
-			nodeUUIDs = append(nodeUUIDs, n.UUID)
+			queryNodeUUIDs = append(queryNodeUUIDs, n.UUID)
 		}
 		if len(nodeIDs) == 0 {
 			return nil
@@ -190,10 +223,6 @@ func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []common.BinUUID)
 			logger.Errorf(ctx, "DelNodes query handle fail uuids: %+v, err: %+v", nodeUUIDs, err)
 			return code.QueryRecordErr
 		}
-		handleUUIDs := make([]common.BinUUID, 0, 2*len(delNodeHandles))
-		for _, h := range delNodeHandles {
-			handleUUIDs = append(handleUUIDs, h.UUID)
-		}
 
 		delNodeEdges := []*model.MaterialEdge{}
 		if err := m.DBWithContext(txCtx).
@@ -204,7 +233,7 @@ func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []common.BinUUID)
 			return code.QueryRecordErr
 		}
 		edgeIDs := make([]int64, 0, len(delNodeEdges))
-		edgeUUIDs := make([]common.BinUUID, 0, len(delNodeEdges))
+		edgeUUIDs := make([]uuid.UUID, 0, len(delNodeEdges))
 		for _, e := range delNodeEdges {
 			edgeIDs = append(edgeIDs, e.ID)
 			edgeUUIDs = append(edgeUUIDs, e.UUID)
@@ -226,8 +255,8 @@ func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []common.BinUUID)
 			logger.Errorf(txCtx, "DelNodes fail ids: %+v, err: %+v", nodeIDs, err)
 			return code.DeleteDateErr.WithMsg(err.Error())
 		}
-		res.NodeUUID = nodeUUIDs
-		res.EdgeUUID = edgeUUIDs
+		res.NodeUUIDs = queryNodeUUIDs
+		res.EdgeUUIDs = edgeUUIDs
 
 		return nil
 	}); err != nil {
@@ -235,4 +264,84 @@ func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []common.BinUUID)
 	}
 
 	return res, nil
+}
+
+// 获取所有物料根据 lab id
+func (m *materialImpl) GetNodesByLabID(ctx context.Context, labID int64, selectKeys ...string) ([]*model.MaterialNode, error) {
+	datas := make([]*model.MaterialNode, 0, 1)
+	if labID == 0 {
+		return datas, nil
+	}
+	query := m.DBWithContext(ctx).Where("lab_id = ?", labID)
+	if len(selectKeys) != 0 {
+		query = query.Select(selectKeys)
+	}
+
+	statement := query.Find(&datas)
+	if statement.Error != nil {
+		logger.Errorf(ctx, "GetNodesByLabID sql: %+s, err: %+v",
+			statement.Statement.SQL.String(),
+			statement.Error)
+		return nil, code.QueryRecordErr
+	}
+
+	return datas, nil
+}
+
+// 获取所有物料id 获取所有的 Handles
+func (m *materialImpl) GetHandlesByNodeID(ctx context.Context, nodeIDs []int64, selectKeys ...string) ([]*model.MaterialHandle, error) {
+	datas := make([]*model.MaterialHandle, 0, 1)
+	if len(nodeIDs) == 0 {
+		return datas, nil
+	}
+	query := m.DBWithContext(ctx).Where("node_id = ?", nodeIDs)
+	if len(selectKeys) != 0 {
+		query = query.Select(selectKeys)
+	}
+
+	statement := query.Find(&datas)
+	if statement.Error != nil {
+		logger.Errorf(ctx, "GetHandlesByNodeID sql: %+s, err: %+v",
+			statement.Statement.SQL.String(),
+			statement.Error)
+		return nil, code.QueryRecordErr
+	}
+
+	return datas, nil
+}
+
+// 根据所有的 uuid 获取所有的edges
+func (m *materialImpl) GetEdgesByNodeUUID(ctx context.Context, uuids []uuid.UUID, selectKeys ...string) ([]*model.MaterialEdge, error) {
+	datas := make([]*model.MaterialEdge, 0, 1)
+	if len(uuids) == 0 {
+		return datas, nil
+	}
+	query := m.DBWithContext(ctx).Where("source_node_uuid in ? or target_node_uuid in ?", uuids, uuids)
+	if len(selectKeys) != 0 {
+		query = query.Select(selectKeys)
+	}
+
+	statement := query.Find(&datas)
+	if statement.Error != nil {
+		logger.Errorf(ctx, "GetEdgesByNodeUUID sql: %+s, err: %+v",
+			statement.Statement.SQL.String(),
+			statement.Error)
+		return nil, code.QueryRecordErr
+	}
+
+	return datas, nil
+}
+
+// 批量 edges
+func (m *materialImpl) DelEdges(ctx context.Context, uuids []uuid.UUID) error {
+	if len(uuids) == 0 {
+		return nil
+	}
+
+	if err := m.DBWithContext(ctx).Where("uuid in ?", uuids).Delete(&model.MaterialEdge{}).Error; err != nil {
+		logger.Errorf(ctx, "DelEdges fail ids: %+v, err: %+v", uuids, err)
+		return code.DeleteDateErr.WithMsg(err.Error())
+	}
+
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofrs/uuid/v5"
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
@@ -35,7 +36,7 @@ func NewMaterialHandle() *Handle {
 }
 
 func (m *Handle) CreateLabMaterial(ctx *gin.Context) {
-	req := &material.GraphNode{}
+	req := &material.GraphNodeReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		logger.Errorf(ctx, "parse CreateLabMaterial param err: %+v", err.Error())
 		common.ReplyErr(ctx, code.ParamErr, err.Error())
@@ -94,6 +95,7 @@ func (m *Handle) initMaterialWebSocket() {
 	m.wsClient.HandleConnect(func(s *melody.Session) {
 		if ctx, ok := s.Get("ctx"); ok {
 			logger.Infof(ctx.(context.Context), "websocket connect keys: %+v", s.Keys)
+			m.mService.HandleWSConnect(ctx.(context.Context), s)
 		}
 	})
 
@@ -122,7 +124,7 @@ func (m *Handle) initMaterialWebSocket() {
 func (m *Handle) LabMaterial(ctx *gin.Context) {
 	req := &material.LabWS{}
 	labUUIDStr := ctx.Param("lab_uuid")
-	req.LabUUID = common.BinUUID(datatypes.BinUUIDFromString(labUUIDStr))
+	req.LabUUID = uuid.UUID(datatypes.BinUUIDFromString(labUUIDStr))
 	userInfo := auth.GetCurrentUser(ctx)
 
 	// 阻塞运行

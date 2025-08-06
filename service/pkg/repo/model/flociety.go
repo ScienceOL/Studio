@@ -2,25 +2,49 @@ package model
 
 import "gorm.io/datatypes"
 
-type DeviceNodeTemplate struct {
+type ResourceNodeTemplate struct {
 	BaseModel
-	Name        string  `gorm:"type:varchar(255);not null;uniqueIndex:idx_dnt_lrnv,priority:3" json:"name"`
-	LabID       int64   `gorm:"type:bigint;not null;uniqueIndex:idx_dnt_lrnv,priority:1" json:"lab_id"`
-	RegID       int64   `gorm:"type:bigint;not null;uniqueIndex:idx_dnt_lrnv,priority:2" json:"reg_id"`
-	UserID      string  `gorm:"type:varchar(120);not null" json:"user_id"`
-	Header      string  `gorm:"type:text" json:"header"`
-	Footer      string  `gorm:"type:text" json:"footer"`
-	Version     string  `gorm:"type:varchar(50);not null;default:'1.0.0';uniqueIndex:idx_dnt_lrnv,priority:4" json:"version"`
-	Icon        string  `gorm:"type:text" json:"icon"`
-	Description *string `gorm:"type:text" json:"description"`
+	Name         string                      `gorm:"type:varchar(255);not null;uniqueIndex:idx_dnt_lrnv,priority:2" json:"name"`
+	LabID        int64                       `gorm:"type:bigint;not null;uniqueIndex:idx_dnt_lrnv,priority:1" json:"lab_id"`
+	UserID       string                      `gorm:"type:varchar(120);not null" json:"user_id"`
+	Header       string                      `gorm:"type:text" json:"header"`
+	Footer       string                      `gorm:"type:text" json:"footer"`
+	Version      string                      `gorm:"type:varchar(50);not null;default:'1.0.0';uniqueIndex:idx_dnt_lrnv,priority:3" json:"version"`
+	Icon         string                      `gorm:"type:text" json:"icon"`
+	Description  *string                     `gorm:"type:text" json:"description"`
+	Model        datatypes.JSON              `gorm:"type:jsonb;" json:"model"`
+	Module       string                      `gorm:"type:varchar(1024)" json:"module"`
+	Language     string                      `gorm:"type:varchar(255);not null;" json:"language"`
+	StatusTypes  datatypes.JSON              `gorm:"type:jsonb" json:"status_types"`
+	Labels       datatypes.JSONSlice[string] `gorm:"type:jsonb" json:"labels"` // label 标签
+	DataSchema   datatypes.JSON              `gorm:"type:jsonb" json:"data_schema"`
+	ConfigSchema datatypes.JSON              `gorm:"type:jsonb" json:"config_schema"`
+	// ConfigInfo   datatypes.JSON `gorm:"type:jsonb" json:"config_info"` // FIXME: 拓展一张表，一个很大个 json object
 }
 
-func (*DeviceNodeTemplate) TableName() string {
-	return "device_node_template"
+func (*ResourceNodeTemplate) TableName() string {
+	return "resource_node_template"
 }
 
-type DeviceNodeHandleTemplate struct {
-	BaseModelNoUUID
+type DeviceAction struct {
+	BaseModel
+	int64       `gorm:"type:bigint;not null;uniqueIndex:idx_reg_name,priority:1" json:"reg_id"`
+	Name        string         `gorm:"type:varchar(255);not null;uniqueIndex:idx_reg_name,priority:2" json:"name"`
+	Goal        datatypes.JSON `gorm:"type:jsonb" json:"goal"`
+	GoalDefault datatypes.JSON `gorm:"type:jsonb" json:"goal_default"`
+	Feedback    datatypes.JSON `gorm:"type:jsonb" json:"feedback"`
+	Result      datatypes.JSON `gorm:"type:jsonb" json:"result"`
+	Schema      datatypes.JSON `gorm:"type:jsonb" json:"schema"`
+	Type        string         `gorm:"type:varchar(120);not null" json:"type"`
+	Handles     datatypes.JSON `gorm:"type:jsonb" json:"handles"`
+}
+
+func (*DeviceAction) TableName() string {
+	return "device_action"
+}
+
+type ResourceNodeHandle struct {
+	BaseModel
 	NodeID      int64  `gorm:"type:bigint;not null;uniqueIndex:idx_dnht_dnhtnn,priority:1" json:"node_id"`
 	Name        string `gorm:"type:varchar(255);not null;uniqueIndex:idx_dnht_dnhtnn,priority:2" json:"name"`
 	DisplayName string `gorm:"type:varchar(255);not null" json:"display_name"`
@@ -31,12 +55,12 @@ type DeviceNodeHandleTemplate struct {
 	Side        string `gorm:"type:varchar(20);not null" json:"side"`
 }
 
-func (*DeviceNodeHandleTemplate) TableName() string {
-	return "device_node_handle_template"
+func (*ResourceNodeHandle) TableName() string {
+	return "resource_node_handle"
 }
 
-type DeviceNodeParamTemplate struct {
-	BaseModelNoUUID
+type ResourceNodeParam struct {
+	BaseModel
 	NodeID      int64  `gorm:"type:bigint;not null;uniqueIndex:idx_dnpt_dnptnn,priority:1" json:"node_id"`
 	Name        string `gorm:"type:varchar(255);not null;uniqueIndex:idx_dnpt_dnptnn,priority:2" json:"name"`
 	Type        string `gorm:"type:varchar(50);not null" json:"type"`
@@ -47,8 +71,8 @@ type DeviceNodeParamTemplate struct {
 	// UISchema    datatypes.JSON `gorm:"type:json" json:"ui_schema"`
 }
 
-func (*DeviceNodeParamTemplate) TableName() string {
-	return "device_node_param_template"
+func (*ResourceNodeParam) TableName() string {
+	return "resource_node_param"
 }
 
 // TODO: NodeTemplateLibrary -----> ActionNodeTemplate

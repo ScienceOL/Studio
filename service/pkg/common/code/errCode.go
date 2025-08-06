@@ -86,6 +86,7 @@ const (
 	EdgeHandleNotExistErr                        // node handle not exist
 	UnknowWSActionErr                            // unkonw material websocket action
 	UnmarshalWSDataErr                           // unmarshal material websocket data err
+	CanNotGetLabIDErr                            // can get lab id err
 )
 
 // notify 通知模块错误

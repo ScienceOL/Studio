@@ -71,12 +71,12 @@ func ReplyOk(ctx *gin.Context, data ...any) {
 
 func ReplyWSOk(s *melody.Session, data ...any) error {
 	if len(data) > 0 {
-		data := &Resp{
+		d := &Resp{
 			Code:      code.Success,
 			Data:      data[0],
 			Timestamp: time.Now().Unix(),
 		}
-		v, _ := json.Marshal(data)
+		v, _ := json.Marshal(d)
 		return s.Write(v)
 	}
 

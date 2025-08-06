@@ -34,6 +34,7 @@ func _() {
 	_ = x[EdgeHandleNotExistErr-22002]
 	_ = x[UnknowWSActionErr-22003]
 	_ = x[UnmarshalWSDataErr-22004]
+	_ = x[CanNotGetLabIDErr-22005]
 	_ = x[NotifyActionAlreadyRegistryErr-24000]
 	_ = x[NotifySubscribeChannelErr-24001]
 	_ = x[NotifySendMsgErr-24002]
@@ -47,7 +48,7 @@ const (
 	_ErrCode_name_2 = "登录配置错误设置登录状态错误刷新 token 失败state 验证失败交换 token 失败回调参数错误获取用户信息失败登录处理用户信息失败未登录状态登录验证格式错误无效 token刷新 token 参数错误"
 	_ErrCode_name_3 = "dababase create data errdatabase update data errdatabase record not founddatabase query errdatabase delete err"
 	_ErrCode_name_4 = "reg action name empty"
-	_ErrCode_name_5 = "registry not existedge node not existnode handle not existunkonw material websocket actionunmarshal material websocket data err"
+	_ErrCode_name_5 = "registry not existedge node not existnode handle not existunkonw material websocket actionunmarshal material websocket data errcan get lab id err"
 	_ErrCode_name_6 = "notify action already registrynotify subscribe channel failnotify send message err"
 	_ErrCode_name_7 = "create lab user errquery lab user err"
 )
@@ -55,7 +56,7 @@ const (
 var (
 	_ErrCode_index_2 = [...]uint8{0, 18, 42, 61, 79, 98, 116, 140, 170, 185, 209, 221, 246}
 	_ErrCode_index_3 = [...]uint8{0, 24, 48, 73, 91, 110}
-	_ErrCode_index_5 = [...]uint8{0, 18, 37, 58, 90, 127}
+	_ErrCode_index_5 = [...]uint8{0, 18, 37, 58, 90, 127, 145}
 	_ErrCode_index_6 = [...]uint8{0, 30, 59, 82}
 	_ErrCode_index_7 = [...]uint8{0, 19, 37}
 )
@@ -74,7 +75,7 @@ func (i ErrCode) String() string {
 		return _ErrCode_name_3[_ErrCode_index_3[i]:_ErrCode_index_3[i+1]]
 	case i == 20000:
 		return _ErrCode_name_4
-	case 22000 <= i && i <= 22004:
+	case 22000 <= i && i <= 22005:
 		i -= 22000
 		return _ErrCode_name_5[_ErrCode_index_5[i]:_ErrCode_index_5[i+1]]
 	case 24000 <= i && i <= 24002:

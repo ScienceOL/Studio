@@ -3,7 +3,7 @@ package notify
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid/v5"
 )
 
 /*
@@ -22,13 +22,17 @@ const (
 
 type SendMsg struct {
 	Action    Action    `json:"action"`
+	LabUUID   uuid.UUID `json:"lab_uuid"`
+	UserID    string    `json:"user_id"`
 	Data      any       `json:"data"`
 	UUID      uuid.UUID `json:"uuid"`
 	Timestamp int64     `json:"timestamp"`
 }
 
+type HandleFunc func(ctx context.Context, msg string) error
+
 type MsgCenter interface {
-	Registry(ctx context.Context, msgName Action, handleFunc func(ctx context.Context, msg string) error) error
+	Registry(ctx context.Context, msgName Action, handleFunc HandleFunc) error
 	Broadcast(ctx context.Context, msg *SendMsg) error
 	Close(ctx context.Context) error
 }

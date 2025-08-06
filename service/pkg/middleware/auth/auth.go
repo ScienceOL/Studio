@@ -5,7 +5,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-
 type Config struct {
 	ClientID     string
 	ClientSecret string

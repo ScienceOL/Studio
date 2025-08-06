@@ -240,7 +240,6 @@ func (th *tracingHook) DialHook(hook r.DialHook) r.DialHook {
 
 func (th *tracingHook) ProcessHook(hook r.ProcessHook) r.ProcessHook {
 	return func(ctx context.Context, cmd r.Cmder) error {
-
 		attrs := make([]attribute.KeyValue, 0, 8)
 		if th.conf.callerEnabled {
 			fn, file, line := funcFileLine("github.com/redis/go-redis")

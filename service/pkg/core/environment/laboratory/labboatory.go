@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid/v5"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/environment"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
@@ -34,12 +34,12 @@ func (lab *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Labora
 		return nil, code.UnLogin
 	}
 
-	ak := uuid.NewString()
-	sk := uuid.NewString()
+	ak := uuid.Must(uuid.NewV4()).String()
+	sk := uuid.Must(uuid.NewV4()).String()
 	err := lab.accountClient.CreateLabUser(ctx, &model.LabInfo{
 		AccessKey:         ak,
 		AccessSecret:      sk,
-		Name:              fmt.Sprintf("%s-%s", req.Name, uuid.NewString()),
+		Name:              fmt.Sprintf("%s-%s", req.Name, ak),
 		DisplayName:       req.Name,
 		Avatar:            "https://cdn.casbin.org/img/casbin.svg",
 		Owner:             "scienceol",
@@ -64,6 +64,7 @@ func (lab *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Labora
 		},
 	}
 	if err := lab.envStore.CreateLaboratoryEnv(ctx, data); err != nil {
+		// FIXME: 如果创建实验室失败，则删除对应的实验室用户
 		return nil, err
 	}
 
@@ -100,7 +101,7 @@ func (lab *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.Update
 	}, nil
 }
 
-func (lab *lab) CreateReg(ctx context.Context, req *environment.RegistryReq) error {
+func (lab *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) error {
 	labInfo := auth.GetCurrentUser(ctx)
 	if labInfo == nil {
 		return code.UnLogin
@@ -133,13 +134,13 @@ func (lab *lab) CreateReg(ctx context.Context, req *environment.RegistryReq) err
 				return err
 			}
 
-			actions := make([]*model.RegAction, 0, len(reg.Class.ActionValueMappings))
+			actions := make([]*model.DeviceAction, 0, len(reg.Class.ActionValueMappings))
 			for actionName, action := range reg.Class.ActionValueMappings {
 				if actionName == "" {
 					return code.RegActionNameEmptyErr
 				}
 
-				actions = append(actions, &model.RegAction{
+				actions = append(actions, &model.DeviceAction{
 					RegID:       regData.ID,
 					Name:        actionName,
 					Goal:        action.Goal,
@@ -156,7 +157,7 @@ func (lab *lab) CreateReg(ctx context.Context, req *environment.RegistryReq) err
 				return err
 			}
 
-			deviceData := &model.DeviceNodeTemplate{
+			deviceData := &model.ResourceNodeTemplate{
 				Name:        reg.RegName,
 				LabID:       labData.ID,
 				RegID:       regData.ID,
@@ -171,9 +172,9 @@ func (lab *lab) CreateReg(ctx context.Context, req *environment.RegistryReq) err
 				return err
 			}
 
-			handles := make([]*model.DeviceNodeHandleTemplate, 0, len(reg.Handles))
+			handles := make([]*model.ResourceNodeHandle, 0, len(reg.Handles))
 			for _, handle := range reg.Handles {
-				handles = append(handles, &model.DeviceNodeHandleTemplate{
+				handles = append(handles, &model.ResourceNodeHandle{
 					NodeID:      deviceData.ID,
 					Name:        handle.HandlerKey,
 					DisplayName: handle.Label,
@@ -188,9 +189,9 @@ func (lab *lab) CreateReg(ctx context.Context, req *environment.RegistryReq) err
 				return err
 			}
 
-			deviceSchemas := make([]*model.DeviceNodeParamTemplate, 0, 2)
+			deviceSchemas := make([]*model.ResourceNodeParam, 0, 2)
 			if reg.InitParamSchema.Data != nil {
-				deviceSchemas = append(deviceSchemas, &model.DeviceNodeParamTemplate{
+				deviceSchemas = append(deviceSchemas, &model.ResourceNodeParam{
 					NodeID:      deviceData.ID,
 					Name:        "data",
 					Type:        "DEFAULT",
@@ -200,7 +201,7 @@ func (lab *lab) CreateReg(ctx context.Context, req *environment.RegistryReq) err
 			}
 
 			if reg.InitParamSchema.Config != nil {
-				deviceSchemas = append(deviceSchemas, &model.DeviceNodeParamTemplate{
+				deviceSchemas = append(deviceSchemas, &model.ResourceNodeParam{
 					NodeID:      deviceData.ID,
 					Name:        "config",
 					Type:        "DEFAULT",

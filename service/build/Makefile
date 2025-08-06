@@ -218,9 +218,9 @@ fmt-install:
 	go install mvdan.cc/gofumpt@v0.8.0
 
 fmt-go: fmt-install
-	# gofumpt -l -w ./pkg ./cmd ./internal
-	# go fmt ./pkg/... ./cmd/... ./internal/...
-	# goimports -w ./pkg ./cmd ./internal
+	gofumpt -l -w ./pkg ./cmd ./internal
+	go fmt ./pkg/... ./cmd/... ./internal/...
+	goimports -w ./pkg ./cmd ./internal
 
 
 lint-install-go:

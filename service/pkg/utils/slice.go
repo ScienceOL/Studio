@@ -3,7 +3,7 @@ package utils
 
 import "slices"
 
-func AppendUniqSlice[T string | int | int64](slice []T, elem T) []T {
+func AppendUniqSlice[T comparable](slice []T, elem T) []T {
 	if slices.Contains(slice, elem) {
 		return slice
 	}
@@ -31,5 +31,25 @@ func RemoveDuplicates[T comparable](slice []T) []T {
 		}
 	}
 
+	return result
+}
+
+func FilterSlice[S any, T any](sources []T, f func(i T) (S, bool)) []S {
+	newSlice := make([]S, 0, len(sources))
+	for _, item := range sources {
+		data, isAdd := f(item)
+		if isAdd {
+			newSlice = append(newSlice, data)
+		}
+	}
+	return newSlice
+}
+
+func SliceToMap[K comparable, V any, T any](sources []T, f func(i T) (K, V)) map[K]V {
+	result := make(map[K]V)
+	for _, item := range sources {
+		key, value := f(item)
+		result[key] = value
+	}
 	return result
 }

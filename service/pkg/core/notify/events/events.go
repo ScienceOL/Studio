@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid/v5"
 	r "github.com/redis/go-redis/v9"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/notify"
@@ -40,7 +40,7 @@ func NewEvents() notify.MsgCenter {
 	return center
 }
 
-func (events *Events) Registry(ctx context.Context, msgName notify.Action, handleFunc func(ctx context.Context, msg string) error) error {
+func (events *Events) Registry(ctx context.Context, msgName notify.Action, handleFunc notify.HandleFunc) error {
 	if _, ok := events.actions.LoadOrStore(msgName, handleFunc); ok {
 		return code.NotifyActionAlreadyRegistryErr.WithMsg(string(msgName))
 	}
@@ -69,8 +69,8 @@ func (events *Events) Registry(ctx context.Context, msgName notify.Action, handl
 
 func (events *Events) Broadcast(ctx context.Context, msg *notify.SendMsg) error {
 	msg.Timestamp = time.Now().Unix()
-	if msg.UUID == uuid.Nil {
-		msg.UUID, _ = uuid.NewUUID()
+	if msg.UUID.IsNil() {
+		msg.UUID, _ = uuid.NewV4()
 	}
 
 	data, _ := json.Marshal(msg)

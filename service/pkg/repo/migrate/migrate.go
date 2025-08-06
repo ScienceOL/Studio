@@ -12,16 +12,11 @@ func Table(_ context.Context) error {
 	return utils.IfErrReturn(func() error {
 		return db.DB().DBIns().AutoMigrate(
 			&model.Laboratory{},
-			&model.Registry{},
-			&model.RegAction{},
-			&model.DeviceNodeTemplate{},
-			&model.DeviceNodeHandleTemplate{},
-			&model.DeviceNodeParamTemplate{},
+			&model.DeviceAction{},
+			&model.ResourceNodeTemplate{},
+			&model.ResourceNodeHandle{},
+			&model.ResourceNodeParam{},
 			&model.MaterialNode{},
-			&model.MaterialHandle{},
 			&model.MaterialEdge{})
-	}, func() error {
-		return db.DB().DBIns().Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_registry_lab_name_version_active 
-			 ON registry (lab_id, name, version) WHERE status != 'del'`).Error
 	})
 }
