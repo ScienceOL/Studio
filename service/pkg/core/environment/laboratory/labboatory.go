@@ -14,6 +14,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/repo/casdoor"
 	eStore "github.com/scienceol/studio/service/pkg/repo/environment"
 	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/utils"
 )
 
 type lab struct {
@@ -102,6 +103,10 @@ func (lab *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.Update
 }
 
 func (lab *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) error {
+	if len(req.Resources) == 0 {
+		return code.ResourceIsEmptyErr
+	}
+
 	labInfo := auth.GetCurrentUser(ctx)
 	if labInfo == nil {
 		return code.UnLogin
@@ -111,37 +116,57 @@ func (lab *lab) CreateResource(ctx context.Context, req *environment.ResourceReq
 		return err
 	}
 
-	// 处理 action
-
 	return db.DB().ExecTx(ctx, func(txCtx context.Context) error {
-		for _, reg := range req.Registries {
-			regData := &model.Registry{
-				Name:   reg.RegName,
-				LabID:  labData.ID,
-				Status: model.REGINIT,
-				Module: reg.Class.Module,
-				// FIXME: 未查询到数据从哪获取
-				// Model      : datatypes.JSON(req.Class.Module), // @世xiang
-				Type:         reg.Class.Type,
-				RegsitryType: reg.RegistryType,
-				Version:      reg.Version,
-				StatusTypes:  reg.Class.StatusTypes,
-				Icon:         reg.Icon,
-				Description:  reg.Description,
+		resDatas := utils.FilterSlice(req.Resources, func(item environment.Resource) (*model.ResourceNodeTemplate, bool) {
+			data := &model.ResourceNodeTemplate{
+				Name:        item.RegName,
+				LabID:       labData.ID,     // 实验室的 id
+				UserID:      labData.UserID, // 创建实验室的 user id
+				Header:      item.RegName,
+				Footer:      "",
+				Version:     utils.Or(item.Version, "0.0.1"),
+				Icon:        item.Icon,
+				Description: item.Description,
+				Model:       item.Model,
+				Module:      item.Class.Module,
+				Language:    item.Language,
+				StatusTypes: item.Class.StatusTypes,
+				// FIXME: 找不到 bug
+				// DataSchema: utils.Ternary(
+				// 	(item.InitParamSchema != nil) &&
+				// 		(item.InitParamSchema.Data != nil),
+				// 	item.InitParamSchema.Data.Properties, datatypes.JSON{}),
+				// ConfigSchema: utils.Ternary(
+				// 	(item.InitParamSchema != nil) &&
+				// 		(item.InitParamSchema.Config != nil),
+				// 	item.InitParamSchema.Config.Properties, datatypes.JSON{}),
+				// Labels      :
 			}
+			return data, true
+		})
 
-			if err := lab.envStore.CreateReg(txCtx, regData); err != nil {
-				return err
+		resDataMap := utils.SliceToMap(resDatas, func(item *model.ResourceNodeTemplate) (string, *model.ResourceNodeTemplate) {
+			return item.Name, item
+		})
+
+		if err := lab.envStore.UpsertDeviceTemplate(txCtx, resDatas); err != nil {
+			return err
+		}
+
+		// device actions
+		resDeviceAction, err := utils.FilterSliceWithErr(req.Resources, func(item environment.Resource) ([]*model.DeviceAction, bool, error) {
+			resData, ok := resDataMap[item.RegName]
+			if !ok {
+				return nil, false, code.ResourceNotExistErr
 			}
-
-			actions := make([]*model.DeviceAction, 0, len(reg.Class.ActionValueMappings))
-			for actionName, action := range reg.Class.ActionValueMappings {
+			actions := make([]*model.DeviceAction, 0, len(item.Class.ActionValueMappings))
+			for actionName, action := range item.Class.ActionValueMappings {
 				if actionName == "" {
-					return code.RegActionNameEmptyErr
+					return nil, false, code.RegActionNameEmptyErr
 				}
 
 				actions = append(actions, &model.DeviceAction{
-					RegID:       regData.ID,
+					ResNodeID:   resData.ID,
 					Name:        actionName,
 					Goal:        action.Goal,
 					GoalDefault: action.GoalDefault,
@@ -152,30 +177,22 @@ func (lab *lab) CreateResource(ctx context.Context, req *environment.ResourceReq
 					Handles:     action.Handles,
 				})
 			}
+			return actions, true, nil
+		})
+		if err != nil {
+			return err
+		}
 
-			if err := lab.envStore.UpsertRegAction(txCtx, actions); err != nil {
-				return err
+		// device handles
+		resDeviceHandles, err := utils.FilterSliceWithErr(req.Resources, func(item environment.Resource) ([]*model.ResourceHandleTemplate, bool, error) {
+			resData, ok := resDataMap[item.RegName]
+			if !ok {
+				return nil, false, code.ResourceNotExistErr
 			}
-
-			deviceData := &model.ResourceNodeTemplate{
-				Name:        reg.RegName,
-				LabID:       labData.ID,
-				RegID:       regData.ID,
-				UserID:      labInfo.ID,
-				Header:      regData.Name,
-				Footer:      "",
-				Version:     regData.Version,
-				Icon:        regData.Icon,
-				Description: regData.Description,
-			}
-			if err := lab.envStore.UpsertDeviceTemplate(txCtx, deviceData); err != nil {
-				return err
-			}
-
-			handles := make([]*model.ResourceNodeHandle, 0, len(reg.Handles))
-			for _, handle := range reg.Handles {
-				handles = append(handles, &model.ResourceNodeHandle{
-					NodeID:      deviceData.ID,
+			handles := make([]*model.ResourceHandleTemplate, 0, len(item.Class.ActionValueMappings))
+			for _, handle := range item.Handles {
+				handles = append(handles, &model.ResourceHandleTemplate{
+					NodeID:      resData.ID,
 					Name:        handle.HandlerKey,
 					DisplayName: handle.Label,
 					Type:        handle.DataType,
@@ -185,33 +202,16 @@ func (lab *lab) CreateResource(ctx context.Context, req *environment.ResourceReq
 					Side:        handle.Side,
 				})
 			}
-			if err := lab.envStore.UpsertDeviceHandleTemplate(txCtx, handles); err != nil {
-				return err
-			}
-
-			deviceSchemas := make([]*model.ResourceNodeParam, 0, 2)
-			if reg.InitParamSchema.Data != nil {
-				deviceSchemas = append(deviceSchemas, &model.ResourceNodeParam{
-					NodeID:      deviceData.ID,
-					Name:        "data",
-					Type:        "DEFAULT",
-					Placeholder: "设备初始化参数配置",
-					Schema:      reg.InitParamSchema.Data.Properties,
-				})
-			}
-
-			if reg.InitParamSchema.Config != nil {
-				deviceSchemas = append(deviceSchemas, &model.ResourceNodeParam{
-					NodeID:      deviceData.ID,
-					Name:        "config",
-					Type:        "DEFAULT",
-					Placeholder: "设备初始化参数配置",
-					Schema:      reg.InitParamSchema.Config.Properties,
-				})
-			}
-			if err := lab.envStore.UpsertDeviceParamTemplate(txCtx, deviceSchemas); err != nil {
-				return err
-			}
+			return handles, true, nil
+		})
+		if err != nil {
+			return err
+		}
+		if err := lab.envStore.UpsertDeviceAction(txCtx, resDeviceAction); err != nil {
+			return err
+		}
+		if err := lab.envStore.UpsertDeviceHandleTemplate(txCtx, resDeviceHandles); err != nil {
+			return err
 		}
 		return nil
 	})

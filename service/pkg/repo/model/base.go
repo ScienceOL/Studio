@@ -14,18 +14,13 @@ type BaseModel struct {
 	UpdatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
-func (b *BaseModel) BeforeUpdate(_ *gorm.DB) error {
+func (b *BaseModel) BeforeCreate(*gorm.DB) error {
+	b.CreatedAt = time.Now()
 	b.UpdatedAt = time.Now()
 	return nil
 }
 
-type BaseModelNoUUID struct {
-	ID        int64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	CreatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"updated_at"`
-}
-
-func (b *BaseModelNoUUID) BeforeUpdate(_ *gorm.DB) error {
+func (b *BaseModel) BeforeUpdate(_ *gorm.DB) error {
 	b.UpdatedAt = time.Now()
 	return nil
 }

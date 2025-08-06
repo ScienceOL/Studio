@@ -14,8 +14,7 @@ func Table(_ context.Context) error {
 			&model.Laboratory{},
 			&model.DeviceAction{},
 			&model.ResourceNodeTemplate{},
-			&model.ResourceNodeHandle{},
-			&model.ResourceNodeParam{},
+			&model.ResourceHandleTemplate{},
 			&model.MaterialNode{},
 			&model.MaterialEdge{})
 	})

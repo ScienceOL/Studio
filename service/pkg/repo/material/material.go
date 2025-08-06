@@ -41,56 +41,23 @@ func (m *materialImpl) UpsertMaterialNode(ctx context.Context, datas []*model.Ma
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"parent_id",
-			"lab_id",
 			"display_name",
 			"description",
 			"type",
-			// "status",
-			"device_node_template_id",
-			"reg_id",
+			"status",
+			"resource_node_template_id",
 			"init_param_data",
 			"schema",
 			"data",
-			"dirs",
-			"position",
 			"pose",
 			"model",
+			"icon",
 			"updated_at",
 		}),
 	}).Create(datas)
 
 	if statement.Error != nil {
 		logger.Errorf(ctx, "UpsertMaterialNode err: %+v", statement.Error)
-		return code.CreateDataErr
-	}
-
-	return nil
-}
-
-func (m *materialImpl) UpsertMaterialHandle(ctx context.Context, datas []*model.MaterialHandle) error {
-	if len(datas) == 0 {
-		return nil
-	}
-
-	statement := m.DBWithContext(ctx).Clauses(clause.OnConflict{
-		Columns: []clause.Column{
-			{Name: "node_id"},
-			{Name: "name"},
-		},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"display_name",
-			"type",
-			"io_type",
-			"source",
-			"key",
-			"connected",
-			"required",
-			"updated_at",
-		}),
-	}).Create(datas)
-
-	if statement.Error != nil {
-		logger.Errorf(ctx, "UpsertMaterialHandle err: %+v", statement.Error)
 		return code.CreateDataErr
 	}
 
@@ -131,7 +98,7 @@ func (m *materialImpl) GetNodeHandles(
 	res := make([]*NodeHandleInfo, 0, len(handleNames))
 	if err := m.DBWithContext(ctx).Table("material_node as n").
 		Select("n.uuid as node_uuid, n.name as node_name, h.uuid as handle_uuid, h.name as handle_name").
-		Joins("inner join material_handle as h on n.id = h.node_id").
+		Joins("inner join resource_handle_template as h on n.resource_node_template_id = h.node_id").
 		Where("n.lab_id = ? and n.name in ? and h.name in ?", labID, nodeNames, handleNames).
 		Find(&res).Error; err != nil {
 		logger.Errorf(ctx, "GetNodeHandles fail lab id: %d, node names: %+v, handle names: %+v, err: %+v", labID, nodeNames, handleNames, err)
@@ -161,8 +128,8 @@ func (m *materialImpl) GetNodeHandlesByUUID(ctx context.Context, nodeUUIDs []uui
 
 	res := make([]*NodeHandleInfo, 0, len(nodeUUIDs))
 	if err := m.DBWithContext(ctx).Table("material_node as n").
-		Select("n.uuid as node_uuid, h.uuid as handle_uui").
-		Joins("inner join material_handle as h on n.id = h.node_id").
+		Select("n.uuid as node_uuid, h.uuid as handle_uuid").
+		Joins("inner join resource_handle_template as h on n.id = h.node_id").
 		Where("n.uuid in ?", nodeUUIDs).
 		Find(&res).Error; err != nil {
 		logger.Errorf(ctx, "GetNodeHandlesByUUID fail node uuids: %+v, err: %+v", nodeUUIDs, err)
@@ -182,7 +149,6 @@ func (m *materialImpl) GetNodeHandlesByUUID(ctx context.Context, nodeUUIDs []uui
 	}
 
 	return resMap, nil
-
 }
 
 // delete nodes、handles、edges
@@ -214,16 +180,6 @@ func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []uuid.UUID) (*re
 			return nil
 		}
 
-		// 获取所有待删除的 node 的 handle id 和 uuid
-		delNodeHandles := []*model.MaterialHandle{}
-		if err := m.DBWithContext(txCtx).
-			Select("id, node_id, uuid").
-			Where("node_id in ?", nodeIDs).
-			Find(&delNodeHandles).Error; err != nil {
-			logger.Errorf(ctx, "DelNodes query handle fail uuids: %+v, err: %+v", nodeUUIDs, err)
-			return code.QueryRecordErr
-		}
-
 		delNodeEdges := []*model.MaterialEdge{}
 		if err := m.DBWithContext(txCtx).
 			Select("id, uuid").
@@ -242,18 +198,13 @@ func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []uuid.UUID) (*re
 		// 删除节点
 		if err := m.DBWithContext(txCtx).Delete(&model.MaterialNode{}, nodeIDs).Error; err != nil {
 			logger.Errorf(txCtx, "DelNodes fail ids: %+v, err: %+v", nodeIDs, err)
-			return code.DeleteDateErr.WithMsg(err.Error())
-		}
-		// 删除 handle
-		if err := m.DBWithContext(txCtx).Where("node_id in ?", nodeIDs).Delete(&model.MaterialHandle{}).Error; err != nil {
-			logger.Errorf(txCtx, "DelNodes fail ids: %+v, err: %+v", nodeIDs, err)
-			return code.DeleteDateErr.WithMsg(err.Error())
+			return code.DeleteDataErr.WithMsg(err.Error())
 		}
 
 		// 删除 edge
 		if err := m.DBWithContext(txCtx).Where("id in ?", edgeIDs).Delete(&model.MaterialEdge{}).Error; err != nil {
 			logger.Errorf(txCtx, "DelNodes fail ids: %+v, err: %+v", nodeIDs, err)
-			return code.DeleteDateErr.WithMsg(err.Error())
+			return code.DeleteDataErr.WithMsg(err.Error())
 		}
 		res.NodeUUIDs = queryNodeUUIDs
 		res.EdgeUUIDs = edgeUUIDs
@@ -280,28 +231,6 @@ func (m *materialImpl) GetNodesByLabID(ctx context.Context, labID int64, selectK
 	statement := query.Find(&datas)
 	if statement.Error != nil {
 		logger.Errorf(ctx, "GetNodesByLabID sql: %+s, err: %+v",
-			statement.Statement.SQL.String(),
-			statement.Error)
-		return nil, code.QueryRecordErr
-	}
-
-	return datas, nil
-}
-
-// 获取所有物料id 获取所有的 Handles
-func (m *materialImpl) GetHandlesByNodeID(ctx context.Context, nodeIDs []int64, selectKeys ...string) ([]*model.MaterialHandle, error) {
-	datas := make([]*model.MaterialHandle, 0, 1)
-	if len(nodeIDs) == 0 {
-		return datas, nil
-	}
-	query := m.DBWithContext(ctx).Where("node_id = ?", nodeIDs)
-	if len(selectKeys) != 0 {
-		query = query.Select(selectKeys)
-	}
-
-	statement := query.Find(&datas)
-	if statement.Error != nil {
-		logger.Errorf(ctx, "GetHandlesByNodeID sql: %+s, err: %+v",
 			statement.Statement.SQL.String(),
 			statement.Error)
 		return nil, code.QueryRecordErr
@@ -340,7 +269,7 @@ func (m *materialImpl) DelEdges(ctx context.Context, uuids []uuid.UUID) error {
 
 	if err := m.DBWithContext(ctx).Where("uuid in ?", uuids).Delete(&model.MaterialEdge{}).Error; err != nil {
 		logger.Errorf(ctx, "DelEdges fail ids: %+v, err: %+v", uuids, err)
-		return code.DeleteDateErr.WithMsg(err.Error())
+		return code.DeleteDataErr.WithMsg(err.Error())
 	}
 
 	return nil

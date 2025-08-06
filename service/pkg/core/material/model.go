@@ -6,16 +6,16 @@ import (
 	"gorm.io/datatypes"
 )
 
-type MaterialActionType string
+type ActionType string
 
 const (
-	FetchGrpah      MaterialActionType = "fetch_graph"
-	FetchTemplate   MaterialActionType = "fetch_template"
-	BatchCreateNode MaterialActionType = "batch_create_nodes"
-	BatchUpdateNode MaterialActionType = "batch_update_nodes"
-	BatchDelNode    MaterialActionType = "batch_del_nodes"
-	BatchCreateEdge MaterialActionType = "batch_create_edges"
-	BatchDelEdge    MaterialActionType = "batch_del_edges"
+	FetchGrpah      ActionType = "fetch_graph"
+	FetchTemplate   ActionType = "fetch_template"
+	BatchCreateNode ActionType = "batch_create_nodes"
+	BatchUpdateNode ActionType = "batch_update_nodes"
+	BatchDelNode    ActionType = "batch_del_nodes"
+	BatchCreateEdge ActionType = "batch_create_edges"
+	BatchDelEdge    ActionType = "batch_del_edges"
 )
 
 type GraphNodeReq struct {
@@ -30,7 +30,7 @@ type Node struct {
 	Class    string           `json:"class" binding:"required"`
 	Children []string         `json:"children,omitempty"`
 	Parent   string           `json:"parent" default:""`
-	Position datatypes.JSON   `json:"position"`
+	Pose     datatypes.JSON   `json:"pose"`
 	Config   datatypes.JSON   `json:"config"`
 	Data     datatypes.JSON   `json:"data"`
 	// FIXME: 这块后续要优化掉，从 reg 获取
@@ -78,16 +78,22 @@ type DeviceParamTemplate struct {
 }
 
 type DeviceTemplate struct {
-	Handles     []*DeviceHandleTemplate `json:"handles"`
-	Params      []*DeviceParamTemplate  `json:"params"`
-	UUID        uuid.UUID               `json:"uuid"`
-	Name        string                  `json:"name"`
-	UserID      string                  `json:"user_id"`
-	Header      string                  `json:"header"`
-	Footer      string                  `json:"footer"`
-	Version     string                  `json:"version"`
-	Icon        string                  `json:"icon"`
-	Description *string                 `json:"description"`
+	Handles      []*DeviceHandleTemplate `json:"handles"`
+	UUID         uuid.UUID               `json:"uuid"`
+	Name         string                  `json:"name"`
+	UserID       string                  `json:"user_id"`
+	Header       string                  `json:"header"`
+	Footer       string                  `json:"footer"`
+	Version      string                  `json:"version"`
+	Icon         string                  `json:"icon"`
+	Description  *string                 `json:"description"`
+	Model        datatypes.JSON
+	Module       string
+	Language     string
+	StatusTypes  datatypes.JSON
+	Labels       datatypes.JSONSlice[string]
+	DataSchema   datatypes.JSON
+	ConfigSchema datatypes.JSON
 }
 
 // 前端获取 materials 相关数据
@@ -101,28 +107,23 @@ type WSHandle struct {
 	IOType      string    `json:"io_type"`
 	Source      string    `json:"source"`
 	Key         string    `json:"key"`
-	Connected   bool      `json:"connected"`
-	Required    bool      `json:"required"`
 }
 
 type WSNode struct {
-	UUID                 uuid.UUID        `json:"uuid"`
-	ParentUUID           uuid.UUID        `json:"parent_uuid"`
-	Name                 string           `json:"name"`
-	DisplayName          string           `json:"display_name"`
-	Description          *string          `json:"description"`
-	Type                 model.DEVICETYPE `json:"type"`
-	DeviceNodeTemplateID int64            `json:"device_node_template_id"`
-	RegID                int64            `json:"reg_id"`
-	InitParamData        datatypes.JSON   `json:"init_param_data"`
-	Schema               datatypes.JSON   `json:"schema"`
-	Data                 datatypes.JSON   `json:"data"`
-	Dirs                 datatypes.JSON   `json:"dirs"`
-	Position             datatypes.JSON   `json:"position"`
-	Pose                 datatypes.JSON   `json:"pose"`
-	Model                string           `json:"model"`
-	Icon                 string           `json:"icon"`
-	Handles              []*WSHandle      `json:"handles"`
+	UUID                uuid.UUID        `json:"uuid"`
+	ParentUUID          uuid.UUID        `json:"parent_uuid"`
+	Name                string           `json:"name"`
+	DisplayName         string           `json:"display_name"`
+	Description         *string          `json:"description"`
+	Type                model.DEVICETYPE `json:"type"`
+	ResNodeTemplateUUID uuid.UUID        `json:"res_node_template_uuid"`
+	InitParamData       datatypes.JSON   `json:"init_param_data"`
+	Schema              datatypes.JSON   `json:"schema"`
+	Data                datatypes.JSON   `json:"data"`
+	Pose                datatypes.JSON   `json:"pose"`
+	Model               string           `json:"model"`
+	Icon                string           `json:"icon"`
+	Handles             []*WSHandle      `json:"handles"`
 }
 
 type WSEdge struct {
@@ -143,8 +144,8 @@ type DeviceTemplates struct {
 }
 
 type WsMsgType struct {
-	Action  MaterialActionType `json:"action"`
-	MsgUUID uuid.UUID          `json:"msg_uuid"`
+	Action  ActionType `json:"action"`
+	MsgUUID uuid.UUID  `json:"msg_uuid"`
 }
 
 // 创建节点

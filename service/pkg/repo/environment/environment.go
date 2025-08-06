@@ -10,6 +10,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	repo "github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -37,7 +38,7 @@ func (e *envImpl) UpdateLaboratoryEnv(ctx context.Context, data *model.Laborator
 	statement := e.DBWithContext(ctx).Model(data).Updates(data)
 	if statement.Error != nil {
 		logger.Errorf(ctx, "UpdateLaboratoryEnv err: %+v", statement.Error)
-		return code.CreateDataErr
+		return code.UpdateDataErr
 	}
 	return nil
 }
@@ -66,25 +67,14 @@ func (e *envImpl) GetLabByUUID(ctx context.Context, UUID uuid.UUID, selectKeys .
 	return data, nil
 }
 
-func (e *envImpl) CreateReg(ctx context.Context, data *model.Registry) error {
-	statement := e.DBWithContext(ctx).Where("lab_id = ? and name = ? and version = ?",
-		data.LabID, data.Name, data.Version).FirstOrCreate(data)
-	if statement.Error != nil {
-		logger.Errorf(ctx, "CreateReg err: %+v", statement.Error)
-		return code.CreateDataErr
-	}
-
-	return nil
-}
-
-func (e *envImpl) UpsertRegAction(ctx context.Context, datas []*model.DeviceAction) error {
+func (e *envImpl) UpsertDeviceAction(ctx context.Context, datas []*model.DeviceAction) error {
 	if len(datas) == 0 {
 		return nil
 	}
 	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{
-			{Name: "reg_id"},
-			{Name: "name"}, // reg_id + name 是唯一约束
+			{Name: "res_node_id"},
+			{Name: "name"}, // res_node_id + name 是唯一约束
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"goal",
@@ -106,11 +96,13 @@ func (e *envImpl) UpsertRegAction(ctx context.Context, datas []*model.DeviceActi
 	return nil
 }
 
-func (e *envImpl) UpsertDeviceTemplate(ctx context.Context, data *model.ResourceNodeTemplate) error {
+func (e *envImpl) UpsertDeviceTemplate(ctx context.Context, datas []*model.ResourceNodeTemplate) error {
+	if len(datas) == 0 {
+		return nil
+	}
 	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{
 			{Name: "lab_id"},
-			{Name: "reg_id"},
 			{Name: "name"},
 			{Name: "version"}, // 根据 idx_lrnv 推测是这些字段的组合
 		},
@@ -120,8 +112,14 @@ func (e *envImpl) UpsertDeviceTemplate(ctx context.Context, data *model.Resource
 			"header",
 			"footer",
 			"updated_at", // 指定需要更新的字段
+			"module",
+			"model",
+			"language",
+			"status_types",
+			"data_schema",
+			"config_schema",
 		}),
-	}).Create(data)
+	}).Create(datas)
 
 	if statement.Error != nil {
 		logger.Errorf(ctx, "UpsertDeviceTemplate err: %+v", statement.Error)
@@ -131,7 +129,7 @@ func (e *envImpl) UpsertDeviceTemplate(ctx context.Context, data *model.Resource
 	return nil
 }
 
-func (e *envImpl) UpsertDeviceHandleTemplate(ctx context.Context, datas []*model.ResourceNodeHandle) error {
+func (e *envImpl) UpsertDeviceHandleTemplate(ctx context.Context, datas []*model.ResourceHandleTemplate) error {
 	if len(datas) == 0 {
 		return nil
 	}
@@ -160,72 +158,54 @@ func (e *envImpl) UpsertDeviceHandleTemplate(ctx context.Context, datas []*model
 	return nil
 }
 
-func (e *envImpl) UpsertDeviceParamTemplate(ctx context.Context, datas []*model.ResourceNodeParam) error {
-	if len(datas) == 0 {
-		return nil
-	}
-
-	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
-		Columns: []clause.Column{
-			{Name: "node_id"},
-			{Name: "name"},
-		},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"placeholder",
-			"type",
-			"schema",
-			"updated_at",
-		}),
-	}).Create(datas)
-
+func (e *envImpl) GetResourceTemplate(ctx context.Context, labID int64, names []string) (map[string]*model.ResourceNodeTemplate, error) {
+	datas := make([]*model.ResourceNodeTemplate, 0, len(names))
+	statement := e.DBWithContext(ctx).Where("lab_id = ? and name in ?", labID, names).Find(&datas)
 	if statement.Error != nil {
-		logger.Errorf(ctx, "UpsertDeviceParamTemplate err: %+v", statement.Error)
-		return code.CreateDataErr
+		logger.Errorf(ctx, "GetResourceTemplate fail lab id: %d, names: %s, err: %+v", labID, names, statement.Error)
+		return nil, code.QueryRecordErr.WithMsg(statement.Error.Error())
 	}
 
-	return nil
+	return utils.SliceToMap(datas, func(data *model.ResourceNodeTemplate) (string, *model.ResourceNodeTemplate) {
+		return data.Name, data
+	}), nil
 }
 
-func (e *envImpl) GetRegs(ctx context.Context, labID int64, names []string) (map[string]*repo.RegDeviceInfo, error) {
-	regs := make([]*repo.RegDeviceInfo, 0, len(names))
-	err := e.DBWithContext(ctx).Raw(`
-   		SELECT ranked.name as reg_name, ranked.id as reg_id, device_node_template.id as device_node_template_id, ranked.icon as icon FROM (
-       SELECT id, name, icon, 
-              ROW_NUMBER() OVER (PARTITION BY name ORDER BY version DESC) as rn
-       FROM registry 
-       WHERE lab_id = ? AND name in ? AND status != ? 
-   ) ranked join device_node_template on device_node_template.reg_id = ranked.id WHERE ranked.rn = 1;
-    `, labID, names, model.REGDEL).Scan(&regs).Error
-	if err != nil {
-		logger.Errorf(ctx, "GetRegs lab id: %d, names: %+v, err: %+v", labID, names, err)
+func (e *envImpl) GetResourceHandleTemplates(ctx context.Context, resIDs []int64) (map[int64][]*model.ResourceHandleTemplate, error) {
+	if len(resIDs) == 0 {
+		return make(map[int64][]*model.ResourceHandleTemplate), nil
+	}
+
+	handles := make([]*model.ResourceHandleTemplate, 0, 1)
+	statement := e.DBWithContext(ctx).Where("node_id in ?", resIDs).Find(&handles)
+	if statement.Error != nil {
+		logger.Errorf(ctx, "GetDeviceHandelTemplates node id: %+v, err: %+v", resIDs, statement.Error)
 		return nil, code.QueryRecordErr
 	}
 
-	regMap := make(map[string]*repo.RegDeviceInfo, len(names))
-	for _, reg := range regs {
-		regMap[reg.RegName] = reg
-	}
-
-	return regMap, nil
-}
-
-func (e *envImpl) GetDeviceTemplateHandels(ctx context.Context, deviceIDs []int64) (map[int64][]*model.ResourceNodeHandle, error) {
-	if len(deviceIDs) == 0 {
-		return make(map[int64][]*model.ResourceNodeHandle), nil
-	}
-
-	handles := make([]*model.ResourceNodeHandle, 0, 1)
-	statement := e.DBWithContext(ctx).Where("node_id in ?", deviceIDs).Find(&handles)
-	if statement.Error != nil {
-		logger.Errorf(ctx, "GetDeviceTemplateHandels node id: %+v, err: %+v", deviceIDs, statement.Error)
-		return nil, code.QueryRecordErr
-	}
-
-	res := make(map[int64][]*model.ResourceNodeHandle)
+	res := make(map[int64][]*model.ResourceHandleTemplate)
 	for _, h := range handles {
 		res[h.NodeID] = append(res[h.NodeID], h)
 	}
 	return res, nil
+}
+
+// 根据 device template node id 获取所有的 uuid
+func (e *envImpl) GetResourceNodeTemplateUUID(ctx context.Context, resIDs []int64) (map[int64]uuid.UUID, error) {
+	if len(resIDs) == 0 {
+		return make(map[int64]uuid.UUID), nil
+	}
+
+	datas := make([]*model.ResourceNodeTemplate, 0, len(resIDs))
+	statement := e.DBWithContext(ctx).Select("id, uuid").Where("id in ?", resIDs).Find(&datas)
+	if statement.Error != nil {
+		logger.Errorf(ctx, "GetResourceNodeTemplateUUID fail ids: %+v, err: %+v", resIDs, statement.Error)
+		return nil, code.QueryRecordErr.WithMsg(statement.Error.Error())
+	}
+
+	return utils.SliceToMap(datas, func(item *model.ResourceNodeTemplate) (int64, uuid.UUID) {
+		return item.ID, item.UUID
+	}), nil
 }
 
 func (e *envImpl) GetLabByAkSk(ctx context.Context, accessKey string, accessSecret string) (*model.Laboratory, error) {
@@ -269,8 +249,13 @@ func (e *envImpl) GetAllDeviceTemplateByLabID(ctx context.Context, labID int64, 
 }
 
 // 根据 device ids 获取所有的 handles
-func (e *envImpl) GetAllDeviceTemplateHandlesByID(ctx context.Context, templateIDs []int64, selectKeys ...string) ([]*model.ResourceNodeHandle, error) {
-	datas := make([]*model.ResourceNodeHandle, 0, 1)
+func (e *envImpl) GetAllDeviceTemplateHandlesByID(
+	ctx context.Context,
+	templateIDs []int64,
+	selectKeys ...string) (
+	[]*model.ResourceHandleTemplate, error,
+) {
+	datas := make([]*model.ResourceHandleTemplate, 0, 1)
 	if len(templateIDs) == 0 {
 		return datas, nil
 	}
@@ -282,28 +267,6 @@ func (e *envImpl) GetAllDeviceTemplateHandlesByID(ctx context.Context, templateI
 	statement := query.Find(&datas)
 	if statement.Error != nil {
 		logger.Errorf(ctx, "GetAllDeviceTemplateHandlesByID sql: %+s, err: %+v",
-			statement.Statement.SQL.String(),
-			statement.Error)
-		return nil, code.QueryRecordErr
-	}
-
-	return datas, nil
-}
-
-// 根据实验室 id 获取所有的模板信息
-func (e *envImpl) GetAllDeviceTemplateParamByID(ctx context.Context, templateIDs []int64, selectKeys ...string) ([]*model.ResourceNodeParam, error) {
-	datas := make([]*model.ResourceNodeParam, 0, 1)
-	if len(templateIDs) == 0 {
-		return datas, nil
-	}
-	query := e.DBWithContext(ctx).Where("node_id in ?", templateIDs)
-	if len(selectKeys) != 0 {
-		query = query.Select(selectKeys)
-	}
-
-	statement := query.Find(&datas)
-	if statement.Error != nil {
-		logger.Errorf(ctx, "GetAllDeviceTemplateParamByID sql: %+s, err: %+v",
 			statement.Statement.SQL.String(),
 			statement.Error)
 		return nil, code.QueryRecordErr

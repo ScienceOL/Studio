@@ -20,8 +20,6 @@ type DelNodeInfo struct {
 type MaterialRepo interface {
 	// 更新或者插入物料
 	UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode) error
-	// 更新或插入 handle
-	UpsertMaterialHandle(ctx context.Context, datas []*model.MaterialHandle) error
 	// 更新或插入 edge
 	UpsertMaterialEdge(ctx context.Context, datas []*model.MaterialEdge) error
 	// 获取所有的 node handle
@@ -32,8 +30,6 @@ type MaterialRepo interface {
 	DelNodes(ctx context.Context, nodeUUIDs []uuid.UUID) (*DelNodeInfo, error)
 	// 获取所有物料根据 lab id
 	GetNodesByLabID(ctx context.Context, labID int64, selectKeys ...string) ([]*model.MaterialNode, error)
-	// 获取所有物料id 获取所有的 Handles
-	GetHandlesByNodeID(ctx context.Context, nodeIDs []int64, selectKeys ...string) ([]*model.MaterialHandle, error)
 	// 根据所有的 uuid 获取所有的edges
 	GetEdgesByNodeUUID(ctx context.Context, uuids []uuid.UUID, selectKeys ...string) ([]*model.MaterialEdge, error)
 	// 批量 edges

@@ -9,7 +9,7 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[Success-0]
-	_ = x[UnDefineErr-0]
+	_ = x[UnDefineErr-1]
 	_ = x[ParamErr-1000]
 	_ = x[LoginConfigErr-5000]
 	_ = x[LoginSetStateErr-5001]
@@ -27,12 +27,14 @@ func _() {
 	_ = x[UpdateDataErr-10001]
 	_ = x[RecordNotFound-10002]
 	_ = x[QueryRecordErr-10003]
-	_ = x[DeleteDateErr-10004]
+	_ = x[DeleteDataErr-10004]
 	_ = x[RegActionNameEmptyErr-20000]
-	_ = x[RegNotExistErr-22000]
+	_ = x[ResourceIsEmptyErr-20001]
+	_ = x[ResourceNotExistErr-20002]
+	_ = x[ResNotExistErr-22000]
 	_ = x[EdgeNodeNotExistErr-22001]
 	_ = x[EdgeHandleNotExistErr-22002]
-	_ = x[UnknowWSActionErr-22003]
+	_ = x[UnknownWSActionErr-22003]
 	_ = x[UnmarshalWSDataErr-22004]
 	_ = x[CanNotGetLabIDErr-22005]
 	_ = x[NotifyActionAlreadyRegistryErr-24000]
@@ -43,28 +45,30 @@ func _() {
 }
 
 const (
-	_ErrCode_name_0 = "成功"
+	_ErrCode_name_0 = "successundefined"
 	_ErrCode_name_1 = "parse parameter error"
-	_ErrCode_name_2 = "登录配置错误设置登录状态错误刷新 token 失败state 验证失败交换 token 失败回调参数错误获取用户信息失败登录处理用户信息失败未登录状态登录验证格式错误无效 token刷新 token 参数错误"
-	_ErrCode_name_3 = "dababase create data errdatabase update data errdatabase record not founddatabase query errdatabase delete err"
-	_ErrCode_name_4 = "reg action name empty"
-	_ErrCode_name_5 = "registry not existedge node not existnode handle not existunkonw material websocket actionunmarshal material websocket data errcan get lab id err"
-	_ErrCode_name_6 = "notify action already registrynotify subscribe channel failnotify send message err"
-	_ErrCode_name_7 = "create lab user errquery lab user err"
+	_ErrCode_name_2 = "login configuration errorset login state errorrefresh token failedstate verification failedexchange token failedcallback parameter errorget user info failedlogin process user info failednot logged inlogin verification format errorinvalid tokenrefresh token parameter error"
+	_ErrCode_name_3 = "database create data errordatabase update data errordatabase record not founddatabase query errordatabase delete error"
+	_ErrCode_name_4 = "reg action name emptyresource is emptyresource not exist"
+	_ErrCode_name_5 = "resource not existedge node not existnode handle not existunknown material websocket actionunmarshal material websocket data errorcannot get lab id error"
+	_ErrCode_name_6 = "notify action already registrynotify subscribe channel failnotify send message error"
+	_ErrCode_name_7 = "create lab user errorquery lab user error"
 )
 
 var (
-	_ErrCode_index_2 = [...]uint8{0, 18, 42, 61, 79, 98, 116, 140, 170, 185, 209, 221, 246}
-	_ErrCode_index_3 = [...]uint8{0, 24, 48, 73, 91, 110}
-	_ErrCode_index_5 = [...]uint8{0, 18, 37, 58, 90, 127, 145}
-	_ErrCode_index_6 = [...]uint8{0, 30, 59, 82}
-	_ErrCode_index_7 = [...]uint8{0, 19, 37}
+	_ErrCode_index_0 = [...]uint8{0, 7, 16}
+	_ErrCode_index_2 = [...]uint16{0, 25, 46, 66, 91, 112, 136, 156, 186, 199, 230, 243, 272}
+	_ErrCode_index_3 = [...]uint8{0, 26, 52, 77, 97, 118}
+	_ErrCode_index_4 = [...]uint8{0, 21, 38, 56}
+	_ErrCode_index_5 = [...]uint8{0, 18, 37, 58, 91, 130, 153}
+	_ErrCode_index_6 = [...]uint8{0, 30, 59, 84}
+	_ErrCode_index_7 = [...]uint8{0, 21, 41}
 )
 
 func (i ErrCode) String() string {
 	switch {
-	case i == 0:
-		return _ErrCode_name_0
+	case 0 <= i && i <= 1:
+		return _ErrCode_name_0[_ErrCode_index_0[i]:_ErrCode_index_0[i+1]]
 	case i == 1000:
 		return _ErrCode_name_1
 	case 5000 <= i && i <= 5011:
@@ -73,8 +77,9 @@ func (i ErrCode) String() string {
 	case 10000 <= i && i <= 10004:
 		i -= 10000
 		return _ErrCode_name_3[_ErrCode_index_3[i]:_ErrCode_index_3[i+1]]
-	case i == 20000:
-		return _ErrCode_name_4
+	case 20000 <= i && i <= 20002:
+		i -= 20000
+		return _ErrCode_name_4[_ErrCode_index_4[i]:_ErrCode_index_4[i+1]]
 	case 22000 <= i && i <= 22005:
 		i -= 22000
 		return _ErrCode_name_5[_ErrCode_index_5[i]:_ErrCode_index_5[i+1]]

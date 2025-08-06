@@ -73,6 +73,3 @@ func (l *EnvHandle) CreateLabResource(ctx *gin.Context) {
 
 	common.ReplyOk(ctx)
 }
-
-func (l *EnvHandle) LabMaterial(_ *gin.Context) {
-}

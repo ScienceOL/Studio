@@ -20,6 +20,14 @@ func Or[T comparable](values ...T) T {
 	return zero
 }
 
+func Ternary[T any](condition bool, trueVal, defaultVal T) T {
+	if condition {
+		return trueVal
+	}
+
+	return defaultVal
+}
+
 func RemoveDuplicates[T comparable](slice []T) []T {
 	keys := make(map[T]bool)
 	result := []T{}
@@ -43,6 +51,20 @@ func FilterSlice[S any, T any](sources []T, f func(i T) (S, bool)) []S {
 		}
 	}
 	return newSlice
+}
+
+func FilterSliceWithErr[S any, T any](sources []T, f func(i T) ([]S, bool, error)) ([]S, error) {
+	newSlice := make([]S, 0, len(sources))
+	for _, item := range sources {
+		datas, isAdd, err := f(item)
+		if err != nil {
+			return nil, err
+		}
+		if isAdd {
+			newSlice = append(newSlice, datas...)
+		}
+	}
+	return newSlice, nil
 }
 
 func SliceToMap[K comparable, V any, T any](sources []T, f func(i T) (K, V)) map[K]V {

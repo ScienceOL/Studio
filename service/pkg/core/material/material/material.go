@@ -66,106 +66,68 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req *material.GraphNo
 }
 
 func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laboratory, req *material.GraphNodeReq) error {
-	regNames := make([]string, 0, len(req.Nodes))
+	resTplNames := make([]string, 0, len(req.Nodes))
 	for _, data := range req.Nodes {
 		if data.Type == model.MATERIALDEVICE ||
 			data.Type == model.MATERIALCONTAINER {
-			regNames = utils.AppendUniqSlice(regNames, data.Class)
+			resTplNames = utils.AppendUniqSlice(resTplNames, data.Class)
 		}
 	}
 
-	regMap, err := m.envStore.GetRegs(ctx, labData.ID, regNames)
+	resMap, err := m.envStore.GetResourceTemplate(ctx, labData.ID, resTplNames)
 	if err != nil {
 		return err
 	}
 
-	// 强制校验注册表是否存在
-	if len(regMap) != len(regNames) {
-		return code.RegNotExistErr
+	// 强制校验资源模板是否存在
+	if len(resMap) != len(resTplNames) {
+		return code.ResNotExistErr
 	}
 
 	levelNodes := sortNodeLevel(ctx, req.Nodes)
 	nodeMap := make(map[string]*model.MaterialNode)
-	err = db.DB().ExecTx(ctx, func(txCtx context.Context) error {
+	if err = db.DB().ExecTx(ctx, func(txCtx context.Context) error {
 		for _, nodes := range levelNodes {
 			datas := make([]*model.MaterialNode, 0, len(nodes))
-			deviceTemplateIDs := make([]int64, 0, len(nodes))
-			handleNodes := make(map[int64][]*model.MaterialNode)
 			for _, n := range nodes {
 				data := &model.MaterialNode{
-					ParentID:             0,
-					LabID:                labData.ID,
-					Name:                 n.DeviceID,
-					DisplayName:          n.Name,
-					Description:          n.Description,
-					Type:                 n.Type,
-					DeviceNodeTemplateID: 0,
-					RegID:                0,
-					InitParamData:        n.Config,
-					// Schema              :
-					Data: n.Data,
-					// Dirs:
-					Position: n.Position,
-					// Pose                :
-					Model: n.Model,
-					Icon:  "",
+					ParentID:               0,
+					LabID:                  labData.ID,
+					Name:                   n.DeviceID,
+					DisplayName:            n.Name,
+					Description:            n.Description,
+					Type:                   n.Type,
+					ResourceNodeTemplateID: 0,
+					InitParamData:          n.Config,
+					Data:                   n.Data,
+					Pose:                   n.Pose,
+					Model:                  n.Model,
+					Icon:                   "",
+					Schema:                 n.Schema,
 				}
 				if node := nodeMap[n.Parent]; node != nil {
 					data.ParentID = node.ID
 				}
-				if regInfo := regMap[n.Class]; regInfo != nil {
-					deviceTemplateIDs = utils.AppendUniqSlice(deviceTemplateIDs, regInfo.DeviceNodeTemplateID)
-					data.RegID = regInfo.RegID
-					data.DeviceNodeTemplateID = regInfo.DeviceNodeTemplateID
-					data.Icon = regInfo.Icon
-					handleNodes[regInfo.DeviceNodeTemplateID] = append(handleNodes[regInfo.DeviceNodeTemplateID], data)
+
+				if resInfo := resMap[n.Class]; resInfo != nil {
+					data.ResourceNodeTemplateID = resInfo.ID
+					data.Icon = resInfo.Icon // TODO: 是否有缺省值
 				}
 
 				datas = append(datas, data)
-				nodeMap[n.DeviceID] = data
+				nodeMap[data.Name] = data
 			}
 
 			if err := m.materialStore.UpsertMaterialNode(txCtx, datas); err != nil {
 				return err
 			}
-
-			deviceTemplateHandles, err := m.envStore.GetDeviceTemplateHandels(txCtx, deviceTemplateIDs)
-			if err != nil {
-				return err
-			}
-			materialHandles := make([]*model.MaterialHandle, 0, 10)
-			for templateNodeID, templateHandles := range deviceTemplateHandles {
-				materialNodes, ok := handleNodes[templateNodeID]
-				if !ok {
-					continue
-				}
-				for _, node := range materialNodes {
-					for _, h := range templateHandles {
-						handleData := &model.MaterialHandle{
-							NodeID:      node.ID,
-							Name:        h.Name,
-							DisplayName: utils.Or(h.DisplayName, h.Key),
-							Type:        h.Type,
-							IOType:      h.IOType,
-							Source:      h.Source,
-							Key:         h.Key,
-							Side:        utils.Or(h.Side, "WEST"),
-							Connected:   false,
-							Required:    false,
-						}
-						materialHandles = append(materialHandles, handleData)
-					}
-				}
-			}
-			if err := m.materialStore.UpsertMaterialHandle(txCtx, materialHandles); err != nil {
-				return err
-			}
 		}
+
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -347,7 +309,7 @@ func (m *materialImpl) HandleWSMsg(ctx context.Context, s *melody.Session, b []b
 	case material.BatchDelEdge: // 批量删除边
 		return m.batchDelEdge(ctx, s, b)
 	default:
-		return common.ReplyWSErr(s, code.UnknowWSActionErr.WithMsg(string(msgType.Action)))
+		return common.ReplyWSErr(s, code.UnknownWSActionErr.WithMsg(string(msgType.Action)))
 	}
 }
 
@@ -364,15 +326,19 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 		return err
 	}
 
-	nodeIDS := utils.FilterSlice(nodes, func(nodeItem *model.MaterialNode) (int64, bool) {
-		return nodeItem.ID, true
+	resTplIDS := utils.FilterSlice(nodes, func(nodeItem *model.MaterialNode) (int64, bool) {
+		if nodeItem.ResourceNodeTemplateID == 0 {
+			return 0, false
+		}
+		return nodeItem.ResourceNodeTemplateID, true
 	})
+	resTplIDS = utils.RemoveDuplicates(resTplIDS)
 
 	nodesMap := utils.SliceToMap(nodes, func(item *model.MaterialNode) (int64, *model.MaterialNode) {
 		return item.ID, item
 	})
 
-	handles, err := m.materialStore.GetHandlesByNodeID(ctx, nodeIDS)
+	resHandlesMap, err := m.envStore.GetResourceHandleTemplates(ctx, resTplIDS)
 	if err != nil {
 		common.ReplyWSErr(s, err)
 		return err
@@ -386,6 +352,11 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 		common.ReplyWSErr(s, err)
 		return err
 	}
+	resNodeTplUUIDMap, err := m.envStore.GetResourceNodeTemplateUUID(ctx, resTplIDS)
+	if err != nil {
+		common.ReplyWSErr(s, err)
+		return err
+	}
 
 	respNodes := utils.FilterSlice(nodes, func(nodeItem *model.MaterialNode) (*material.WSNode, bool) {
 		var parentUUID uuid.UUID
@@ -393,24 +364,24 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 		if ok {
 			parentUUID = parentNode.UUID
 		}
+		resNodeTplUUID, _ := resNodeTplUUIDMap[nodeItem.ResourceNodeTemplateID]
+
+		handles, _ := resHandlesMap[nodeItem.ID]
 		return &material.WSNode{
-			UUID:                 nodeItem.UUID,
-			ParentUUID:           parentUUID,
-			Name:                 nodeItem.Name,
-			DisplayName:          nodeItem.DisplayName,
-			Description:          nodeItem.Description,
-			Type:                 nodeItem.Type,
-			DeviceNodeTemplateID: nodeItem.DeviceNodeTemplateID, // TODO: 是否需要给template id 么？想要的话换成 uuid
-			RegID:                nodeItem.RegID,                // TODO 是不是删掉？需要的话 换成 registry uuid
-			InitParamData:        nodeItem.InitParamData,
-			Schema:               nodeItem.Schema,
-			Data:                 nodeItem.Data,
-			Dirs:                 nodeItem.Dirs,
-			Position:             nodeItem.Position,
-			Pose:                 nodeItem.Pose,
-			Model:                nodeItem.Model,
-			Icon:                 nodeItem.Icon,
-			Handles: utils.FilterSlice(handles, func(handleItem *model.MaterialHandle) (*material.WSHandle, bool) {
+			UUID:                nodeItem.UUID,
+			ParentUUID:          parentUUID,
+			Name:                nodeItem.Name,
+			DisplayName:         nodeItem.DisplayName,
+			Description:         nodeItem.Description,
+			Type:                nodeItem.Type,
+			ResNodeTemplateUUID: resNodeTplUUID,
+			InitParamData:       nodeItem.InitParamData,
+			Schema:              nodeItem.Schema,
+			Data:                nodeItem.Data,
+			Pose:                nodeItem.Pose,
+			Model:               nodeItem.Model,
+			Icon:                nodeItem.Icon,
+			Handles: utils.FilterSlice(handles, func(handleItem *model.ResourceHandleTemplate) (*material.WSHandle, bool) {
 				var nodeUUID uuid.UUID
 				if nodeData, ok := nodesMap[handleItem.NodeID]; ok {
 					nodeUUID = nodeData.UUID
@@ -426,8 +397,6 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 					IOType:      handleItem.IOType,
 					Source:      handleItem.Source,
 					Key:         handleItem.Key,
-					Connected:   handleItem.Connected,
-					Required:    handleItem.Required,
 				}, true
 			}),
 		}, true
@@ -492,14 +461,11 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 	if err != nil {
 		return err
 	}
-	tplParams, err := m.envStore.GetAllDeviceTemplateParamByID(ctx, nodeIDs)
-	if err != nil {
-		return err
-	}
 
 	tplDatas := utils.FilterSlice(tplNodes, func(nodeItem *model.ResourceNodeTemplate) (*material.DeviceTemplate, bool) {
 		return &material.DeviceTemplate{
-			Handles: utils.FilterSlice(tplHandles, func(handleItem *model.ResourceNodeHandle) (*material.DeviceHandleTemplate, bool) {
+			Handles: utils.FilterSlice(tplHandles, func(handleItem *model.ResourceHandleTemplate) (*material.DeviceHandleTemplate, bool) {
+				// FIXME: 此处效率可以优化
 				if handleItem.NodeID != nodeItem.ID {
 					return nil, false
 				}
@@ -514,27 +480,21 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 					Side:        handleItem.Side,
 				}, true
 			}),
-			Params: utils.FilterSlice(tplParams, func(paramItem *model.ResourceNodeParam) (*material.DeviceParamTemplate, bool) {
-				if paramItem.NodeID != nodeItem.ID {
-					return nil, false
-				}
-				return &material.DeviceParamTemplate{
-					UUID:        paramItem.UUID,
-					Name:        paramItem.Name,
-					Type:        paramItem.Type,
-					Placeholder: paramItem.Placeholder,
-					Schema:      paramItem.Schema,
-				}, true
-			}),
-
-			UUID:        nodeItem.UUID,
-			Name:        nodeItem.Name,
-			UserID:      nodeItem.UserID,
-			Header:      nodeItem.Header,
-			Footer:      nodeItem.Footer,
-			Version:     nodeItem.Version,
-			Icon:        nodeItem.Icon,
-			Description: nodeItem.Description,
+			UUID:         nodeItem.UUID,
+			Name:         nodeItem.Name,
+			UserID:       nodeItem.UserID,
+			Header:       nodeItem.Header,
+			Footer:       nodeItem.Footer,
+			Version:      nodeItem.Version,
+			Icon:         nodeItem.Icon,
+			Description:  nodeItem.Description,
+			Model:        nodeItem.Model,
+			Module:       nodeItem.Module,
+			Language:     nodeItem.Language,
+			StatusTypes:  nodeItem.StatusTypes,
+			Labels:       nodeItem.Labels,
+			DataSchema:   nodeItem.DataSchema,
+			ConfigSchema: nodeItem.ConfigSchema,
 		}, true
 	})
 	resData := &material.DeviceTemplates{
@@ -552,21 +512,19 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 
 // 批量创建节点
 func (m *materialImpl) batchCreateNodes(_ context.Context, _ *melody.Session, _ []byte) error {
-
-
 	return nil
 }
 
 // 批量更新节点
 func (m *materialImpl) batchUpateNode(_ context.Context, _ *melody.Session, _ []byte) error {
 	// node := model.MaterialNode{
-	// ParentID         : 
+	// ParentID         :
 	// DisplayName :
 	// Description :
-	// InitParamData    :    
-	// Data             :    
-	// Pose             :    
-	// Icon             :    
+	// InitParamData    :
+	// Data             :
+	// Pose             :
+	// Icon             :
 	// }
 
 	return nil
@@ -592,7 +550,9 @@ func (m *materialImpl) batchDelNode(ctx context.Context, s *melody.Session, b []
 		Data:      res,
 	}
 
-	common.ReplyWSOk(s, resData)
+	if err := common.ReplyWSOk(s, resData); err != nil {
+		logger.Errorf(ctx, "batchDelNode reply ws ok fail err: %+v", err)
+	}
 	// 广播
 	labUUID, _ := s.Get("lab_uuid")
 	userInfo := auth.GetCurrentUser(ctx)
@@ -660,13 +620,29 @@ func (m *materialImpl) batchDelEdge(ctx context.Context, s *melody.Session, b []
 		common.ReplyWSErr(s, err)
 		return err
 	}
-
-	return common.ReplyWSOk(s, &material.WSData[[]uuid.UUID]{
+	resData := &material.WSData[[]uuid.UUID]{
 		WsMsgType: material.WsMsgType{
 			Action:  data.Action,
 			MsgUUID: data.MsgUUID,
 		},
 		Data: data.Data,
+	}
+
+	if err = common.ReplyWSOk(s, resData); err != nil {
+		logger.Errorf(ctx, "batchDelEdge reply ws ok fail err: %+v", err)
+	}
+
+	userInfo := auth.GetCurrentUser(ctx)
+	labData, err := m.getLab(ctx, s)
+	if err != nil {
+		return err
+	}
+
+	return m.msgCenter.Broadcast(ctx, &notify.SendMsg{
+		Action:  notify.MaterialModify,
+		UserID:  userInfo.ID,
+		LabUUID: labData.UUID,
+		Data:    resData,
 	})
 }
 
