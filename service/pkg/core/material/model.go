@@ -11,8 +11,8 @@ type ActionType string
 const (
 	FetchGrpah      ActionType = "fetch_graph"
 	FetchTemplate   ActionType = "fetch_template"
-	BatchCreateNode ActionType = "batch_create_nodes"
-	BatchUpdateNode ActionType = "batch_update_nodes"
+	CreateNode      ActionType = "create_node"
+	UpdateNode      ActionType = "update_node"
 	BatchDelNode    ActionType = "batch_del_nodes"
 	BatchCreateEdge ActionType = "batch_create_edges"
 	BatchDelEdge    ActionType = "batch_del_edges"
@@ -98,8 +98,8 @@ type DeviceTemplate struct {
 
 // 前端获取 materials 相关数据
 type WSHandle struct {
+	// NodeUUID    uuid.UUID `json:"node_uuid"`
 	UUID        uuid.UUID `json:"uuid"`
-	NodeUUID    uuid.UUID `json:"node_uuid"`
 	Name        string    `json:"name"`
 	Side        string    `json:"side"`
 	DisplayName string    `json:"display_name"`
@@ -143,11 +143,6 @@ type DeviceTemplates struct {
 	Templates []*DeviceTemplate `json:"templates"`
 }
 
-type WsMsgType struct {
-	Action  ActionType `json:"action"`
-	MsgUUID uuid.UUID  `json:"msg_uuid"`
-}
-
 // 创建节点
 type WSNodes struct {
 	Nodes []*Node `json:"nodes"`
@@ -174,12 +169,19 @@ type WSDelNodeEdges struct {
 }
 
 // 更新边
-type WDUpdateNodeEdge struct {
+type WSUpdateNodeEdge struct {
 	OldEdge uuid.UUID
 	Edge    *Edge
 }
 
-type WSData[T any] struct {
-	WsMsgType
-	Data T `json:"data"`
+// 更新节点
+type WSUpdateNode struct {
+	UUID          uuid.UUID       `json:"uuid"`
+	ParentUUID    *uuid.UUID      `json:"parent_uuid,omitempty"`
+	DisplayName   *string         `json:"display_name,omitempty"`
+	Description   *string         `json:"description,omitempty"`
+	InitParamData *datatypes.JSON `json:"init_param_data,omitempty"`
+	Data          *datatypes.JSON `json:"data,omitempty"`
+	Pose          *datatypes.JSON `json:"pose,omitempty"`
+	Schema        *datatypes.JSON `json:"schema,omitempty"`
 }

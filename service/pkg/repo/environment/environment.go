@@ -227,7 +227,7 @@ func (e *envImpl) GetLabByAkSk(ctx context.Context, accessKey string, accessSecr
 }
 
 // 根据实验室 id 获取所有的模板信息
-func (e *envImpl) GetAllDeviceTemplateByLabID(ctx context.Context, labID int64, selectKeys ...string) ([]*model.ResourceNodeTemplate, error) {
+func (e *envImpl) GetAllResourceTemplateByLabID(ctx context.Context, labID int64, selectKeys ...string) ([]*model.ResourceNodeTemplate, error) {
 	datas := make([]*model.ResourceNodeTemplate, 0, 1)
 	if labID == 0 {
 		return datas, nil
@@ -239,7 +239,7 @@ func (e *envImpl) GetAllDeviceTemplateByLabID(ctx context.Context, labID int64, 
 
 	statement := query.Find(&datas)
 	if statement.Error != nil {
-		logger.Errorf(ctx, "GetAllDeviceTemplateByLabID sql: %+s, err: %+v",
+		logger.Errorf(ctx, "GetAllResourceTemplateByLabID sql: %+s, err: %+v",
 			statement.Statement.SQL.String(),
 			statement.Error)
 		return nil, code.QueryRecordErr
@@ -273,4 +273,27 @@ func (e *envImpl) GetAllDeviceTemplateHandlesByID(
 	}
 
 	return datas, nil
+}
+
+// 根据 uuid 获取 template 数据
+func (e *envImpl) GetResourceTemplateByUUD(ctx context.Context, uuid uuid.UUID, selectKeys ...string) (*model.ResourceNodeTemplate, error) {
+	if uuid.IsNil() {
+		return nil, code.QueryRecordErr
+	}
+
+	data := &model.ResourceNodeTemplate{}
+	query := e.DBWithContext(ctx).Where("uuid = ?", uuid)
+	if len(selectKeys) != 0 {
+		query = query.Select(selectKeys)
+	}
+	statement := query.First(data)
+	if statement.Error != nil {
+		if errors.Is(statement.Error, gorm.ErrRecordNotFound) {
+			return nil, code.RecordNotFound
+		}
+		logger.Errorf(ctx, "GetResourceTemplateByUUD fail uuid: %+v, err: %+v", uuid, statement.Error)
+		return nil, code.QueryRecordErr.WithMsg(statement.Error.Error())
+	}
+
+	return data, nil
 }

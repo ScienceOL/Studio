@@ -21,7 +21,7 @@ const (
 )
 
 type SendMsg struct {
-	Action    Action    `json:"action"`
+	Channel   Action    `json:"action"`
 	LabUUID   uuid.UUID `json:"lab_uuid"`
 	UserID    string    `json:"user_id"`
 	Data      any       `json:"data"`

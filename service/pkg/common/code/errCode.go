@@ -83,12 +83,15 @@ const (
 
 // material module errors
 const (
-	ResNotExistErr        ErrCode = iota + 22000 // resource not exist
-	EdgeNodeNotExistErr                          // edge node not exist
-	EdgeHandleNotExistErr                        // node handle not exist
-	UnknownWSActionErr                           // unknown material websocket action
-	UnmarshalWSDataErr                           // unmarshal material websocket data error
-	CanNotGetLabIDErr                            // cannot get lab id error
+	ResNotExistErr          ErrCode = iota + 22000 // resource not exist
+	EdgeNodeNotExistErr                            // edge node not exist
+	EdgeHandleNotExistErr                          // node handle not exist
+	UnknownWSActionErr                             // unknown material websocket action
+	UnmarshalWSDataErr                             // unmarshal material websocket data error
+	CanNotGetLabIDErr                              // cannot get lab id error
+	UpdateNodeErr                                  // update material node error
+	ParentNodeNotFoundErr                          // parent node not found error
+	TemplateNodeNotFoundErr                        // template node not found error
 )
 
 // notify module errors

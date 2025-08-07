@@ -9,6 +9,7 @@ import (
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
+	"github.com/scienceol/studio/service/pkg/common/constant"
 	"github.com/scienceol/studio/service/pkg/core/material"
 	impl "github.com/scienceol/studio/service/pkg/core/material/material"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
@@ -23,6 +24,7 @@ type Handle struct {
 
 func NewMaterialHandle() *Handle {
 	wsClient := melody.New()
+	wsClient.Config.MaxMessageSize = constant.MaxMessageSize
 	mService := impl.NewMaterial(wsClient)
 	// 注册集群通知
 

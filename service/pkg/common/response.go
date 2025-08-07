@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofrs/uuid/v5"
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common/code"
 )
@@ -21,6 +22,16 @@ type Resp struct {
 	Error     *Error       `json:"error,omitempty"`
 	Data      any          `json:"data,omitempty"`
 	Timestamp int64        `json:"timestamp,omitempty"`
+}
+
+type WsMsgType struct {
+	Action  string    `json:"action"`
+	MsgUUID uuid.UUID `json:"msg_uuid"`
+}
+
+type WSData[T any] struct {
+	WsMsgType
+	Data T `json:"data,omitempty"`
 }
 
 func ReplyErr(ctx *gin.Context, err error, msg ...string) {
@@ -69,11 +80,17 @@ func ReplyOk(ctx *gin.Context, data ...any) {
 	})
 }
 
-func ReplyWSOk(s *melody.Session, data ...any) error {
+func ReplyWSOk(s *melody.Session, action string, msgUUID uuid.UUID, data ...any) error {
 	if len(data) > 0 {
 		d := &Resp{
-			Code:      code.Success,
-			Data:      data[0],
+			Code: code.Success,
+			Data: &WSData[any]{
+				WsMsgType: WsMsgType{
+					Action:  action,
+					MsgUUID: msgUUID,
+				},
+				Data: data[0],
+			},
 			Timestamp: time.Now().Unix(),
 		}
 		v, _ := json.Marshal(d)
@@ -81,19 +98,30 @@ func ReplyWSOk(s *melody.Session, data ...any) error {
 	}
 
 	v, _ := json.Marshal(&Resp{
-		Code:      code.Success,
+		Code: code.Success,
+		Data: &WSData[any]{
+			WsMsgType: WsMsgType{
+				Action:  action,
+				MsgUUID: msgUUID,
+			},
+		},
 		Timestamp: time.Now().Unix(),
 	})
 	return s.Write(v)
 }
 
-func ReplyWSErr(s *melody.Session, err error, msg ...string) error {
+func ReplyWSErr(s *melody.Session, action string, msgUUID uuid.UUID, err error) error {
 	if errCode, ok := err.(code.ErrCode); ok {
 		d := &Resp{
 			Code: errCode,
 			Error: &Error{
-				Msg:  errCode.String(),
-				Info: msg,
+				Msg: errCode.String(),
+			},
+			Data: &WSData[any]{
+				WsMsgType: WsMsgType{
+					Action:  action,
+					MsgUUID: msgUUID,
+				},
 			},
 			Timestamp: time.Now().Unix(),
 		}
@@ -106,8 +134,13 @@ func ReplyWSErr(s *melody.Session, err error, msg ...string) error {
 		d := &Resp{
 			Code: errCode.ErrCode,
 			Error: &Error{
-				Msg:  errCode.Msgs(),
-				Info: msg,
+				Msg: errCode.Msgs(),
+			},
+			Data: &WSData[any]{
+				WsMsgType: WsMsgType{
+					Action:  action,
+					MsgUUID: msgUUID,
+				},
 			},
 			Timestamp: time.Now().Unix(),
 		}
@@ -119,6 +152,12 @@ func ReplyWSErr(s *melody.Session, err error, msg ...string) error {
 		Code: code.UnDefineErr,
 		Error: &Error{
 			Msg: err.Error(),
+		},
+		Data: &WSData[any]{
+			WsMsgType: WsMsgType{
+				Action:  action,
+				MsgUUID: msgUUID,
+			},
 		},
 		Timestamp: time.Now().Unix(),
 	}

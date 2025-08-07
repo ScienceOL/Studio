@@ -15,6 +15,7 @@ import (
 	eStore "github.com/scienceol/studio/service/pkg/repo/environment"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	"github.com/scienceol/studio/service/pkg/utils"
+	"gorm.io/datatypes"
 )
 
 type lab struct {
@@ -131,15 +132,17 @@ func (lab *lab) CreateResource(ctx context.Context, req *environment.ResourceReq
 				Module:      item.Class.Module,
 				Language:    item.Language,
 				StatusTypes: item.Class.StatusTypes,
-				// FIXME: 找不到 bug
-				// DataSchema: utils.Ternary(
-				// 	(item.InitParamSchema != nil) &&
-				// 		(item.InitParamSchema.Data != nil),
-				// 	item.InitParamSchema.Data.Properties, datatypes.JSON{}),
-				// ConfigSchema: utils.Ternary(
-				// 	(item.InitParamSchema != nil) &&
-				// 		(item.InitParamSchema.Config != nil),
-				// 	item.InitParamSchema.Config.Properties, datatypes.JSON{}),
+				// DataSchema: utils.TernaryLazy(
+				// 	item.InitParamSchema == nil || item.InitParamSchema.Data == nil,
+				// 	func() datatypes.JSON { return datatypes.JSON{} },
+				// 	func() datatypes.JSON { return item.InitParamSchema.Data.Properties }, // 安全！
+				// ),
+				DataSchema: utils.SafeValue(func() datatypes.JSON {
+					return item.InitParamSchema.Data.Properties
+				}, datatypes.JSON{}),
+				ConfigSchema: utils.SafeValue(
+					func() datatypes.JSON { return item.InitParamSchema.Config.Properties },
+					datatypes.JSON{}),
 				// Labels      :
 			}
 			return data, true

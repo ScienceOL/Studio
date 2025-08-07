@@ -17,6 +17,11 @@ type DelNodeInfo struct {
 	EdgeUUIDs []uuid.UUID `json:"edge_uuids"`
 }
 
+type UpdateNode struct {
+	UpdateKeys []string
+	Data       *model.MaterialNode
+}
+
 type MaterialRepo interface {
 	// 更新或者插入物料
 	UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode) error
@@ -34,4 +39,8 @@ type MaterialRepo interface {
 	GetEdgesByNodeUUID(ctx context.Context, uuids []uuid.UUID, selectKeys ...string) ([]*model.MaterialEdge, error)
 	// 批量 edges
 	DelEdges(ctx context.Context, uuids []uuid.UUID) error
+	// 批量跟新 node 数据
+	UpdateNodeByUUID(ctx context.Context, data *model.MaterialNode, selectKeys ...string) error
+	// 根据 uuid 获取节点 ID
+	GetNodeIDByUUID(ctx context.Context, nodeUUID uuid.UUID) (int64, error)
 }

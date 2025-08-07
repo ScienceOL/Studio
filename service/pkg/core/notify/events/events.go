@@ -74,9 +74,9 @@ func (events *Events) Broadcast(ctx context.Context, msg *notify.SendMsg) error 
 	}
 
 	data, _ := json.Marshal(msg)
-	ret := events.client.Publish(ctx, string(msg.Action), data)
+	ret := events.client.Publish(ctx, string(msg.Channel), data)
 	if ret.Err() != nil {
-		logger.Errorf(ctx, "send msg fail action: %s", msg.Action)
+		logger.Errorf(ctx, "send msg fail action: %s", msg.Channel)
 		return code.NotifySendMsgErr
 	}
 

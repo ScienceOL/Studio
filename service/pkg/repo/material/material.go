@@ -2,6 +2,7 @@ package material
 
 import (
 	"context"
+	"errors"
 
 	"github.com/gofrs/uuid/v5"
 	"github.com/scienceol/studio/service/pkg/common/code"
@@ -9,6 +10,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/repo/model"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -129,7 +131,7 @@ func (m *materialImpl) GetNodeHandlesByUUID(ctx context.Context, nodeUUIDs []uui
 	res := make([]*NodeHandleInfo, 0, len(nodeUUIDs))
 	if err := m.DBWithContext(ctx).Table("material_node as n").
 		Select("n.uuid as node_uuid, h.uuid as handle_uuid").
-		Joins("inner join resource_handle_template as h on n.id = h.node_id").
+		Joins("inner join resource_handle_template as h on n.resource_node_template_id = h.node_id").
 		Where("n.uuid in ?", nodeUUIDs).
 		Find(&res).Error; err != nil {
 		logger.Errorf(ctx, "GetNodeHandlesByUUID fail node uuids: %+v, err: %+v", nodeUUIDs, err)
@@ -273,4 +275,36 @@ func (m *materialImpl) DelEdges(ctx context.Context, uuids []uuid.UUID) error {
 	}
 
 	return nil
+}
+
+// 批量跟新 node 数据
+func (m *materialImpl) UpdateNodeByUUID(ctx context.Context, data *model.MaterialNode, selectKeys ...string) error {
+	if err := m.DBWithContext(ctx).
+		Model(&model.MaterialNode{}).
+		Select(selectKeys).
+		Where("uuid = ?", data.UUID).
+		Updates(data).Error; err != nil {
+		logger.Errorf(ctx, "UpdateNodeByUUID fail data: %+v, err: %+v", data, err)
+		return code.UpdateDataErr.WithMsg(err.Error())
+	}
+
+	return nil
+}
+
+// 根据 uuid 获取节点 ID
+func (m *materialImpl) GetNodeIDByUUID(ctx context.Context, nodeUUID uuid.UUID) (int64, error) {
+	data := &model.MaterialNode{}
+	if err := m.DBWithContext(ctx).
+		Select("id, uuid").
+		Where("uuid = ?", nodeUUID).
+		First(data).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, code.RecordNotFound
+		}
+
+		logger.Errorf(ctx, "GetNodeIDByUUID query node fail uuid: %s, err: %+v", nodeUUID, err)
+		return 0, code.QueryRecordErr
+	}
+
+	return data.ID, nil
 }
