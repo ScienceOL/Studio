@@ -185,3 +185,5 @@ type WSUpdateNode struct {
 	Pose          *datatypes.JSON `json:"pose,omitempty"`
 	Schema        *datatypes.JSON `json:"schema,omitempty"`
 }
+
+// ======================= 工作流模板相关

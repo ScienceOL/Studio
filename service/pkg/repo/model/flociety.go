@@ -60,3 +60,16 @@ func (*ResourceHandleTemplate) TableName() string {
 }
 
 // TODO: NodeTemplateLibrary -----> ActionNodeTemplate
+type NodeActionTemplate struct {
+}
+
+func (*NodeActionTemplate) TableName() string {
+	return "node_action_template"
+}
+
+type NodeHandleTemplate struct {
+}
+
+func (*NodeHandleTemplate) TableName() string {
+	return "node_handle_template"
+}
