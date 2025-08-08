@@ -1,6 +1,14 @@
 {
   "version": "0.2.0",
-  "configurations": [{
+  "configurations": [
+    // {
+    //   "name": "Launch Package",
+    //   "type": "go",
+    //   "request": "launch",
+    //   "mode": "auto",
+    //   "program": "${workspaceFolder}"
+    // },
+    {
     "name": "migrate",
     "type": "dlv_spawn",
     "request": "launch",
