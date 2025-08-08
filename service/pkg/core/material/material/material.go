@@ -481,7 +481,7 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 			Module:       nodeItem.Module,
 			Language:     nodeItem.Language,
 			StatusTypes:  nodeItem.StatusTypes,
-			Labels:       nodeItem.Labels,
+			Tags:       nodeItem.Tags,
 			DataSchema:   nodeItem.DataSchema,
 			ConfigSchema: nodeItem.ConfigSchema,
 		}, true

@@ -16,7 +16,7 @@ type ResourceNodeTemplate struct {
 	Module       string                      `gorm:"type:varchar(1024)" json:"module"`
 	Language     string                      `gorm:"type:varchar(255);not null;" json:"language"`
 	StatusTypes  datatypes.JSON              `gorm:"type:jsonb" json:"status_types"`
-	Labels       datatypes.JSONSlice[string] `gorm:"type:jsonb" json:"labels"` // label 标签
+	Tags         datatypes.JSONSlice[string] `gorm:"type:jsonb" json:"tags"` // label 标签
 	DataSchema   datatypes.JSON              `gorm:"type:jsonb" json:"data_schema"`
 	ConfigSchema datatypes.JSON              `gorm:"type:jsonb" json:"config_schema"`
 	// ConfigInfo   datatypes.JSON `gorm:"type:jsonb" json:"config_info"` // FIXME: 拓展一张表，一个很大个 json object
@@ -59,17 +59,28 @@ func (*ResourceHandleTemplate) TableName() string {
 	return "resource_handle_template"
 }
 
-// TODO: NodeTemplateLibrary -----> ActionNodeTemplate
-type NodeActionTemplate struct {
+// 节点模板
+type ActionNodeTemplate struct {
+	BaseModel
+	Name        string
+	DisplayName string
+	
+
 }
 
-func (*NodeActionTemplate) TableName() string {
-	return "node_action_template"
+func (*ActionNodeTemplate) TableName() string {
+	return "action_node_template"
 }
 
-type NodeHandleTemplate struct {
+// 节点模板 handle
+type ActionHandleTemplate struct {
+	BaseModel
+	ActionID    int64
+	Name        string
+	DisplayName string
+	Icon        string
 }
 
-func (*NodeHandleTemplate) TableName() string {
-	return "node_handle_template"
+func (*ActionHandleTemplate) TableName() string {
+	return "action_handle_template"
 }
