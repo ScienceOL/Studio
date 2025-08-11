@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/gofrs/uuid/v5"
+	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
@@ -296,4 +297,14 @@ func (e *envImpl) GetResourceTemplateByUUD(ctx context.Context, uuid uuid.UUID, 
 	}
 
 	return data, nil
+}
+
+// 根据实验室
+func (e *envImpl) GetLabList(ctx *context.Context, userID string, req *common.PageReq) (*common.PageResp, error) {
+	// datas := make([]*model.Laboratory, 0, 1)
+	// var total int64
+
+	// query := e.DBWithContext(ctx).Count(&total).Where("")
+
+	return nil, nil
 }

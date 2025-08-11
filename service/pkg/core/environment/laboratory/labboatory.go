@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid/v5"
+	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/environment"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
@@ -218,4 +219,9 @@ func (lab *lab) CreateResource(ctx context.Context, req *environment.ResourceReq
 		}
 		return nil
 	})
+}
+
+func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageResp, error) {
+	// l.envStore.GetLabList(ctx)
+	return nil, nil
 }

@@ -12,6 +12,10 @@ import (
 	"github.com/scienceol/studio/service/pkg/common/code"
 )
 
+const (
+	MaxPageSize = 50
+)
+
 type Error struct {
 	Msg  string   `json:"msg"`
 	Info []string `json:"info,omitempty"`
@@ -22,6 +26,28 @@ type Resp struct {
 	Error     *Error       `json:"error,omitempty"`
 	Data      any          `json:"data,omitempty"`
 	Timestamp int64        `json:"timestamp,omitempty"`
+}
+
+type PageResp struct {
+	Total    int64 `json:"total"`
+	Page     int64 `json:"page"`
+	PageSize int64 `json:"page_size"`
+	Data     any   `json:"data"`
+}
+
+type PageReq struct {
+	Page     int `json:"page" form:"page" uri:"page"`
+	PageSize int `json:"page_size" form:"page_size" uri:"page_size"`
+}
+
+func (p *PageReq) Normalize() {
+	if p.PageSize > MaxPageSize {
+		p.PageSize = MaxPageSize
+	}
+
+	if p.Page <= 0 {
+		p.Page = 1
+	}
 }
 
 type WsMsgType struct {

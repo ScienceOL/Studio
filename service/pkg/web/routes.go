@@ -68,6 +68,7 @@ func InstallURL(g *gin.Engine) {
 			labHandle := laboratory.NewEnvironment()
 			labRouter.POST("", labHandle.CreateLabEnv)
 			labRouter.PATCH("", labHandle.UpdateLabEnv)
+			labRouter.GET("/list", labHandle.LabList)
 			labRouter.POST("/resource", labHandle.CreateLabResource)
 
 			materialHandle := material.NewMaterialHandle()

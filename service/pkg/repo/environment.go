@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gofrs/uuid/v5"
+	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 )
 
@@ -34,4 +35,6 @@ type EnvRepo interface {
 	GetAllDeviceTemplateHandlesByID(ctx context.Context, templateIDs []int64, selectKeys ...string) ([]*model.ResourceHandleTemplate, error)
 	// 根据 uuid 获取 template 数据
 	GetResourceTemplateByUUD(ctx context.Context, uuid uuid.UUID, selectKeys ...string) (*model.ResourceNodeTemplate, error)
+	// 获取实验室列表
+	GetLabList(ctx *context.Context, userID string, req *common.PageReq) (*common.PageResp, error)
 }

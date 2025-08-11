@@ -481,7 +481,7 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 			Module:       nodeItem.Module,
 			Language:     nodeItem.Language,
 			StatusTypes:  nodeItem.StatusTypes,
-			Tags:       nodeItem.Tags,
+			Tags:         nodeItem.Tags,
 			DataSchema:   nodeItem.DataSchema,
 			ConfigSchema: nodeItem.ConfigSchema,
 		}, true
@@ -665,6 +665,7 @@ func (m *materialImpl) upateNode(ctx context.Context, s *melody.Session, b []byt
 
 // 批量删除节点
 func (m *materialImpl) batchDelNode(ctx context.Context, s *melody.Session, b []byte) error {
+	// FIXME: 如果删除父节点，子节点全部删除.
 	data := &common.WSData[[]uuid.UUID]{}
 	err := json.Unmarshal(b, data)
 	if err != nil {
