@@ -77,7 +77,7 @@ func (lab *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Labora
 	}, nil
 }
 
-func (lab *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.UpdateEnvReq) (*environment.UpdateEnvResp, error) {
+func (lab *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.UpdateEnvReq) (*environment.LaboratoryResp, error) {
 	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
 		return nil, code.UnLogin
@@ -97,7 +97,7 @@ func (lab *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.Update
 	if err != nil {
 		return nil, err
 	}
-	return &environment.UpdateEnvResp{
+	return &environment.LaboratoryResp{
 		UUID:        data.UUID,
 		Name:        data.Name,
 		Description: data.Description,
@@ -221,7 +221,28 @@ func (lab *lab) CreateResource(ctx context.Context, req *environment.ResourceReq
 	})
 }
 
-func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageResp, error) {
-	// l.envStore.GetLabList(ctx)
-	return nil, nil
+func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageResp[[]*environment.LaboratoryResp], error) {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return nil, code.UnLogin
+	}
+	resp, err := l.envStore.GetLabList(ctx, []string{userInfo.ID}, req)
+	if err != nil {
+		return nil, err
+	}
+
+	labs := utils.FilterSlice(resp.Data, func(item *model.Laboratory) (*environment.LaboratoryResp, bool) {
+		return &environment.LaboratoryResp{
+			UUID:        item.UUID,
+			Name:        item.Name,
+			Description: item.Description,
+		}, true
+	})
+
+	return &common.PageResp[[]*environment.LaboratoryResp]{
+		Data:     labs,
+		Page:     req.Page,
+		Total:    resp.Total,
+		PageSize: req.PageSize,
+	}, nil
 }

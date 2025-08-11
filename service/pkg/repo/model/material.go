@@ -29,6 +29,7 @@ type MaterialNode struct {
 	Status                 string         `gorm:"type:varchar(20);not null;default:'idle'" json:"status"`
 	Type                   DEVICETYPE     `gorm:"type:varchar(20);not null" json:"type"`
 	ResourceNodeTemplateID int64          `gorm:"type:bigint;index:idx_template" json:"resource_node_template_id"`
+	Class                  string         `gorm:"type:text" json:"class"`
 	InitParamData          datatypes.JSON `gorm:"type:jsonb" json:"init_param_data"` // TODO: 这是原来的 config 对应的数据
 	Schema                 datatypes.JSON `gorm:"type:jsonb" json:"schema"`          // TODO: 从 registry 里面获取，需要 edge 配合修改
 	Data                   datatypes.JSON `gorm:"type:jsonb" json:"data"`

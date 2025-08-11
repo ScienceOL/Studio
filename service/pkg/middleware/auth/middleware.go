@@ -17,6 +17,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/repo/casdoor"
 	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/utils"
 	"golang.org/x/oauth2"
 )
 
@@ -88,7 +89,10 @@ func Auth() func(ctx *gin.Context) {
 // RequireAuth 中间件函数验证用户是否已登录
 func (u *userAuth) AuthUser(ctx *gin.Context) {
 	// 从请求头获取Authorization
+	cookie, _ := ctx.Cookie("access_token_v2")
 	authHeader := ctx.GetHeader("Authorization")
+	queryToken := ctx.Query("access_token_v2")
+	authHeader = utils.Or(queryToken, cookie, authHeader)
 	if authHeader == "" {
 		ctx.JSON(http.StatusUnauthorized, &common.Resp{
 			Code: code.UnLogin,

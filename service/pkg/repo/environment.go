@@ -8,6 +8,11 @@ import (
 	"github.com/scienceol/studio/service/pkg/repo/model"
 )
 
+type ResNodeTpl struct{
+	Node *model.ResourceNodeTemplate
+	Actions []*model.DeviceAction
+}
+
 type EnvRepo interface {
 	// 创建实验室
 	CreateLaboratoryEnv(ctx context.Context, data *model.Laboratory) error
@@ -24,7 +29,7 @@ type EnvRepo interface {
 	// 更新或者插入设备模板 handle
 	UpsertDeviceHandleTemplate(ctx context.Context, data []*model.ResourceHandleTemplate) error
 	// 根据实验室获取所有的注册表信息
-	GetResourceTemplate(ctx context.Context, labID int64, names []string) (map[string]*model.ResourceNodeTemplate, error)
+	GetResourceTemplate(ctx context.Context, labID int64, names []string) (map[string]*ResNodeTpl, error)
 	// 根据 device template node id 获取所有的 handle
 	GetResourceHandleTemplates(ctx context.Context, resIDs []int64) (map[int64][]*model.ResourceHandleTemplate, error)
 	// 根据 device template node id 获取所有的 uuid
@@ -36,5 +41,5 @@ type EnvRepo interface {
 	// 根据 uuid 获取 template 数据
 	GetResourceTemplateByUUD(ctx context.Context, uuid uuid.UUID, selectKeys ...string) (*model.ResourceNodeTemplate, error)
 	// 获取实验室列表
-	GetLabList(ctx *context.Context, userID string, req *common.PageReq) (*common.PageResp, error)
+	GetLabList(ctx context.Context, userIDs []string, req *common.PageReq) (*common.PageResp[[]*model.Laboratory], error)
 }

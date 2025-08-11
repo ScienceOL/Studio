@@ -11,11 +11,13 @@ import (
 func Table(_ context.Context) error {
 	return utils.IfErrReturn(func() error {
 		return db.DB().DBIns().AutoMigrate(
-			&model.Laboratory{},
-			&model.DeviceAction{},
-			&model.ResourceNodeTemplate{},
-			&model.ResourceHandleTemplate{},
-			&model.MaterialNode{},
-			&model.MaterialEdge{})
+			&model.Laboratory{},             // 实验室
+			&model.ResourceNodeTemplate{},   // 资源模板
+			&model.ResourceHandleTemplate{}, // 资源 handle 模板
+			&model.DeviceAction{},           // 实验室动作
+			&model.MaterialNode{},           // 物料节点
+			&model.MaterialEdge{},           // 物料边
+			&model.WorkflowNodeTemplate{},     // 动作节点模板
+			&model.WorkflowHandleTemplate{})   // 动作节点handle 模板
 	})
 }

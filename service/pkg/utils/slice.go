@@ -94,3 +94,15 @@ func SliceToMap[K comparable, V any, T any](sources []T, f func(i T) (K, V)) map
 	}
 	return result
 }
+
+func MapToSlice[K comparable, V any, T any](sources map[K]V, f func(key K, value V) (T, bool)) []T {
+	result := make([]T, 0, len(sources))
+	for k, v := range sources {
+		data, add := f(k, v)
+		if add {
+			result = append(result, data)
+		}
+	}
+
+	return result
+}

@@ -28,11 +28,11 @@ type Resp struct {
 	Timestamp int64        `json:"timestamp,omitempty"`
 }
 
-type PageResp struct {
+type PageResp[T any] struct {
 	Total    int64 `json:"total"`
-	Page     int64 `json:"page"`
-	PageSize int64 `json:"page_size"`
-	Data     any   `json:"data"`
+	Page     int   `json:"page"`
+	PageSize int   `json:"page_size"`
+	Data     T     `json:"data"`
 }
 
 type PageReq struct {
@@ -45,9 +45,22 @@ func (p *PageReq) Normalize() {
 		p.PageSize = MaxPageSize
 	}
 
+	if p.PageSize <= 0 {
+		p.PageSize = 1
+	}
+
 	if p.Page <= 0 {
 		p.Page = 1
 	}
+}
+
+func (p *PageReq) AddPage(count int) {
+	p.Normalize()
+	p.Page += count
+}
+
+func (p *PageReq) Offest() int {
+	return (p.Page - 1) * p.PageSize
 }
 
 type WsMsgType struct {

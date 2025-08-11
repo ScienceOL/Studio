@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/gofrs/uuid/v5"
@@ -22,6 +21,7 @@ import (
 	mStore "github.com/scienceol/studio/service/pkg/repo/material"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	"github.com/scienceol/studio/service/pkg/utils"
+	"gorm.io/datatypes"
 )
 
 type materialImpl struct {
@@ -61,6 +61,7 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req *material.GraphNo
 		return err
 	}
 
+	// FIXME: 这个可能会报错，刚插入数据，迅速索引数据
 	_ = m.addEdges(ctx, labData.ID, req.Edges, false)
 	return nil
 }
@@ -84,7 +85,23 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 		return code.ResNotExistErr
 	}
 
-	levelNodes := sortNodeLevel(ctx, req.Nodes)
+	nodeNames := utils.FilterSlice(req.Nodes, func(item *material.Node) (*utils.Node[string, *material.Node], bool) {
+		if item.Name == "" {
+			return nil, false
+		}
+
+		return &utils.Node[string, *material.Node]{
+			Name:   item.Name,
+			Parent: item.Parent,
+			Data:   item,
+		}, true
+	})
+
+	levelNodes, err := utils.BuildDAGHierarchy(nodeNames)
+	if err != nil {
+		return code.InvalidDagErr.WithMsg(err.Error())
+	}
+
 	nodeMap := make(map[string]*model.MaterialNode)
 	if err = db.DB().ExecTx(ctx, func(txCtx context.Context) error {
 		for _, nodes := range levelNodes {
@@ -93,25 +110,26 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 				data := &model.MaterialNode{
 					ParentID:               0,
 					LabID:                  labData.ID,
-					Name:                   n.DeviceID,
-					DisplayName:            n.Name,
-					Description:            n.Description,
-					Type:                   n.Type,
+					Name:                   n.Data.DeviceID,
+					DisplayName:            n.Data.Name,
+					Description:            n.Data.Description,
+					Class:                  n.Data.Class,
+					Type:                   n.Data.Type,
 					ResourceNodeTemplateID: 0,
-					InitParamData:          n.Config,
-					Data:                   n.Data,
-					Pose:                   n.Pose,
-					Model:                  n.Model,
+					InitParamData:          n.Data.Config,
+					Data:                   n.Data.Data,
+					Pose:                   n.Data.Pose,
+					Model:                  n.Data.Model,
 					Icon:                   "",
-					Schema:                 n.Schema,
+					Schema:                 n.Data.Schema,
 				}
 				if node := nodeMap[n.Parent]; node != nil {
 					data.ParentID = node.ID
 				}
 
-				if resInfo := resMap[n.Class]; resInfo != nil {
-					data.ResourceNodeTemplateID = resInfo.ID
-					data.Icon = resInfo.Icon // TODO: 是否有缺省值
+				if resInfo := resMap[n.Data.Class]; resInfo != nil {
+					data.ResourceNodeTemplateID = resInfo.Node.ID
+					data.Icon = resInfo.Node.Icon // TODO: 是否有缺省值
 				}
 
 				datas = append(datas, data)
@@ -119,6 +137,10 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 			}
 
 			if err := m.materialStore.UpsertMaterialNode(txCtx, datas); err != nil {
+				return err
+			}
+
+			if err := m.createActionTemplate(txCtx, datas, resMap); err != nil {
 				return err
 			}
 		}
@@ -131,74 +153,109 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 	return nil
 }
 
-func sortNodeLevel(ctx context.Context, nodes []*material.Node) [][]*material.Node {
-	nodeMap := make(map[string]*material.Node)
-	for _, node := range nodes {
-		nodeMap[node.DeviceID] = node
+func (m *materialImpl) createActionTemplate(ctx context.Context, nodes []*model.MaterialNode, resMap map[string]*repo.ResNodeTpl) error {
+	type wnTpl struct {
+		Node    *model.WorkflowNodeTemplate
+		Handles []*model.WorkflowHandleTemplate
+	}
+	wnTpls := make([]*wnTpl, 0, 10)
+	for _, mNode := range nodes {
+		if mNode.ResourceNodeTemplateID == 0 {
+			continue
+		}
+
+		resTpl, ok := resMap[mNode.Class]
+		if !ok {
+			continue
+		}
+
+		for _, action := range resTpl.Actions {
+			tl := &wnTpl{}
+			tl.Node = &model.WorkflowNodeTemplate{
+				Name:                   action.Name,
+				LabID:                  mNode.LabID,
+				ResourceNodeTemplateID: resTpl.Node.ID,
+				DeviceActionID:         action.ID,
+				MaterialNodeID:         mNode.ID,
+				DisplayName:            action.Name,
+				Header:                 action.Name,
+				Footer:                 &mNode.Class,
+				ParamType:              "DEFAULT",
+				Schema: utils.SafeValue(func() datatypes.JSON {
+					data := struct {
+						Properties struct {
+							Goal datatypes.JSON `json:"goal"`
+						} `json:"properties"`
+					}{}
+					if err := json.Unmarshal(action.Schema, &data); err != nil {
+						return datatypes.JSON{}
+					}
+					return data.Properties.Goal
+				}, datatypes.JSON{}),
+				ExecuteScript: "",
+				NodeType:      "",
+			}
+			tl.Handles = append(tl.Handles, &model.WorkflowHandleTemplate{
+				HandleKey: "ready",
+				IoType:    "target",
+			})
+			tl.Handles = append(tl.Handles, &model.WorkflowHandleTemplate{
+				HandleKey: "ready",
+				IoType:    "source",
+			})
+
+			hs := material.ActionHandle{}
+			if err := json.Unmarshal(action.Handles, &hs); err != nil {
+				logger.Errorf(ctx, "unmarshal action handles id: %d, err: %+v", action.ID, err)
+				continue
+			}
+			inHandles := utils.FilterSlice(hs.Input, func(h *material.Handle) (*model.WorkflowHandleTemplate, bool) {
+				return &model.WorkflowHandleTemplate{
+					HandleKey:   h.HandlerKey,
+					IoType:      "target",
+					DisplayName: h.Label,
+					Type:        h.DataType,
+					DataSource:  h.DataSource,
+					DataKey:     h.DataKey,
+				}, true
+			})
+			tl.Handles = append(tl.Handles, inHandles...)
+			outHandles := utils.FilterSlice(hs.Input, func(h *material.Handle) (*model.WorkflowHandleTemplate, bool) {
+				return &model.WorkflowHandleTemplate{
+					HandleKey:   h.HandlerKey,
+					IoType:      "source",
+					DisplayName: h.Label,
+					Type:        h.DataType,
+					DataSource:  h.DataSource,
+					DataKey:     h.DataKey,
+				}, true
+			})
+			tl.Handles = append(tl.Handles, outHandles...)
+			wnTpls = append(wnTpls, tl)
+		}
 	}
 
-	mapLevel := make(map[string]int)
-	for _, node := range nodes {
-		getNodeLevel(ctx, mapLevel, nodeMap, node)
-	}
-
-	type IndexLevel struct {
-		Level int
-		Nodes []*material.Node
-	}
-
-	levelNodeMap := make(map[int][]*material.Node)
-	for name, level := range mapLevel {
-		levelNodeMap[level] = append(levelNodeMap[level], nodeMap[name])
-	}
-
-	indexLevel := make([]*IndexLevel, 0, len(mapLevel))
-	for level, nodes := range levelNodeMap {
-		indexLevel = append(indexLevel, &IndexLevel{
-			Level: level,
-			Nodes: nodes,
-		})
-	}
-
-	sort.Slice(indexLevel, func(i, j int) bool {
-		return indexLevel[i].Level < indexLevel[j].Level
+	tls := utils.FilterSlice(wnTpls, func(item *wnTpl) (*model.WorkflowNodeTemplate, bool) {
+		return item.Node, true
 	})
 
-	res := make([][]*material.Node, 0, len(indexLevel))
-	for _, groupNodes := range indexLevel {
-		res = append(res, groupNodes.Nodes)
+	if err := m.materialStore.UpsertWorkflowNodeTemplate(ctx, tls); err != nil {
+		return err
 	}
 
-	return res
-}
+	tlHandles, _ := utils.FilterSliceWithErr(wnTpls, func(item *wnTpl) ([]*model.WorkflowHandleTemplate, bool, error) {
+		hs := utils.FilterSlice(item.Handles, func(h *model.WorkflowHandleTemplate) (*model.WorkflowHandleTemplate, bool) {
+			h.NodeTemplateID = item.Node.ID
+			return h, true
+		})
+		return hs, true, nil
+	})
 
-func getNodeLevel(ctx context.Context, cache map[string]int, nodeMap map[string]*material.Node, node *material.Node) int {
-	if node.Parent == "" {
-		cache[node.DeviceID] = 0
-		return 0
+	if err := m.materialStore.UpsertWorkflowHandleTemplate(ctx, tlHandles); err != nil {
+		return err
 	}
 
-	cacheNodeLevel, ok := cache[node.DeviceID]
-	if ok {
-		return cacheNodeLevel
-	}
-
-	parentNodeLevel, ok := cache[node.Parent]
-	if ok {
-		cache[node.DeviceID] = parentNodeLevel + 1
-		return 0
-	}
-
-	parentNode, ok := nodeMap[node.Parent]
-	if !ok {
-		logger.Warnf(ctx, "node parent invalidate node name: %s, node parent name: %s", node.Name, node.Parent)
-		cache[node.DeviceID] = 0
-		return 0
-	}
-
-	parentLevel := getNodeLevel(ctx, cache, nodeMap, parentNode)
-	cache[node.DeviceID] = parentLevel + 1
-	return cache[node.DeviceID]
+	return nil
 }
 
 func (m *materialImpl) CreateEdge(ctx context.Context, req *material.GraphEdge) error {

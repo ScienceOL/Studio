@@ -92,6 +92,7 @@ const (
 	UpdateNodeErr                                  // update material node error
 	ParentNodeNotFoundErr                          // parent node not found error
 	TemplateNodeNotFoundErr                        // template node not found error
+	InvalidDagErr                                  // invalid dag error
 )
 
 // notify module errors

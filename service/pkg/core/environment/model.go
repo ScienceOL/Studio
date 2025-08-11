@@ -25,7 +25,7 @@ type UpdateEnvReq struct {
 	Description *string   `json:"description,omitempty"`
 }
 
-type UpdateEnvResp struct {
+type LaboratoryResp struct {
 	UUID        uuid.UUID `json:"uuid"`
 	Name        string    `json:"name"`
 	Description *string   `json:"description"`

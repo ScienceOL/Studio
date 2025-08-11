@@ -60,27 +60,39 @@ func (*ResourceHandleTemplate) TableName() string {
 }
 
 // 节点模板
-type ActionNodeTemplate struct {
+type WorkflowNodeTemplate struct {
 	BaseModel
-	Name        string
-	DisplayName string
-	
-
+	Name                   string         `gorm:"type:varchar(100);not null;uniqueIndex:idx_ant_ldmn,priority:4" json:"name"`       // action name
+	LabID                  int64          `gorm:"type:bigint;not null;uniqueIndex:idx_ant_ldmn,priority:1" json:"lab_id"`           // 实验室 id
+	ResourceNodeTemplateID int64          `gorm:"type:bigint;not null" json:"resource_node_template_id"`                            // 引用模板 id
+	DeviceActionID         int64          `gorm:"type:bigint;not null;uniqueIndex:idx_ant_ldmn,priority:2" json:"device_action_id"` // 引用的对应 action id
+	MaterialNodeID         int64          `gorm:"type:bigint;not null;uniqueIndex:idx_ant_ldmn,priority:3" json:"material_node_id"` // 物料 id
+	DisplayName            string         `gorm:"type:varchar(255);not null" json:"display_name"`
+	Header                 string         `gorm:"type:text" json:"header"`
+	Footer                 *string        `gorm:"type:text" json:"footer"`
+	ParamType              string         `gorm:"type:varchar(50);default:'DEFAULT'" json:"param_type"`
+	Schema                 datatypes.JSON `gorm:"type:jsonb" json:"schema"`
+	ExecuteScript          string         `gorm:"type:text" json:"execute_script"`
+	NodeType               string         `gorm:"type:varchar(50);not null;default:'ILab'" json:"node_type"`
+	// ParamDataKey string 现状都是 default ，是不是没有用？
 }
 
-func (*ActionNodeTemplate) TableName() string {
-	return "action_node_template"
+func (*WorkflowNodeTemplate) TableName() string {
+	return "workflow_node_template"
 }
 
 // 节点模板 handle
-type ActionHandleTemplate struct {
+type WorkflowHandleTemplate struct {
 	BaseModel
-	ActionID    int64
-	Name        string
-	DisplayName string
-	Icon        string
+	NodeTemplateID int64  `gorm:"type:bigint;not null;uniqueIndex:idx_aht_ahi,priority:1" json:"node_template_id"` // 节点模板的 id
+	HandleKey      string `gorm:"type:varchar(100);not null;uniqueIndex:idx_aht_ahi,priority:2" json:"handle_key"`
+	IoType         string `gorm:"type:varchar(10);not null;uniqueIndex:idx_aht_ahi,priority:3" json:"io_type"`
+	DisplayName    string `gorm:"type:varchar(255);not null" json:"display_name"`
+	Type           string `gorm:"type:varchar(100);not null" json:"type"`
+	DataSource     string `gorm:"type:varchar(10)" json:"data_source"`
+	DataKey        string `gorm:"type:varchar(100)" json:"data_key"`
 }
 
-func (*ActionHandleTemplate) TableName() string {
-	return "action_handle_template"
+func (*WorkflowHandleTemplate) TableName() string {
+	return "workflow_handle_template"
 }
