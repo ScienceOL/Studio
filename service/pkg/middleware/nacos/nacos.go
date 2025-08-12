@@ -21,10 +21,10 @@ type Kms struct {
 type nacosClient struct {
 	Ctx    context.Context
 	client config_client.IConfigClient
-	*NacoConf
+	*Conf
 }
 
-type NacoConf struct {
+type Conf struct {
 	Endpoint    string
 	ContextPath string
 	NamespaceID string
@@ -40,7 +40,7 @@ type NacoConf struct {
 	Kms         *Kms   // kms 加密
 }
 
-func (conf *NacoConf) checkParam() error {
+func (conf *Conf) checkParam() error {
 	if conf.Endpoint == "" {
 		return fmt.Errorf("endpoint is empty")
 	}
@@ -77,9 +77,9 @@ func (conf *NacoConf) checkParam() error {
 	return nil
 }
 
-// 如果初始化化失败，会直接退出进程
-func MustInit(ctx context.Context, conf *NacoConf, onContent func(content []byte) error) {
-	n := &nacosClient{Ctx: ctx, NacoConf: conf}
+// 如果初始化失败，会直接退出进程
+func MustInit(ctx context.Context, conf *Conf, onContent func(content []byte) error) {
+	n := &nacosClient{Ctx: ctx, Conf: conf}
 
 	if err := conf.checkParam(); err != nil {
 		logger.Fatalf(ctx, "参数校验失败 err: %+v", err)
@@ -87,12 +87,12 @@ func MustInit(ctx context.Context, conf *NacoConf, onContent func(content []byte
 	}
 
 	if err := n.initClient(ctx); err != nil {
-		logger.Fatalf(ctx, "初始化 naco 失败 err: %v\n", err)
+		logger.Fatalf(ctx, "初始化 nacos 失败 err: %v\n", err)
 		os.Exit(1)
 	}
 
 	if err := n.getConf(ctx, onContent); err != nil {
-		logger.Fatalf(ctx, "初始化 naco 失败 err: %v\n", err)
+		logger.Fatalf(ctx, "初始化 nacos 失败 err: %v\n", err)
 		os.Exit(1)
 	}
 }

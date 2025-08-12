@@ -1,6 +1,6 @@
 package login
 
-import "github.com/scienceol/studio/service/pkg/middleware/auth"
+import "github.com/scienceol/studio/service/pkg/repo/model"
 
 type Resp struct {
 	RedirectURL string `json:"redirect_url"`
@@ -23,8 +23,8 @@ type CallbackReq struct {
 }
 
 type CallbackResp struct {
-	User         *auth.UserData `json:"user"`
-	Token        string         `json:"token"`
-	RefreshToken string         `json:"refresh_token"`
-	ExpiresIn    int64          `json:"expires_in"`
+	User         *model.UserData `json:"user"`
+	Token        string          `json:"token"`
+	RefreshToken string          `json:"refresh_token"`
+	ExpiresIn    int64           `json:"expires_in"`
 }

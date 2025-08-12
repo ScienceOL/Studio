@@ -112,7 +112,7 @@ func initMigrate(cmd *cobra.Command, _ []string) error {
 func initWeb(cmd *cobra.Command, _ []string) error {
 	config := webapp.Config()
 	// 初始化 nacos , 注意初始化时序，请勿在动态配置未初始化时候使用配置
-	nacos.MustInit(cmd.Context(), &nacos.NacoConf{
+	nacos.MustInit(cmd.Context(), &nacos.Conf{
 		Endpoint:  config.Nacos.Endpoint,
 		User:      config.Nacos.User,
 		Password:  config.Nacos.Password,
@@ -219,6 +219,8 @@ func newRouter(cmd *cobra.Command, _ []string) error {
 }
 
 func cleanWebResource(cmd *cobra.Command, _ []string) error {
+	// FIXME: 关系消息通知中心
+	// FIXME: 关闭 websocket
 	redis.CloseRedis(cmd.Context())
 	db.ClosePostgres(cmd.Context())
 	trace.CloseTrace()

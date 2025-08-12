@@ -11,17 +11,13 @@ import (
 func Table(_ context.Context) error {
 	return utils.IfErrReturn(func() error {
 		return db.DB().DBIns().AutoMigrate(
-			&model.Laboratory{},
-			&model.Registry{},
-			&model.RegAction{},
-			&model.DeviceNodeTemplate{},
-			&model.DeviceNodeHandleTemplate{},
-			&model.DeviceNodeParamTemplate{},
-			&model.MaterialNode{},
-			&model.MaterialHandle{},
-			&model.MaterialEdge{})
-	}, func() error {
-		return db.DB().DBIns().Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_registry_lab_name_version_active 
-			 ON registry (lab_id, name, version) WHERE status != 'del'`).Error
+			&model.Laboratory{},             // 实验室
+			&model.ResourceNodeTemplate{},   // 资源模板
+			&model.ResourceHandleTemplate{}, // 资源 handle 模板
+			&model.DeviceAction{},           // 实验室动作
+			&model.MaterialNode{},           // 物料节点
+			&model.MaterialEdge{},           // 物料边
+			&model.WorkflowNodeTemplate{},   // 动作节点模板
+			&model.WorkflowHandleTemplate{}) // 动作节点handle 模板
 	})
 }

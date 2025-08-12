@@ -38,7 +38,7 @@
       "logo": "",
       "homepageUrl": "",
       "description": "",
-      "organization": "",
+      "organization": "scienceol",
       "cert": "cert-built-in",
       "headerHtml": "",
       "enablePassword": true,
@@ -606,6 +606,13 @@
           "viewRule": "Self",
           "modifyRule": "Self",
           "regex": ""
+        },
+        {
+          "name": "API key",
+          "visible": true,
+          "viewRule": "Admin",
+          "modifyRule": "Admin",
+          "regex": ""
         }
       ]
     },
@@ -871,6 +878,13 @@
           "viewRule": "Self",
           "modifyRule": "Self",
           "regex": ""
+        },
+        {
+          "name": "API key",
+          "visible": true,
+          "viewRule": "Self",
+          "modifyRule": "Self",
+          "regex": ""
         }
       ]
     }
@@ -1055,7 +1069,10 @@
       "invitationCode": "",
       "faceIds": null,
       "ldap": "",
-      "properties": {},
+      "properties": {
+        "apiKey": "studio",
+        "apiKeyEnabled": "true"
+      },
       "roles": null,
       "permissions": null,
       "groups": null,

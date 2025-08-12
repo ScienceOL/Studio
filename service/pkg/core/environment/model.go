@@ -1,7 +1,7 @@
 package environment
 
 import (
-	"github.com/scienceol/studio/service/pkg/common"
+	"github.com/gofrs/uuid/v5"
 	"gorm.io/datatypes"
 )
 
@@ -11,8 +11,8 @@ type LaboratoryEnvReq struct {
 }
 
 type LaboratoryEnvResp struct {
-	UUID common.BinUUID `json:"uuid"`
-	Name string         `json:"name"`
+	UUID uuid.UUID `json:"uuid"`
+	Name string    `json:"name"`
 }
 
 func (l *LaboratoryEnvResp) GetUUIDString() string {
@@ -20,15 +20,15 @@ func (l *LaboratoryEnvResp) GetUUIDString() string {
 }
 
 type UpdateEnvReq struct {
-	UUID        common.BinUUID `json:"uuid" binding:"required"`
-	Name        string         `json:"name,omitempty"`
-	Description *string        `json:"description,omitempty"`
+	UUID        uuid.UUID `json:"uuid" binding:"required"`
+	Name        string    `json:"name,omitempty"`
+	Description *string   `json:"description,omitempty"`
 }
 
-type UpdateEnvResp struct {
-	UUID        common.BinUUID `json:"uuid"`
-	Name        string         `json:"name"`
-	Description *string        `json:"description"`
+type LaboratoryResp struct {
+	UUID        uuid.UUID `json:"uuid"`
+	Name        string    `json:"name"`
+	Description *string   `json:"description"`
 }
 
 type RegAction struct {
@@ -70,15 +70,19 @@ type RegInitParamSchema struct {
 	Config *RegSchema `json:"config,omitempty"`
 }
 
-type RegistryReq struct {
-	LabUUID         common.BinUUID     `json:"lab_uuid" binding:"required"`
-	RegName         string             `json:"reg_name" binding:"required"`
-	Description     *string            `json:"description,omitempty"`
-	Icon            string             `json:"icon,omitempty"`
-	RegistryType    string             `json:"registry_type" binding:"required"`
-	Version         string             `json:"version" default:"0.0.1"`
-	FilePath        string             `json:"file_path"`
-	Class           RegClass           `json:"class"`
-	Handles         []*RegHandle       `json:"handles"`
-	InitParamSchema RegInitParamSchema `json:"init_param_schema"`
+type ResourceReq struct {
+	Resources []Resource `json:"resources"`
+}
+
+type Resource struct {
+	RegName         string              `json:"id" binding:"required"`
+	Description     *string             `json:"description,omitempty"`
+	Icon            string              `json:"icon,omitempty"`
+	Language        string              `json:"registry_type" binding:"required"`
+	Version         string              `json:"version" default:"0.0.1"`
+	FilePath        string              `json:"file_path"`
+	Class           RegClass            `json:"class"`
+	Handles         []*RegHandle        `json:"handles"`
+	InitParamSchema *RegInitParamSchema `json:"init_param_schema,omitempty"`
+	Model           datatypes.JSON      `json:"model"`
 }

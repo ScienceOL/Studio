@@ -2,44 +2,72 @@ package laboratory
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/gofrs/uuid/v5"
+	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/environment"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/repo"
+	"github.com/scienceol/studio/service/pkg/repo/casdoor"
 	eStore "github.com/scienceol/studio/service/pkg/repo/environment"
 	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/utils"
+	"gorm.io/datatypes"
 )
 
 type lab struct {
-	envStore repo.EnvRepo
+	envStore      repo.EnvRepo
+	accountClient repo.Account
 }
 
 func NewLab() environment.EnvService {
 	return &lab{
-		envStore: eStore.NewEnv(),
+		envStore:      eStore.NewEnv(),
+		accountClient: casdoor.NewCasClient(),
 	}
 }
 
-func (lab *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.LaboratoryEnvReq) (*environment.LaboratoryEnvResp, error) {
+func (l *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.LaboratoryEnvReq) (*environment.LaboratoryEnvResp, error) {
 	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
 		return nil, code.UnLogin
 	}
 
+	ak := uuid.Must(uuid.NewV4()).String()
+	sk := uuid.Must(uuid.NewV4()).String()
+	err := l.accountClient.CreateLabUser(ctx, &model.LabInfo{
+		AccessKey:         ak,
+		AccessSecret:      sk,
+		Name:              fmt.Sprintf("%s-%s", req.Name, ak),
+		DisplayName:       req.Name,
+		Avatar:            "https://cdn.casbin.org/img/casbin.svg",
+		Owner:             "scienceol",
+		Type:              model.LABTYPE,
+		Password:          "lab-user",
+		SignupApplication: "scienceol",
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	data := &model.Laboratory{
-		Name:        req.Name,
-		UserID:      userInfo.ID,
-		Status:      model.INIT,
-		Description: req.Description,
+		Name:         req.Name,
+		UserID:       userInfo.ID,
+		Status:       model.INIT,
+		AccessKey:    ak,
+		AccessSecret: sk,
+		Description:  req.Description,
 		BaseModel: model.BaseModel{
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
 	}
-	if err := lab.envStore.CreateLaboratoryEnv(ctx, data); err != nil {
+	if err := l.envStore.CreateLaboratoryEnv(ctx, data); err != nil {
+		// FIXME: 如果创建实验室失败，则删除对应的实验室用户
 		return nil, err
 	}
 
@@ -49,7 +77,7 @@ func (lab *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Labora
 	}, nil
 }
 
-func (lab *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.UpdateEnvReq) (*environment.UpdateEnvResp, error) {
+func (l *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.UpdateEnvReq) (*environment.LaboratoryResp, error) {
 	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
 		return nil, code.UnLogin
@@ -65,127 +93,156 @@ func (lab *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.Update
 		Description: req.Description,
 	}
 
-	err := lab.envStore.UpdateLaboratoryEnv(ctx, data)
+	err := l.envStore.UpdateLaboratoryEnv(ctx, data)
 	if err != nil {
 		return nil, err
 	}
-	return &environment.UpdateEnvResp{
+	return &environment.LaboratoryResp{
 		UUID:        data.UUID,
 		Name:        data.Name,
 		Description: data.Description,
 	}, nil
 }
 
-func (lab *lab) CreateReg(ctx context.Context, req *environment.RegistryReq) error {
-	userIfo := auth.GetCurrentUser(ctx)
-	if userIfo == nil {
+func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) error {
+	if len(req.Resources) == 0 {
+		return code.ResourceIsEmptyErr
+	}
+
+	labInfo := auth.GetCurrentUser(ctx)
+	if labInfo == nil {
 		return code.UnLogin
 	}
-	labData, err := lab.envStore.GetLabByUUID(ctx, req.LabUUID)
+	labData, err := l.envStore.GetLabByAkSk(ctx, labInfo.AccessKey, labInfo.AccessSecret)
 	if err != nil {
 		return err
 	}
 
-	regData := &model.Registry{
-		Name:   req.RegName,
-		LabID:  labData.ID,
-		Status: model.REGINIT,
-		Module: req.Class.Module,
-		// FIXME: 未查询到数据从哪获取
-		// Model      : datatypes.JSON(req.Class.Module), // @世xiang
-		Type:         req.Class.Type,
-		RegsitryType: req.RegistryType,
-		Version:      req.Version,
-		StatusTypes:  req.Class.StatusTypes,
-		Icon:         req.Icon,
-		Description:  req.Description,
-	}
-
-	// 处理 action
-
 	return db.DB().ExecTx(ctx, func(txCtx context.Context) error {
-		if err := lab.envStore.CreateReg(txCtx, regData); err != nil {
-			return err
-		}
-
-		actions := make([]*model.RegAction, 0, len(req.Class.ActionValueMappings))
-		for actionName, action := range req.Class.ActionValueMappings {
-			if actionName == "" {
-				return code.RegActionNameEmptyErr
+		resDatas := utils.FilterSlice(req.Resources, func(item environment.Resource) (*model.ResourceNodeTemplate, bool) {
+			data := &model.ResourceNodeTemplate{
+				Name:        item.RegName,
+				LabID:       labData.ID,     // 实验室的 id
+				UserID:      labData.UserID, // 创建实验室的 user id
+				Header:      item.RegName,
+				Footer:      "",
+				Version:     utils.Or(item.Version, "0.0.1"),
+				Icon:        item.Icon,
+				Description: item.Description,
+				Model:       item.Model,
+				Module:      item.Class.Module,
+				Language:    item.Language,
+				StatusTypes: item.Class.StatusTypes,
+				// DataSchema: utils.TernaryLazy(
+				// 	item.InitParamSchema == nil || item.InitParamSchema.Data == nil,
+				// 	func() datatypes.JSON { return datatypes.JSON{} },
+				// 	func() datatypes.JSON { return item.InitParamSchema.Data.Properties }, // 安全！
+				// ),
+				DataSchema: utils.SafeValue(func() datatypes.JSON {
+					return item.InitParamSchema.Data.Properties
+				}, datatypes.JSON{}),
+				ConfigSchema: utils.SafeValue(
+					func() datatypes.JSON { return item.InitParamSchema.Config.Properties },
+					datatypes.JSON{}),
+				// Labels      :
 			}
+			return data, true
+		})
 
-			actions = append(actions, &model.RegAction{
-				RegID:       regData.ID,
-				Name:        actionName,
-				Goal:        action.Goal,
-				GoalDefault: action.GoalDefault,
-				Feedback:    action.Feedback,
-				Result:      action.Result,
-				Schema:      action.Schema,
-				Type:        action.Type,
-				Handles:     action.Handles,
-			})
-		}
+		resDataMap := utils.SliceToMap(resDatas, func(item *model.ResourceNodeTemplate) (string, *model.ResourceNodeTemplate) {
+			return item.Name, item
+		})
 
-		if err := lab.envStore.UpsertRegAction(txCtx, actions); err != nil {
+		if err := l.envStore.UpsertDeviceTemplate(txCtx, resDatas); err != nil {
 			return err
 		}
 
-		deviceData := &model.DeviceNodeTemplate{
-			Name:        req.RegName,
-			LabID:       labData.ID,
-			RegID:       regData.ID,
-			UserID:      userIfo.ID,
-			Header:      regData.Name,
-			Footer:      "",
-			Version:     regData.Version,
-			Icon:        regData.Icon,
-			Description: regData.Description,
-		}
-		if err := lab.envStore.UpsertDeviceTemplate(txCtx, deviceData); err != nil {
+		// device actions
+		resDeviceAction, err := utils.FilterSliceWithErr(req.Resources, func(item environment.Resource) ([]*model.DeviceAction, bool, error) {
+			resData, ok := resDataMap[item.RegName]
+			if !ok {
+				return nil, false, code.ResourceNotExistErr
+			}
+			actions := make([]*model.DeviceAction, 0, len(item.Class.ActionValueMappings))
+			for actionName, action := range item.Class.ActionValueMappings {
+				if actionName == "" {
+					return nil, false, code.RegActionNameEmptyErr
+				}
+
+				actions = append(actions, &model.DeviceAction{
+					ResNodeID:   resData.ID,
+					Name:        actionName,
+					Goal:        action.Goal,
+					GoalDefault: action.GoalDefault,
+					Feedback:    action.Feedback,
+					Result:      action.Result,
+					Schema:      action.Schema,
+					Type:        action.Type,
+					Handles:     action.Handles,
+				})
+			}
+			return actions, true, nil
+		})
+		if err != nil {
 			return err
 		}
 
-		handles := make([]*model.DeviceNodeHandleTemplate, 0, len(req.Handles))
-		for _, handle := range req.Handles {
-			handles = append(handles, &model.DeviceNodeHandleTemplate{
-				NodeID:      deviceData.ID,
-				Name:        handle.HandlerKey,
-				DisplayName: handle.Label,
-				Type:        handle.DataType,
-				IOType:      handle.IoType,
-				Source:      handle.DataSource,
-				Key:         handle.DataKey,
-				Side:        handle.Side,
-			})
-		}
-		if err := lab.envStore.UpsertDeviceHandleTemplate(txCtx, handles); err != nil {
+		// device handles
+		resDeviceHandles, err := utils.FilterSliceWithErr(req.Resources, func(item environment.Resource) ([]*model.ResourceHandleTemplate, bool, error) {
+			resData, ok := resDataMap[item.RegName]
+			if !ok {
+				return nil, false, code.ResourceNotExistErr
+			}
+			handles := make([]*model.ResourceHandleTemplate, 0, len(item.Class.ActionValueMappings))
+			for _, handle := range item.Handles {
+				handles = append(handles, &model.ResourceHandleTemplate{
+					NodeID:      resData.ID,
+					Name:        handle.HandlerKey,
+					DisplayName: handle.Label,
+					Type:        handle.DataType,
+					IOType:      handle.IoType,
+					Source:      handle.DataSource,
+					Key:         handle.DataKey,
+					Side:        handle.Side,
+				})
+			}
+			return handles, true, nil
+		})
+		if err != nil {
 			return err
 		}
-
-		deviceSchemas := make([]*model.DeviceNodeParamTemplate, 0, 2)
-		if req.InitParamSchema.Data != nil {
-			deviceSchemas = append(deviceSchemas, &model.DeviceNodeParamTemplate{
-				NodeID:      deviceData.ID,
-				Name:        "data",
-				Type:        "DEFAULT",
-				Placeholder: "设备初始化参数配置",
-				Schema:      req.InitParamSchema.Data.Properties,
-			})
+		if err := l.envStore.UpsertDeviceAction(txCtx, resDeviceAction); err != nil {
+			return err
 		}
-
-		if req.InitParamSchema.Config != nil {
-			deviceSchemas = append(deviceSchemas, &model.DeviceNodeParamTemplate{
-				NodeID:      deviceData.ID,
-				Name:        "config",
-				Type:        "DEFAULT",
-				Placeholder: "设备初始化参数配置",
-				Schema:      req.InitParamSchema.Config.Properties,
-			})
-		}
-		if err := lab.envStore.UpsertDeviceParamTemplate(txCtx, deviceSchemas); err != nil {
+		if err := l.envStore.UpsertDeviceHandleTemplate(txCtx, resDeviceHandles); err != nil {
 			return err
 		}
 		return nil
 	})
+}
+
+func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageResp[[]*environment.LaboratoryResp], error) {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return nil, code.UnLogin
+	}
+	resp, err := l.envStore.GetLabList(ctx, []string{userInfo.ID}, req)
+	if err != nil {
+		return nil, err
+	}
+
+	labs := utils.FilterSlice(resp.Data, func(item *model.Laboratory) (*environment.LaboratoryResp, bool) {
+		return &environment.LaboratoryResp{
+			UUID:        item.UUID,
+			Name:        item.Name,
+			Description: item.Description,
+		}, true
+	})
+
+	return &common.PageResp[[]*environment.LaboratoryResp]{
+		Data:     labs,
+		Page:     req.Page,
+		Total:    resp.Total,
+		PageSize: req.PageSize,
+	}, nil
 }

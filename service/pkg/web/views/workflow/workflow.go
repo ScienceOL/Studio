@@ -1,77 +1,60 @@
-package material
+package workflow
 
 import (
 	"context"
 	"errors"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gofrs/uuid/v5"
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/constant"
-	"github.com/scienceol/studio/service/pkg/core/material"
-	impl "github.com/scienceol/studio/service/pkg/core/material/material"
+	"github.com/scienceol/studio/service/pkg/core/workflow"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
-	"gorm.io/datatypes"
 )
 
-type Handle struct {
-	mService material.Service
+type workflowHandle struct {
 	wsClient *melody.Melody
+	wService workflow.Service
 }
 
-func NewMaterialHandle() *Handle {
+func NewWorkflowHandle() *workflowHandle {
 	wsClient := melody.New()
 	wsClient.Config.MaxMessageSize = constant.MaxMessageSize
-	mService := impl.NewMaterial(wsClient)
+	// mService := impl.NewMaterial(wsClient)
 	// 注册集群通知
 
-	h := &Handle{
-		mService: mService,
+	h := &workflowHandle{
 		wsClient: wsClient,
 	}
 
 	h.initMaterialWebSocket()
-	return h
+	return &workflowHandle{}
 }
 
-func (m *Handle) CreateLabMaterial(ctx *gin.Context) {
-	req := &material.GraphNodeReq{}
-	if err := ctx.ShouldBindJSON(req); err != nil {
-		logger.Errorf(ctx, "parse CreateLabMaterial param err: %+v", err.Error())
-		common.ReplyErr(ctx, code.ParamErr, err.Error())
-		return
-	}
-	if err := m.mService.CreateMaterial(ctx, req); err != nil {
-		logger.Errorf(ctx, "CreateMaterial err: %+v", err)
-		common.ReplyErr(ctx, err)
+// 工作流模板列表
+func (w *workflowHandle) TemplateList(ctx *gin.Context) {}
 
-		return
-	}
+// 工作流模板详情
+func (w *workflowHandle) TemplateDetail(ctx *gin.Context) {}
 
-	common.ReplyOk(ctx)
-}
+// 工作流模板 fork
+func (w *workflowHandle) ForkTemplate(ctx *gin.Context) {}
 
-func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
-	req := &material.GraphEdge{}
-	if err := ctx.ShouldBindJSON(req); err != nil {
-		logger.Errorf(ctx, "parse CreateMaterialEdge param err: %+v", err.Error())
-		common.ReplyErr(ctx, code.ParamErr, err.Error())
-		return
-	}
-	if err := m.mService.CreateEdge(ctx, req); err != nil {
-		logger.Errorf(ctx, "CreateMaterialEdge err: %+v", err)
-		common.ReplyErr(ctx, err)
+// 节点模板列表，节点模板分类
+func (w *workflowHandle) NodeTemplateList(ctx *gin.Context) {}
 
-		return
-	}
+// 节点模板详情
+func (w *workflowHandle) NodeTemplateDetail(ctx *gin.Context) {}
 
-	common.ReplyOk(ctx)
-}
+// 节点模板编辑
+func (w *workflowHandle) UpdateNodeTemplate(ctx *gin.Context) {}
 
-func (m *Handle) initMaterialWebSocket() {
+// 我创建的工作流
+func (w *workflowHandle) Add(ctx *gin.Context) {}
+
+func (m *workflowHandle) initMaterialWebSocket() {
 	m.wsClient.HandleClose(func(s *melody.Session, i int, s2 string) error {
 		if ctx, ok := s.Get("ctx"); ok {
 			logger.Infof(ctx.(context.Context), "client close keys: %+v", s.Keys)
@@ -97,7 +80,7 @@ func (m *Handle) initMaterialWebSocket() {
 	m.wsClient.HandleConnect(func(s *melody.Session) {
 		if ctx, ok := s.Get("ctx"); ok {
 			logger.Infof(ctx.(context.Context), "websocket connect keys: %+v", s.Keys)
-			m.mService.HandleWSConnect(ctx.(context.Context), s)
+			m.wService.OnWSConnect(ctx.(context.Context), s)
 		}
 	})
 
@@ -108,7 +91,7 @@ func (m *Handle) initMaterialWebSocket() {
 			return
 		}
 
-		if err := m.mService.HandleWSMsg(ctxI.(*gin.Context), s, b); err != nil {
+		if err := m.wService.OnWSMsg(ctxI.(*gin.Context), s, b); err != nil {
 			logger.Errorf(ctxI.(*gin.Context), "material handle msg err: %+v", err)
 		}
 	})
@@ -123,16 +106,20 @@ func (m *Handle) initMaterialWebSocket() {
 	})
 }
 
-func (m *Handle) LabMaterial(ctx *gin.Context) {
-	req := &material.LabWS{}
-	labUUIDStr := ctx.Param("lab_uuid")
-	req.LabUUID = uuid.UUID(datatypes.BinUUIDFromString(labUUIDStr))
+// 工作流 websocket
+func (w *workflowHandle) LabWorkflow(ctx *gin.Context) {
+	req := &workflow.LabWorkflow{}
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
 	userInfo := auth.GetCurrentUser(ctx)
 
 	// 阻塞运行
-	m.wsClient.HandleRequestWithKeys(ctx.Writer, ctx.Request, map[string]any{
+	w.wsClient.HandleRequestWithKeys(ctx.Writer, ctx.Request, map[string]any{
 		auth.USERKEY: userInfo,
 		"ctx":        ctx,
-		"lab_uuid":   req.LabUUID,
+		"uuid":       req.UUID,
 	})
 }

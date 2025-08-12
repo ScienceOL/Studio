@@ -208,7 +208,7 @@ services:
   #     replicas: ${MQTT_REPLICAS:-1}
 
   casdoor:
-    image: casbin/casdoor:v1.924.0
+    image: casbin/casdoor:v2.6.0
     container_name: sciol-casdoor
     entrypoint: /bin/sh -c './server --createDatabase=true'
     network_mode: 'service:network-service'
@@ -247,7 +247,7 @@ services:
       start_period: 15s
     deploy:
       replicas: ${SERVICE_REPLICAS:-1}
-
+  
   web:
     image: registry.scienceol.tech/base/web
     pull_policy: if_not_present

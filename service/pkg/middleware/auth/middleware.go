@@ -2,26 +2,39 @@ package auth
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/scienceol/studio/service/internal/configs/webapp"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
+	"github.com/scienceol/studio/service/pkg/repo"
+	"github.com/scienceol/studio/service/pkg/repo/casdoor"
+	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/utils"
 	"golang.org/x/oauth2"
 )
+
+type userAuth struct {
+	casDoorClient repo.Account
+}
 
 // 用于认证的错误
 var (
 	ErrInvalidToken = errors.New("invalid or expired token")
+
+	authClient *userAuth
+	once       sync.Once
 )
 
 // ValidateToken 检查令牌是否有效
-func ValidateToken(ctx context.Context, tokenType string, token string) (*UserData, error) {
+func ValidateToken(ctx context.Context, tokenType string, token string) (*model.UserData, error) {
 	// 获取OAuth2配置
 	oauthConfig := GetOAuthConfig()
 	// 创建一个包含传入token的oauth2.Token对象
@@ -52,7 +65,7 @@ func ValidateToken(ctx context.Context, tokenType string, token string) (*UserDa
 	}
 
 	// 解析用户信息
-	result := &UserInfo{}
+	result := &model.UserInfo{}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil ||
 		result.Status != "ok" ||
 		result.Data == nil {
@@ -62,25 +75,24 @@ func ValidateToken(ctx context.Context, tokenType string, token string) (*UserDa
 
 	// 检查API调用是否成功
 	return result.Data, nil
+}
 
-	// 如果没有status字段或者status不是ok，直接将result作为用户数据
-	// 验证返回的数据包含必要的用户信息
-	// if result["id"] == nil {
-	// 	logger.Errorf(ctx, "Invalid user data format: missing required fields")
-	// 	return nil, errors.New("invalid user data format")
-	// }
-
-	// // 返回验证成功和用户数据
-	// return map[string]any{
-	// 	"valid": true,
-	// 	"user":  result, // 直接使用返回的用户对象
-	// }, nil
+func Auth() func(ctx *gin.Context) {
+	once.Do(func() {
+		authClient = &userAuth{
+			casDoorClient: casdoor.NewCasClient(),
+		}
+	})
+	return authClient.AuthUser
 }
 
 // RequireAuth 中间件函数验证用户是否已登录
-func Auth(ctx *gin.Context) {
+func (u *userAuth) AuthUser(ctx *gin.Context) {
 	// 从请求头获取Authorization
+	cookie, _ := ctx.Cookie("access_token_v2")
 	authHeader := ctx.GetHeader("Authorization")
+	queryToken := ctx.Query("access_token_v2")
+	authHeader = utils.Or(queryToken, cookie, authHeader)
 	if authHeader == "" {
 		ctx.JSON(http.StatusUnauthorized, &common.Resp{
 			Code: code.UnLogin,
@@ -92,9 +104,8 @@ func Auth(ctx *gin.Context) {
 		return
 	}
 
-	// 检查格式是否为 "Bearer {token}"
-	bearerToken := strings.Split(authHeader, " ")
-	if len(bearerToken) != 2 || bearerToken[0] != "Bearer" {
+	tokens := strings.Split(authHeader, " ")
+	if len(tokens) != 2 {
 		ctx.JSON(http.StatusUnauthorized,
 			&common.Resp{
 				Code: code.LoginFormatErr,
@@ -106,16 +117,22 @@ func Auth(ctx *gin.Context) {
 		return
 	}
 
-	// 验证令牌
-	userInfo, err := ValidateToken(ctx, bearerToken[0], bearerToken[1])
-	if err != nil {
-		logger.Errorf(ctx, "Token validation failed: %v", err)
-		ctx.JSON(http.StatusUnauthorized, &common.Resp{
-			Code: code.InvalidToken,
-			Error: &common.Error{
-				Msg: code.InvalidToken.String(),
-			},
-		})
+	var userInfo *model.UserData
+	switch tokens[0] {
+	case "Bearer":
+		userInfo = u.getNormalUser(ctx, authHeader)
+	case "lab":
+		userInfo = u.getLabUser(ctx, authHeader)
+	}
+
+	if userInfo == nil {
+		ctx.JSON(http.StatusUnauthorized,
+			&common.Resp{
+				Code: code.LoginFormatErr,
+				Error: &common.Error{
+					Msg: code.LoginFormatErr.String(),
+				},
+			})
 		ctx.Abort()
 		return
 	}
@@ -125,8 +142,56 @@ func Auth(ctx *gin.Context) {
 	ctx.Next()
 }
 
+func (u *userAuth) getLabUser(ctx *gin.Context, authHeader string) *model.UserData {
+	// 检查格式是否为 "Bearer {token}"
+	baseSplit := strings.Split(authHeader, " ")
+	if len(baseSplit) != 2 {
+		logger.Errorf(ctx, "getLabUser authHeader format invalid")
+		return nil
+	}
+
+	baseStr, err := base64.StdEncoding.DecodeString(baseSplit[1])
+	if err != nil {
+		logger.Errorf(ctx, "getLabUser decode auth header err: %s", err.Error())
+		return nil
+	}
+
+	keys := strings.Split(string(baseStr), ":")
+	if len(keys) != 2 {
+		logger.Errorf(ctx, "getLabUser base formate err not 2")
+		return nil
+	}
+	userInfo, err := u.casDoorClient.GetLabUserInfo(ctx, &model.LabAkSk{
+		AccessKey:    keys[0],
+		AccessSecret: keys[1],
+	})
+	if err != nil {
+		logger.Errorf(ctx, "getLabUser GetLabUserInfo err: %s", err.Error())
+		return nil
+	}
+
+	return userInfo
+}
+
+func (u *userAuth) getNormalUser(ctx *gin.Context, authHeader string) *model.UserData {
+	// 检查格式是否为 "Bearer {token}"
+	bearerToken := strings.Split(authHeader, " ")
+	if len(bearerToken) != 2 || bearerToken[0] != "Bearer" {
+		logger.Errorf(ctx, "bearer format err: %s", authHeader)
+		return nil
+	}
+
+	// 验证令牌
+	userInfo, err := ValidateToken(ctx, bearerToken[0], bearerToken[1])
+	if err != nil {
+		logger.Errorf(ctx, "Token validation failed: %v", err)
+		return nil
+	}
+	return userInfo
+}
+
 // GetCurrentUser 从上下文中获取当前用户信息
-func GetCurrentUser(ctx context.Context) *UserData {
+func GetCurrentUser(ctx context.Context) *model.UserData {
 	gCtx, ok := ctx.(*gin.Context)
 	if !ok {
 		return nil
@@ -136,5 +201,5 @@ func GetCurrentUser(ctx context.Context) *UserData {
 	if !exists {
 		return nil
 	}
-	return user.(*UserData)
+	return user.(*model.UserData)
 }

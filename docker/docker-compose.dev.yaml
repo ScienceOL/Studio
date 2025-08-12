@@ -1,27 +1,43 @@
-services:
-  service:
-    image: registry.aissquare.com/base/service:dev
-    build:
-      context: ../service
-      platforms:
-        - linux/amd64
-        - linux/arm64
-      dockerfile: Dockerfile
-    env_file:
-      - .env.dev
-    volumes:
-      - ../service:/app
-
-  web:
-    image: registry.aissquare.com/base/web:dev
-    build:
-      context: ../web
-      platforms:
-        - linux/amd64
-        - linux/arm64
-      dockerfile: Dockerfile
-    env_file:
-      - .env.dev
-    volumes:
-      - ../web:/app
-    command: sh -c "if [ ! -d 'node_modules' ]; then yarn install; fi && yarn dev"
+# services:
+#   service:
+#     image: registry.aissquare.com/base/service:dev
+#     build:
+#       context: ../service
+#       platforms:
+#         - linux/amd64
+#         - linux/arm64
+#       dockerfile: Dockerfile
+#     env_file:
+#       - .env.dev
+#     volumes:
+#       - ../service:/app
+#
+#   # mcps:
+#   #   image: registry.aissquare.com/web/service:dev
+#   #   pull_policy: if_not_present
+#   #   container_name: sciol-mcps
+#   #   restart: on-failure:5
+#   #   depends_on:
+#   #     service:
+#   #       condition: service_healthy
+#   #   env_file:
+#   #     - .env.dev
+#   #   volumes:
+#   #     - ../service:/app
+#   #   ports:
+#   #     - '48200:8000'
+#   #   command: sh -c "bash entrymcps.sh"
+#
+#   web:
+#     image: registry.aissquare.com/base/web:dev
+#     build:
+#       context: ../web
+#       platforms:
+#         - linux/amd64
+#         - linux/arm64
+#       dockerfile: Dockerfile
+#     env_file:
+#       - .env.dev
+#     volumes:
+#       - ../web:/app
+#     command: sh -c "if [ ! -d 'node_modules' ]; then yarn install; fi && yarn dev"

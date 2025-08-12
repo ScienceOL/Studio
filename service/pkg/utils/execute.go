@@ -1,3 +1,4 @@
+//nolint:revive // var-naming: common package contains shared utilities
 package utils
 
 func IfErrReturn(fs ...func() error) error {
