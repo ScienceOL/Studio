@@ -75,7 +75,7 @@ check_precommit() {
   if [ ! -f "${PROJECT_DIR}/.git/hooks/pre-commit" ] || ! grep -q "pre-commit" "${PROJECT_DIR}/.git/hooks/pre-commit"; then
     echo -e "${BRIGHT_YELLOW}⚠️  pre-commit 钩子未安装在本项目${RESET}"
     echo -e "${BRIGHT_CYAN}▶ 正在安装 pre-commit 钩子...${RESET}"
-    (cd "${PROJECT_DIR}" && pre-commit install)
+    (cd "${PROJECT_DIR}" && uv run --frozen pre-commit install)
     if [ $? -ne 0 ]; then
       echo -e "${BRIGHT_RED}❌ pre-commit 钩子安装失败${RESET}"
       return 1
@@ -135,8 +135,15 @@ if ! command -v docker &> /dev/null; then
 fi
 echo -e "${BRIGHT_GREEN}✓ Docker 已就绪${RESET}"
 
+# 检查 .env.dev 文件是否存在，不存在则从 .env.example 创建
+if [ ! -f "${ENV_FILE}" ]; then
+  echo -e "${BRIGHT_YELLOW}⚠️  未找到 .env.dev 文件，将从 .env.example 创建...${RESET}"
+  cp "${PROJECT_DIR}/docker/.env.example" "${ENV_FILE}"
+  echo -e "${BRIGHT_GREEN}✓ .env.dev 文件已创建${RESET}"
+fi
+
 # 检查并安装 pre-commit 钩子
-# check_precommit
+check_precommit
 
 # -------------------------------
 # 配置预览

@@ -29,7 +29,7 @@ type Redis struct {
 }
 
 // Init 初始化redis连接
-func initRedis(conf *Redis) (*r.Client, error) {
+func initRedis(conf *Redis) (*redis.Client, error) {
 	addr := fmt.Sprintf("%s:%d", conf.Host, conf.Port)
 	client := r.NewClient(&r.Options{
 		Addr:     addr,
