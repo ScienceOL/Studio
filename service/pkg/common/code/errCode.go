@@ -107,8 +107,3 @@ const (
 	CasDoorCreateLabUserErr ErrCode = iota + 26000 // create lab user error
 	CasDoorQueryLabUserErr                         // query lab user error
 )
-
-// material 业务错误
-const (
-	REGNOTEXISTErr ErrCode = iota + 22000 // registry not exist
-)

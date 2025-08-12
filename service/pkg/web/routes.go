@@ -98,5 +98,4 @@ func InstallURL(g *gin.Engine) {
 			}
 		}
 	}
-
 }
