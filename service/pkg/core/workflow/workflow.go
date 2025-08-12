@@ -7,7 +7,7 @@ import (
 )
 
 type Service interface {
-	Add(ctx context.Context)
+	Add(ctx context.Context, data *WorkflowReq) (*WorkflowResp, error)
 	NodeTemplateList(ctx context.Context)
 	ForkTemplate(ctx context.Context)
 	NodeTemplateDetail(ctx context.Context)

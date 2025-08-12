@@ -20,13 +20,13 @@ import (
 )
 
 type lab struct {
-	envStore      repo.EnvRepo
+	envStore      repo.LaboratoryRepo
 	accountClient repo.Account
 }
 
 func NewLab() environment.EnvService {
 	return &lab{
-		envStore:      eStore.NewEnv(),
+		envStore:      eStore.New(),
 		accountClient: casdoor.NewCasClient(),
 	}
 }

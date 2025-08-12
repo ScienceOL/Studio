@@ -10,7 +10,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/constant"
 	"github.com/scienceol/studio/service/pkg/core/workflow"
-	"github.com/scienceol/studio/service/pkg/middleware/auth"
+	impl "github.com/scienceol/studio/service/pkg/core/workflow/workflow"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 )
 
@@ -27,6 +27,7 @@ func NewWorkflowHandle() *workflowHandle {
 
 	h := &workflowHandle{
 		wsClient: wsClient,
+		wService: impl.New(),
 	}
 
 	h.initMaterialWebSocket()
@@ -52,7 +53,19 @@ func (w *workflowHandle) NodeTemplateDetail(ctx *gin.Context) {}
 func (w *workflowHandle) UpdateNodeTemplate(ctx *gin.Context) {}
 
 // 我创建的工作流
-func (w *workflowHandle) Add(ctx *gin.Context) {}
+func (w *workflowHandle) Add(ctx *gin.Context) {
+	req := &workflow.WorkflowReq{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
+	if res, err := w.wService.Add(ctx, req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx, res)
+	}
+}
 
 func (m *workflowHandle) initMaterialWebSocket() {
 	m.wsClient.HandleClose(func(s *melody.Session, i int, s2 string) error {
@@ -78,21 +91,15 @@ func (m *workflowHandle) initMaterialWebSocket() {
 	})
 
 	m.wsClient.HandleConnect(func(s *melody.Session) {
-		if ctx, ok := s.Get("ctx"); ok {
-			logger.Infof(ctx.(context.Context), "websocket connect keys: %+v", s.Keys)
-			m.wService.OnWSConnect(ctx.(context.Context), s)
+		if err := m.wService.OnWSConnect(s.Request.Context(), s); err != nil {
+			logger.Errorf(s.Request.Context(), "check param err: %+v", err)
+			s.CloseWithMsg([]byte(err.Error()))
 		}
 	})
 
 	m.wsClient.HandleMessage(func(s *melody.Session, b []byte) {
-		ctxI, ok := s.Get("ctx")
-		if !ok {
-			s.CloseWithMsg([]byte("no ctx"))
-			return
-		}
-
-		if err := m.wService.OnWSMsg(ctxI.(*gin.Context), s, b); err != nil {
-			logger.Errorf(ctxI.(*gin.Context), "material handle msg err: %+v", err)
+		if err := m.wService.OnWSMsg(s.Request.Context(), s, b); err != nil {
+			logger.Errorf(s.Request.Context(), "material handle msg err: %+v", err)
 		}
 	})
 
@@ -114,12 +121,14 @@ func (w *workflowHandle) LabWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	userInfo := auth.GetCurrentUser(ctx)
+	if req.UUID.IsNil() {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg("uuid is empty"))
+		return
+	}
 
+	ctx.Request = ctx.Request.WithContext(ctx)
 	// 阻塞运行
 	w.wsClient.HandleRequestWithKeys(ctx.Writer, ctx.Request, map[string]any{
-		auth.USERKEY: userInfo,
-		"ctx":        ctx,
-		"uuid":       req.UUID,
+		"uuid": req.UUID,
 	})
 }

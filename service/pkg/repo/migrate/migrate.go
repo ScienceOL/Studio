@@ -18,6 +18,11 @@ func Table(_ context.Context) error {
 			&model.MaterialNode{},           // 物料节点
 			&model.MaterialEdge{},           // 物料边
 			&model.WorkflowNodeTemplate{},   // 动作节点模板
-			&model.WorkflowHandleTemplate{}) // 动作节点handle 模板
+			&model.WorkflowHandleTemplate{},
+			&model.Workflow{},
+			&model.WorkflowNode{},
+			&model.WorkflowEdge{},
+			&model.WorkflowConsole{},
+		) // 动作节点handle 模板
 	})
 }

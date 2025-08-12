@@ -25,20 +25,20 @@ import (
 )
 
 type materialImpl struct {
-	envStore      repo.EnvRepo
+	envStore      repo.LaboratoryRepo
 	materialStore repo.MaterialRepo
 	wsClient      *melody.Melody
 	msgCenter     notify.MsgCenter
 }
 
-func NewMaterial(wsClient *melody.Melody) material.Service {
+func NewMaterial(ctx context.Context, wsClient *melody.Melody) material.Service {
 	m := &materialImpl{
-		envStore:      eStore.NewEnv(),
+		envStore:      eStore.New(),
 		materialStore: mStore.NewMaterialImpl(),
 		wsClient:      wsClient,
 		msgCenter:     events.NewEvents(),
 	}
-	events.NewEvents().Registry(context.Background(), notify.MaterialModify, m.HandleNotify)
+	events.NewEvents().Registry(ctx, notify.MaterialModify, m.HandleNotify)
 
 	return m
 }
@@ -122,6 +122,11 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 					Model:                  n.Data.Model,
 					Icon:                   "",
 					Schema:                 n.Data.Schema,
+				}
+				if data.Pose.Data().Layout == "" {
+					poseData := data.Pose.Data()
+					poseData.Layout = "2d"
+					data.Pose = datatypes.NewJSONType(poseData)
 				}
 				if node := nodeMap[n.Parent]; node != nil {
 					data.ParentID = node.ID
@@ -343,7 +348,7 @@ func (m *materialImpl) addEdges(ctx context.Context, labID int64, edges []*mater
 	return nil
 }
 
-func (m *materialImpl) HandleWSMsg(ctx context.Context, s *melody.Session, b []byte) error {
+func (m *materialImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte) error {
 	msgType := &common.WsMsgType{}
 	err := json.Unmarshal(b, msgType)
 	if err != nil {
@@ -894,7 +899,7 @@ func (m *materialImpl) checkWSConnet(ctx context.Context, s *melody.Session) err
 	return nil
 }
 
-func (m *materialImpl) HandleWSConnect(ctx context.Context, s *melody.Session) error {
+func (m *materialImpl) OnWSConnect(ctx context.Context, s *melody.Session) error {
 	// TODO: 检查用户是否有权限
 	err := m.checkWSConnet(ctx, s)
 	if err == nil {

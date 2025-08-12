@@ -21,10 +21,10 @@ type Handle struct {
 	wsClient *melody.Melody
 }
 
-func NewMaterialHandle() *Handle {
+func NewMaterialHandle(ctx context.Context) *Handle {
 	wsClient := melody.New()
 	wsClient.Config.MaxMessageSize = constant.MaxMessageSize
-	mService := impl.NewMaterial(wsClient)
+	mService := impl.NewMaterial(ctx, wsClient)
 	// 注册集群通知
 
 	h := &Handle{
@@ -96,7 +96,7 @@ func (m *Handle) initMaterialWebSocket() {
 	m.wsClient.HandleConnect(func(s *melody.Session) {
 		if ctx, ok := s.Get("ctx"); ok {
 			logger.Infof(ctx.(context.Context), "websocket connect keys: %+v", s.Keys)
-			m.mService.HandleWSConnect(ctx.(context.Context), s)
+			m.mService.OnWSConnect(ctx.(context.Context), s)
 		}
 	})
 
@@ -107,7 +107,7 @@ func (m *Handle) initMaterialWebSocket() {
 			return
 		}
 
-		if err := m.mService.HandleWSMsg(ctxI.(*gin.Context), s, b); err != nil {
+		if err := m.mService.OnWSMsg(ctxI.(*gin.Context), s, b); err != nil {
 			logger.Errorf(ctxI.(*gin.Context), "material handle msg err: %+v", err)
 		}
 	})

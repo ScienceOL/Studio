@@ -74,7 +74,8 @@ type WorkflowNodeTemplate struct {
 	Schema                 datatypes.JSON `gorm:"type:jsonb" json:"schema"`
 	ExecuteScript          string         `gorm:"type:text" json:"execute_script"`
 	NodeType               string         `gorm:"type:varchar(50);not null;default:'ILab'" json:"node_type"`
-	// ParamDataKey string 现状都是 default ，是不是没有用？
+	Icon                   string         `gorm:"type:text" json:"icon"`
+	// TODO: ParamDataKey string 现状都是 default ，是不是没有用？
 }
 
 func (*WorkflowNodeTemplate) TableName() string {

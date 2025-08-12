@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"fmt"
 
 	_ "github.com/scienceol/studio/service/docs" // 导入自动生成的 docs 包
@@ -22,9 +23,9 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
-func NewRouter(g *gin.Engine) {
+func NewRouter(ctx context.Context, g *gin.Engine) {
 	installMiddleware(g)
-	InstallURL(g)
+	InstallURL(ctx, g)
 }
 
 func installMiddleware(g *gin.Engine) {
@@ -38,7 +39,7 @@ func installMiddleware(g *gin.Engine) {
 	g.Use(logger.LogWithWriter())
 }
 
-func InstallURL(g *gin.Engine) {
+func InstallURL(ctx context.Context, g *gin.Engine) {
 	api := g.Group("/api")
 	api.GET("/health", views.Health)
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
@@ -76,7 +77,7 @@ func InstallURL(g *gin.Engine) {
 			}
 
 			{
-				materialHandle := material.NewMaterialHandle()
+				materialHandle := material.NewMaterialHandle(ctx)
 				materialRouter := labRouter.Group("/material")
 				materialRouter.POST("", materialHandle.CreateLabMaterial)
 				materialRouter.POST("/edge", materialHandle.CreateMaterialEdge)

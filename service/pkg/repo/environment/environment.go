@@ -21,7 +21,7 @@ type envImpl struct {
 	*db.Datastore
 }
 
-func NewEnv() repo.EnvRepo {
+func New() repo.LaboratoryRepo {
 	return &envImpl{
 		Datastore: db.DB(),
 	}

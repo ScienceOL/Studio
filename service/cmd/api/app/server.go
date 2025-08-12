@@ -28,11 +28,13 @@ import (
 )
 
 func NewWeb() *cobra.Command {
+	rootCtx := utils.SetupSignalContext()
 	rootCommand := &cobra.Command{
 		SilenceUsage:       true,
 		PersistentPreRunE:  initGlobalResource,
 		PersistentPostRunE: cleanGlobalResource,
 	}
+	rootCommand.SetContext(rootCtx)
 
 	webServer := &cobra.Command{
 		Use:  "apiserver",
@@ -44,7 +46,7 @@ func NewWeb() *cobra.Command {
 		RunE:         newRouter,
 		PostRunE:     cleanWebResource,
 	}
-	webServer.SetContext(utils.SetupSignalContext())
+	webServer.SetContext(rootCtx)
 	migrate := &cobra.Command{
 		Use:          "migrate",
 		Long:         `api server db migrate`,
@@ -58,6 +60,7 @@ func NewWeb() *cobra.Command {
 			return nil
 		},
 	}
+	migrate.SetContext(rootCtx)
 
 	rootCommand.AddCommand(webServer)
 	rootCommand.AddCommand(migrate)
@@ -171,7 +174,7 @@ func initWeb(cmd *cobra.Command, _ []string) error {
 func newRouter(cmd *cobra.Command, _ []string) error {
 	router := gin.Default()
 
-	web.NewRouter(router)
+	web.NewRouter(cmd.Context(), router)
 	port := webapp.Config().Server.Port
 	addr := ":" + strconv.Itoa(port)
 

@@ -107,3 +107,10 @@ const (
 	CasDoorCreateLabUserErr ErrCode = iota + 26000 // create lab user error
 	CasDoorQueryLabUserErr                         // query lab user error
 )
+
+// workflow module errors
+const (
+	CanNotGetWorkflowUUIDErr ErrCode = iota + 28000 // can not get workflow uuid
+	WorkflowNotExistErr                             // workflow not exist
+
+)

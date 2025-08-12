@@ -17,6 +17,11 @@ func Or[T comparable](values ...T) T {
 			return v
 		}
 	}
+
+	if len(values) > 0 {
+		return values[len(values)-1]
+	}
+
 	return zero
 }
 
@@ -83,6 +88,16 @@ func SliceToMap[K comparable, V any, T any](sources []T, f func(i T) (K, V)) map
 	for _, item := range sources {
 		key, value := f(item)
 		result[key] = value
+	}
+	return result
+}
+
+func SliceToMapSlice[K comparable, V any, T any](sources []T, f func(i T) (K, V, bool)) map[K][]V {
+	result := make(map[K][]V)
+	for _, item := range sources {
+		if key, value, isAdd := f(item); isAdd {
+			result[key] = append(result[key], value)
+		}
 	}
 	return result
 }

@@ -13,7 +13,7 @@ type ResNodeTpl struct {
 	Actions []*model.DeviceAction
 }
 
-type EnvRepo interface {
+type LaboratoryRepo interface {
 	// 创建实验室
 	CreateLaboratoryEnv(ctx context.Context, data *model.Laboratory) error
 	// 根据 uuid 获取实验室

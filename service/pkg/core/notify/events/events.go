@@ -51,7 +51,17 @@ func (events *Events) Registry(ctx context.Context, msgName notify.Action, handl
 		ch := sub.Channel()
 		for {
 			select {
-			case msg := <-ch:
+			case msg, ok := <-ch:
+				if !ok {
+					logger.Infof(ctx, "exit redis channel name: %s", string(msgName))
+					sub.Unsubscribe(ctx, string(msgName))
+					events.actions.Delete(msgName)
+					return
+				}
+
+				if msg == nil {
+					continue
+				}
 				if err := handleFunc(ctx, msg.Payload); err != nil {
 					logger.Errorf(ctx, "handle redis msg fail name: %s, err: %+v", msgName, err)
 				}
@@ -59,6 +69,7 @@ func (events *Events) Registry(ctx context.Context, msgName notify.Action, handl
 				logger.Infof(ctx, "exit redis channel name: %s", string(msgName))
 				sub.Unsubscribe(ctx, string(msgName))
 				events.actions.Delete(msgName)
+				return
 			}
 		}
 	}, func(err error) {
