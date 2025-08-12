@@ -14,6 +14,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/web/views/laboratory"
 	"github.com/scienceol/studio/service/pkg/web/views/material"
+	"github.com/scienceol/studio/service/pkg/web/views/workflow"
 
 	"github.com/scienceol/studio/service/pkg/web/views"
 	"github.com/scienceol/studio/service/pkg/web/views/foo"
@@ -65,16 +66,36 @@ func InstallURL(g *gin.Engine) {
 		// 环境相关
 		{
 			labRouter := v1.Group("/lab", auth.Auth())
-			labHandle := laboratory.NewEnvironment()
-			labRouter.POST("", labHandle.CreateLabEnv)
-			labRouter.PATCH("", labHandle.UpdateLabEnv)
-			labRouter.GET("/list", labHandle.LabList)
-			labRouter.POST("/resource", labHandle.CreateLabResource)
 
-			materialHandle := material.NewMaterialHandle()
-			labRouter.POST("/material", materialHandle.CreateLabMaterial)
-			labRouter.POST("/material/edge", materialHandle.CreateMaterialEdge)
-			labRouter.GET("/ws/material/:lab_uuid", materialHandle.LabMaterial)
+			{
+				labHandle := laboratory.NewEnvironment()
+				labRouter.POST("", labHandle.CreateLabEnv)
+				labRouter.PATCH("", labHandle.UpdateLabEnv)
+				labRouter.GET("/list", labHandle.LabList)
+				labRouter.POST("/resource", labHandle.CreateLabResource)
+			}
+
+			{
+				materialHandle := material.NewMaterialHandle()
+				materialRouter := labRouter.Group("/material")
+				materialRouter.POST("", materialHandle.CreateLabMaterial)
+				materialRouter.POST("/edge", materialHandle.CreateMaterialEdge)
+
+				labRouter.GET("/ws/material/:lab_uuid", materialHandle.LabMaterial) // TODO: websocket 是否要放在统一的路由下
+			}
+			{
+				workflowHandle := workflow.NewWorkflowHandle()
+				workflowRouter := labRouter.Group("/workflow")
+				workflowRouter.POST("", workflowHandle.Add)
+				workflowRouter.GET("/node/list", workflowHandle.NodeTemplateList)
+				workflowRouter.PUT("/fork", workflowHandle.ForkTemplate)
+				workflowRouter.GET("/node/detail", workflowHandle.NodeTemplateDetail)
+				workflowRouter.GET("/template/detail", workflowHandle.TemplateDetail)
+				workflowRouter.GET("/template/list", workflowHandle.TemplateList)
+				workflowRouter.PUT("/node", workflowHandle.UpdateNodeTemplate)
+
+				workflowRouter.GET("/ws/workflow/:uuid", workflowHandle.LabWorkflow) // TODO: websocket 是否放在统一的路由下
+			}
 		}
 	}
 }

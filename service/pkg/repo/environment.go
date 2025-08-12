@@ -8,8 +8,8 @@ import (
 	"github.com/scienceol/studio/service/pkg/repo/model"
 )
 
-type ResNodeTpl struct{
-	Node *model.ResourceNodeTemplate
+type ResNodeTpl struct {
+	Node    *model.ResourceNodeTemplate
 	Actions []*model.DeviceAction
 }
 

@@ -133,6 +133,8 @@ type WSNode struct {
 	InitParamData       datatypes.JSON   `json:"init_param_data"`
 	Schema              datatypes.JSON   `json:"schema"`
 	Data                datatypes.JSON   `json:"data"`
+	Status              string           `json:"status"`
+	Header              string           `json:"header"`
 	Pose                datatypes.JSON   `json:"pose"`
 	Model               string           `json:"model"`
 	Icon                string           `json:"icon"`
@@ -145,6 +147,7 @@ type WSEdge struct {
 	TargetNodeUUID   uuid.UUID `json:"target_node_uuid"`
 	SourceHandleUUID uuid.UUID `json:"source_handle_uuid"`
 	TargetHandleUUID uuid.UUID `json:"target_handle_uuid"`
+	Type             string    `json:"type"`
 }
 
 type GraphResp struct {

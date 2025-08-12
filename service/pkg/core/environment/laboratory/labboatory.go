@@ -31,7 +31,7 @@ func NewLab() environment.EnvService {
 	}
 }
 
-func (lab *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.LaboratoryEnvReq) (*environment.LaboratoryEnvResp, error) {
+func (l *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.LaboratoryEnvReq) (*environment.LaboratoryEnvResp, error) {
 	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
 		return nil, code.UnLogin
@@ -39,7 +39,7 @@ func (lab *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Labora
 
 	ak := uuid.Must(uuid.NewV4()).String()
 	sk := uuid.Must(uuid.NewV4()).String()
-	err := lab.accountClient.CreateLabUser(ctx, &model.LabInfo{
+	err := l.accountClient.CreateLabUser(ctx, &model.LabInfo{
 		AccessKey:         ak,
 		AccessSecret:      sk,
 		Name:              fmt.Sprintf("%s-%s", req.Name, ak),
@@ -66,7 +66,7 @@ func (lab *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Labora
 			UpdatedAt: time.Now(),
 		},
 	}
-	if err := lab.envStore.CreateLaboratoryEnv(ctx, data); err != nil {
+	if err := l.envStore.CreateLaboratoryEnv(ctx, data); err != nil {
 		// FIXME: 如果创建实验室失败，则删除对应的实验室用户
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (lab *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Labora
 	}, nil
 }
 
-func (lab *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.UpdateEnvReq) (*environment.LaboratoryResp, error) {
+func (l *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.UpdateEnvReq) (*environment.LaboratoryResp, error) {
 	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
 		return nil, code.UnLogin
@@ -93,7 +93,7 @@ func (lab *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.Update
 		Description: req.Description,
 	}
 
-	err := lab.envStore.UpdateLaboratoryEnv(ctx, data)
+	err := l.envStore.UpdateLaboratoryEnv(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (lab *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.Update
 	}, nil
 }
 
-func (lab *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) error {
+func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) error {
 	if len(req.Resources) == 0 {
 		return code.ResourceIsEmptyErr
 	}
@@ -113,7 +113,7 @@ func (lab *lab) CreateResource(ctx context.Context, req *environment.ResourceReq
 	if labInfo == nil {
 		return code.UnLogin
 	}
-	labData, err := lab.envStore.GetLabByAkSk(ctx, labInfo.AccessKey, labInfo.AccessSecret)
+	labData, err := l.envStore.GetLabByAkSk(ctx, labInfo.AccessKey, labInfo.AccessSecret)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func (lab *lab) CreateResource(ctx context.Context, req *environment.ResourceReq
 			return item.Name, item
 		})
 
-		if err := lab.envStore.UpsertDeviceTemplate(txCtx, resDatas); err != nil {
+		if err := l.envStore.UpsertDeviceTemplate(txCtx, resDatas); err != nil {
 			return err
 		}
 
@@ -211,10 +211,10 @@ func (lab *lab) CreateResource(ctx context.Context, req *environment.ResourceReq
 		if err != nil {
 			return err
 		}
-		if err := lab.envStore.UpsertDeviceAction(txCtx, resDeviceAction); err != nil {
+		if err := l.envStore.UpsertDeviceAction(txCtx, resDeviceAction); err != nil {
 			return err
 		}
-		if err := lab.envStore.UpsertDeviceHandleTemplate(txCtx, resDeviceHandles); err != nil {
+		if err := l.envStore.UpsertDeviceHandleTemplate(txCtx, resDeviceHandles); err != nil {
 			return err
 		}
 		return nil

@@ -50,7 +50,7 @@ func BuildDAGHierarchy[T comparable, D any](nodes []*Node[T, D]) ([][]*Node[T, D
 
 	queues := MapToSlice(inDegree, func(k T, v int) (*Node[T, D], bool) {
 		if v == 0 {
-			node, _ := nodeMap[k]
+			node := nodeMap[k]
 			return node, true
 		}
 		return nil, false

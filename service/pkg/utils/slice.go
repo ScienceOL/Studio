@@ -20,14 +20,6 @@ func Or[T comparable](values ...T) T {
 	return zero
 }
 
-func Ternary[T any](condition bool, trueVal, defaultVal T) T {
-	if condition {
-		return trueVal
-	}
-
-	return defaultVal
-}
-
 // TernaryLazy 延迟计算版本的三元运算符，避免预先计算所有参数
 // 只有在需要时才会调用相应的函数来计算值
 func TernaryLazy[T any](condition bool, trueFn, falseFn func() T) T {

@@ -422,8 +422,8 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 			parentUUID = parentNode.UUID
 		}
 
-		resNodeTplUUID, _ := resNodeTplUUIDMap[nodeItem.ResourceNodeTemplateID]
-		handles, _ := resHandlesMap[nodeItem.ResourceNodeTemplateID]
+		resNodeTplUUID := resNodeTplUUIDMap[nodeItem.ResourceNodeTemplateID]
+		handles := resHandlesMap[nodeItem.ResourceNodeTemplateID]
 		return &material.WSNode{
 			UUID:                nodeItem.UUID,
 			ParentUUID:          parentUUID,
@@ -435,6 +435,7 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 			InitParamData:       nodeItem.InitParamData,
 			Schema:              nodeItem.Schema,
 			Data:                nodeItem.Data,
+			Status:              nodeItem.Status,
 			Pose:                nodeItem.Pose,
 			Model:               nodeItem.Model,
 			Icon:                nodeItem.Icon,
@@ -460,6 +461,7 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 			TargetNodeUUID:   item.TargetNodeUUID,
 			SourceHandleUUID: item.SourceHandleUUID,
 			TargetHandleUUID: item.SourceHandleUUID,
+			Type:             "step",
 		}, true
 	})
 
