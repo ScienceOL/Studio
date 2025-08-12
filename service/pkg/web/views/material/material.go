@@ -5,16 +5,15 @@ import (
 	"errors"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gofrs/uuid/v5"
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/constant"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/core/material"
 	impl "github.com/scienceol/studio/service/pkg/core/material/material"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
-	"gorm.io/datatypes"
 )
 
 type Handle struct {
@@ -125,8 +124,13 @@ func (m *Handle) initMaterialWebSocket() {
 
 func (m *Handle) LabMaterial(ctx *gin.Context) {
 	req := &material.LabWS{}
+	var err error
 	labUUIDStr := ctx.Param("lab_uuid")
-	req.LabUUID = uuid.UUID(datatypes.BinUUIDFromString(labUUIDStr))
+	req.LabUUID, err = uuid.FromString(labUUIDStr)
+	if err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
 	userInfo := auth.GetCurrentUser(ctx)
 
 	// 阻塞运行

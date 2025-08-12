@@ -1,7 +1,7 @@
 package environment
 
 import (
-	"github.com/gofrs/uuid/v5"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"gorm.io/datatypes"
 )
 

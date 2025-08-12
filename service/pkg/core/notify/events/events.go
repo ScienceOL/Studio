@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gofrs/uuid/v5"
 	r "github.com/redis/go-redis/v9"
 	"github.com/scienceol/studio/service/pkg/common/code"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/core/notify"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
@@ -70,7 +70,7 @@ func (events *Events) Registry(ctx context.Context, msgName notify.Action, handl
 func (events *Events) Broadcast(ctx context.Context, msg *notify.SendMsg) error {
 	msg.Timestamp = time.Now().Unix()
 	if msg.UUID.IsNil() {
-		msg.UUID, _ = uuid.NewV4()
+		msg.UUID = uuid.NewV4()
 	}
 
 	data, _ := json.Marshal(msg)

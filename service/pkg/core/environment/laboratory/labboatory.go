@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gofrs/uuid/v5"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/core/environment"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
@@ -37,8 +37,8 @@ func (l *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Laborato
 		return nil, code.UnLogin
 	}
 
-	ak := uuid.Must(uuid.NewV4()).String()
-	sk := uuid.Must(uuid.NewV4()).String()
+	ak := uuid.NewV4().String()
+	sk := uuid.NewV4().String()
 	err := l.accountClient.CreateLabUser(ctx, &model.LabInfo{
 		AccessKey:         ak,
 		AccessSecret:      sk,

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gofrs/uuid/v5"
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/core/material"
 	"github.com/scienceol/studio/service/pkg/core/notify"
 	"github.com/scienceol/studio/service/pkg/core/notify/events"
@@ -91,7 +91,7 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 		}
 
 		return &utils.Node[string, *material.Node]{
-			Name:   item.Name,
+			Name:   item.DeviceID,
 			Parent: item.Parent,
 			Data:   item,
 		}, true
@@ -623,7 +623,7 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		Channel: notify.MaterialModify,
 		UserID:  userInfo.ID,
 		LabUUID: labUUID.(uuid.UUID),
-		UUID:    uuid.Must(uuid.NewV4()),
+		UUID:    uuid.NewV4(),
 		Data:    req,
 	}); err != nil {
 		logger.Errorf(ctx, "updateNode notify fail err: %+v", err)
@@ -713,7 +713,7 @@ func (m *materialImpl) upateNode(ctx context.Context, s *melody.Session, b []byt
 		Channel: notify.MaterialModify,
 		UserID:  userInfo.ID,
 		LabUUID: labUUID.(uuid.UUID),
-		UUID:    uuid.Must(uuid.NewV4()),
+		UUID:    uuid.NewV4(),
 		Data:    req,
 	}); err != nil {
 		logger.Errorf(ctx, "updateNode notify fail err: %+v", err)

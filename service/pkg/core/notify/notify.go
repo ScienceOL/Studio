@@ -3,7 +3,7 @@ package notify
 import (
 	"context"
 
-	"github.com/gofrs/uuid/v5"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 )
 
 /*
