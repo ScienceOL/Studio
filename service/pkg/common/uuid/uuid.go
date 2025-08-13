@@ -21,6 +21,45 @@ func FromString(value string) (UUID, error) {
 	return UUID{UUID: parsed}, nil
 }
 
+// // 添加这个方法来支持 URI 参数绑定
+// func (u *UUID) UnmarshalText(text []byte) error {
+// 	s := string(text)
+// 	if s == "" {
+// 		u.UUID = uuid.Nil
+// 		return nil
+// 	}
+//
+// 	parsed, err := uuid.FromString(s)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	u.UUID = parsed
+// 	return nil
+// }
+//
+// // 可选：添加 MarshalText 方法保持对称性
+// func (u UUID) MarshalText() ([]byte, error) {
+// 	if u.UUID.IsNil() {
+// 		return []byte(""), nil
+// 	}
+// 	return []byte(u.UUID.String()), nil
+// }
+
+// 实现 Gin 的 BindUnmarshaler 接口，用于 URI 参数绑定
+func (u *UUID) UnmarshalParam(param string) error {
+	if param == "" {
+		u.UUID = uuid.Nil
+		return nil
+	}
+
+	parsed, err := uuid.FromString(param)
+	if err != nil {
+		return err
+	}
+	u.UUID = parsed
+	return nil
+}
+
 // JSON 序列化
 func (u UUID) MarshalJSON() ([]byte, error) {
 	if u.UUID.IsNil() {

@@ -109,7 +109,7 @@ func (w *workflowImpl) GetWorkflowGraph(ctx context.Context, userID string, work
 
 	tplHandles := make([]*model.WorkflowHandleTemplate, 0, len(templateIDs))
 	if err := w.DBWithContext(ctx).
-		Where("id in ?", templateIDs).
+		Where("node_template_id in ?", templateIDs).
 		Find(&tplHandles).Error; err != nil {
 
 		logger.Errorf(ctx, "GetWorkflowGraph get template handle fail template ids: %+v, err: %+v", templateIDs, err)

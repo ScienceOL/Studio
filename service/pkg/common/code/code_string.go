@@ -11,6 +11,7 @@ func _() {
 	_ = x[Success-0]
 	_ = x[UnDefineErr-1]
 	_ = x[ParamErr-1000]
+	_ = x[NotPointerErr-1001]
 	_ = x[LoginConfigErr-5000]
 	_ = x[LoginSetStateErr-5001]
 	_ = x[RefreshTokenErr-5002]
@@ -28,6 +29,7 @@ func _() {
 	_ = x[RecordNotFound-10002]
 	_ = x[QueryRecordErr-10003]
 	_ = x[DeleteDataErr-10004]
+	_ = x[NotBaseDBTypeErr-10005]
 	_ = x[RegActionNameEmptyErr-20000]
 	_ = x[ResourceIsEmptyErr-20001]
 	_ = x[ResourceNotExistErr-20002]
@@ -48,41 +50,44 @@ func _() {
 	_ = x[CasDoorQueryLabUserErr-26001]
 	_ = x[CanNotGetWorkflowUUIDErr-28000]
 	_ = x[WorkflowNotExistErr-28001]
+	_ = x[UpsertWorkflowEdgeErr-28002]
 }
 
 const (
 	_ErrCode_name_0 = "successundefined"
-	_ErrCode_name_1 = "parse parameter error"
+	_ErrCode_name_1 = "parse parameter errornot pointer err"
 	_ErrCode_name_2 = "login configuration errorset login state errorrefresh token failedstate verification failedexchange token failedcallback parameter errorget user info failedlogin process user info failednot logged inlogin verification format errorinvalid tokenrefresh token parameter error"
-	_ErrCode_name_3 = "database create data errordatabase update data errordatabase record not founddatabase query errordatabase delete error"
+	_ErrCode_name_3 = "database create data errordatabase update data errordatabase record not founddatabase query errordatabase delete errornot base db type error"
 	_ErrCode_name_4 = "reg action name emptyresource is emptyresource not exist"
 	_ErrCode_name_5 = "resource not existedge node not existnode handle not existunknown material websocket actionunmarshal material websocket data errorcannot get lab id errorupdate material node errorparent node not found errortemplate node not found errorinvalid dag error"
 	_ErrCode_name_6 = "notify action already registrynotify subscribe channel failnotify send message error"
 	_ErrCode_name_7 = "create lab user errorquery lab user error"
-	_ErrCode_name_8 = "can not get workflow uuidworkflow not exist"
+	_ErrCode_name_8 = "can not get workflow uuidworkflow not existupsert workflow edge error"
 )
 
 var (
 	_ErrCode_index_0 = [...]uint8{0, 7, 16}
+	_ErrCode_index_1 = [...]uint8{0, 21, 36}
 	_ErrCode_index_2 = [...]uint16{0, 25, 46, 66, 91, 112, 136, 156, 186, 199, 230, 243, 272}
-	_ErrCode_index_3 = [...]uint8{0, 26, 52, 77, 97, 118}
+	_ErrCode_index_3 = [...]uint8{0, 26, 52, 77, 97, 118, 140}
 	_ErrCode_index_4 = [...]uint8{0, 21, 38, 56}
 	_ErrCode_index_5 = [...]uint8{0, 18, 37, 58, 91, 130, 153, 179, 206, 235, 252}
 	_ErrCode_index_6 = [...]uint8{0, 30, 59, 84}
 	_ErrCode_index_7 = [...]uint8{0, 21, 41}
-	_ErrCode_index_8 = [...]uint8{0, 25, 43}
+	_ErrCode_index_8 = [...]uint8{0, 25, 43, 69}
 )
 
 func (i ErrCode) String() string {
 	switch {
 	case 0 <= i && i <= 1:
 		return _ErrCode_name_0[_ErrCode_index_0[i]:_ErrCode_index_0[i+1]]
-	case i == 1000:
-		return _ErrCode_name_1
+	case 1000 <= i && i <= 1001:
+		i -= 1000
+		return _ErrCode_name_1[_ErrCode_index_1[i]:_ErrCode_index_1[i+1]]
 	case 5000 <= i && i <= 5011:
 		i -= 5000
 		return _ErrCode_name_2[_ErrCode_index_2[i]:_ErrCode_index_2[i+1]]
-	case 10000 <= i && i <= 10004:
+	case 10000 <= i && i <= 10005:
 		i -= 10000
 		return _ErrCode_name_3[_ErrCode_index_3[i]:_ErrCode_index_3[i+1]]
 	case 20000 <= i && i <= 20002:
@@ -97,7 +102,7 @@ func (i ErrCode) String() string {
 	case 26000 <= i && i <= 26001:
 		i -= 26000
 		return _ErrCode_name_7[_ErrCode_index_7[i]:_ErrCode_index_7[i+1]]
-	case 28000 <= i && i <= 28001:
+	case 28000 <= i && i <= 28002:
 		i -= 28000
 		return _ErrCode_name_8[_ErrCode_index_8[i]:_ErrCode_index_8[i+1]]
 	default:

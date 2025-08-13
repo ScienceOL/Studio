@@ -86,21 +86,21 @@ type WSTemplate struct {
 }
 
 type WSTemplateHandles struct {
-	Template *WSTemplate
-	Handles  []*WSNodeHandle
+	Template *WSTemplate     `json:"template"`
+	Handles  []*WSNodeHandle `json:"handles"`
 }
 
 type WSTemplates struct {
-	Templates []*WSTemplateHandles
+	Templates []*WSTemplateHandles `json:"templates"`
 }
 
 type WSCreateNode struct {
-	TemplateUUID uuid.UUID
-	ParentUUID   uuid.UUID
-	Type         string
-	Icon         string
-	Pose         datatypes.JSONType[model.Pose]
-	Param        datatypes.JSON
+	TemplateUUID uuid.UUID                      `json:"template_uuid"`
+	ParentUUID   uuid.UUID                      `json:"parent_uuid"`
+	Type         string                         `json:"type"`
+	Icon         string                         `json:"icon"`
+	Pose         datatypes.JSONType[model.Pose] `json:"pose"`
+	Param        datatypes.JSON                 `json:"param"`
 }
 
 type WSUpdateNode struct {

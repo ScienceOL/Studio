@@ -31,7 +31,7 @@ func NewWorkflowHandle() *workflowHandle {
 	}
 
 	h.initMaterialWebSocket()
-	return &workflowHandle{}
+	return h
 }
 
 // 工作流模板列表
@@ -91,15 +91,17 @@ func (m *workflowHandle) initMaterialWebSocket() {
 	})
 
 	m.wsClient.HandleConnect(func(s *melody.Session) {
-		if err := m.wService.OnWSConnect(s.Request.Context(), s); err != nil {
-			logger.Errorf(s.Request.Context(), "check param err: %+v", err)
+		c, _ := s.Get("ctx")
+		if err := m.wService.OnWSConnect(c.(*gin.Context), s); err != nil {
+			logger.Errorf(c.(*gin.Context), "check param err: %+v", err)
 			s.CloseWithMsg([]byte(err.Error()))
 		}
 	})
 
 	m.wsClient.HandleMessage(func(s *melody.Session, b []byte) {
-		if err := m.wService.OnWSMsg(s.Request.Context(), s, b); err != nil {
-			logger.Errorf(s.Request.Context(), "material handle msg err: %+v", err)
+		c, _ := s.Get("ctx")
+		if err := m.wService.OnWSMsg(c.(*gin.Context), s, b); err != nil {
+			logger.Errorf(c.(*gin.Context), "material handle msg err: %+v", err)
 		}
 	})
 
@@ -116,19 +118,21 @@ func (m *workflowHandle) initMaterialWebSocket() {
 // 工作流 websocket
 func (w *workflowHandle) LabWorkflow(ctx *gin.Context) {
 	req := &workflow.LabWorkflow{}
-	if err := ctx.ShouldBindUri(&req); err != nil {
+	if err := ctx.ShouldBindUri(req); err != nil {
+		logger.Errorf(ctx, "unmarshal uuid err: %+v", err)
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
 		return
 	}
 
 	if req.UUID.IsNil() {
+		logger.Errorf(ctx, "unmarshal uuid is empty")
 		common.ReplyErr(ctx, code.ParamErr.WithMsg("uuid is empty"))
 		return
 	}
 
-	ctx.Request = ctx.Request.WithContext(ctx)
 	// 阻塞运行
 	w.wsClient.HandleRequestWithKeys(ctx.Writer, ctx.Request, map[string]any{
 		"uuid": req.UUID,
+		"ctx":  ctx,
 	})
 }

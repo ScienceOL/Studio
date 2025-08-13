@@ -274,7 +274,7 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		UserID:     userInfo.ID,
 		Status:     "draft",
 		Type:       utils.Or(reqData.Type, "Device"),
-		Icon:       tplNode.Template.Icon,
+		Icon:       utils.Or(tplNode.Template.Icon, reqData.Icon),
 		Pose:       reqData.Pose,
 		Param:      reqData.Param,
 	}
@@ -439,7 +439,7 @@ func (w *workflowImpl) batchCreateEdge(ctx context.Context, s *melody.Session, b
 	}
 
 	count, err = w.workflowStore.Count(ctx, &model.WorkflowHandleTemplate{}, map[string]any{"uuid": handleUUIDs})
-	if err != nil || count != int64(len(nodeUUIDs)) {
+	if err != nil || count != int64(len(handleUUIDs)) {
 		common.ReplyWSErr(s, string(workflow.BatchCreateEdge), req.MsgUUID, code.ParamErr.WithMsg("handle templet uuid not exist"))
 		return code.ParamErr.WithMsg("handle templet not exist")
 	}
