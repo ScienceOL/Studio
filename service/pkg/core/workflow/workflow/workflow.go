@@ -247,7 +247,7 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 
 	reqData := req.Data
 	if reqData.TemplateUUID.IsNil() {
-		common.ReplyWSErr(s, string(workflow.CreateNode), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
+		common.ReplyWSErr(s, string(workflow.CreateNode), req.MsgUUID, code.ParamErr)
 		return err
 	}
 
@@ -313,22 +313,179 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 
 // 更新工作流节点
 func (w *workflowImpl) upateNode(ctx context.Context, s *melody.Session, b []byte) error {
-	return nil
+	req := &common.WSData[*workflow.WSUpdateNode]{}
+	if err := json.Unmarshal(b, req); err != nil {
+		common.ReplyWSErr(s, string(workflow.UpdateNode), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
+		return err
+	}
+
+	reqData := req.Data
+
+	if reqData == nil ||
+		reqData.UUID.IsNil() {
+		common.ReplyWSErr(s, string(workflow.UpdateNode), req.MsgUUID, code.ParamErr)
+		return code.ParamErr.WithMsg("empty param")
+	}
+
+	d := &model.WorkflowNode{}
+	keys := make([]string, 0, 1)
+	if reqData.ParentUUID != nil {
+		nodeData := &model.WorkflowNode{}
+		nodeData.UUID = *reqData.ParentUUID
+		if err := w.workflowStore.TranslateIDOrUUID(ctx, nodeData); err != nil {
+			common.ReplyWSErr(s, string(workflow.UpdateNode), req.MsgUUID, err)
+			return code.ParamErr.WithMsg("empty param")
+		}
+		d.ParentID = nodeData.ID
+	}
+
+	if reqData.Status != nil {
+		d.Status = *reqData.Status
+		keys = append(keys, "status")
+	}
+
+	if reqData.Type != nil {
+		d.Type = *reqData.Type
+		keys = append(keys, "type")
+	}
+
+	if reqData.Icon != nil {
+		d.Icon = *reqData.Icon
+		keys = append(keys, "icon")
+	}
+
+	if reqData.Pose != nil {
+		d.Pose = *reqData.Pose
+		keys = append(keys, "pose")
+	}
+
+	if reqData.Param != nil {
+		d.Param = *reqData.Param
+		keys = append(keys, "param")
+	}
+
+	if len(keys) == 0 {
+		common.ReplyWSOk(s, string(workflow.UpdateNode), reqData.UUID)
+		return nil
+	}
+
+	if err := w.workflowStore.UpdateWorkflowNode(ctx, reqData.UUID, d, keys); err != nil {
+		common.ReplyWSErr(s, string(workflow.UpdateNode), reqData.UUID, err)
+		return err
+	}
+
+	return common.ReplyWSOk(s, string(workflow.UpdateNode), reqData.UUID, reqData)
 }
 
 // 批量删除工作流节点
 func (w *workflowImpl) batchDelNode(ctx context.Context, s *melody.Session, b []byte) error {
-	return nil
+	req := &common.WSData[[]uuid.UUID]{}
+	if err := json.Unmarshal(b, &req); err != nil {
+
+		common.ReplyWSErr(s, string(workflow.BatchDelNode), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
+		return err
+	}
+
+	if len(req.Data) == 0 {
+		common.ReplyWSOk(s, string(workflow.BatchDelNode), req.MsgUUID, &workflow.WSDelNodes{})
+		return nil
+	}
+
+	resp, err := w.workflowStore.DeleteWorkflowNodes(ctx, req.Data)
+	if err != nil {
+		common.ReplyWSErr(s, string(workflow.BatchDelNode), req.MsgUUID, err)
+		return err
+	}
+
+	return common.ReplyWSOk(s, string(workflow.BatchDelNode), req.MsgUUID, &workflow.WSDelNodes{
+		NodeUUIDs: resp.NodeUUIDs,
+		EdgeUUIDs: resp.EdgeUUIDs,
+	})
 }
 
 // 批量创建边
 func (w *workflowImpl) batchCreateEdge(ctx context.Context, s *melody.Session, b []byte) error {
-	return nil
+	req := &common.WSData[[]*workflow.WSWorkflowEdge]{}
+	if err := json.Unmarshal(b, req); err != nil {
+		common.ReplyWSErr(s, string(workflow.BatchCreateEdge), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
+		return code.ParamErr.WithMsg(err.Error())
+	}
+
+	if len(req.Data) == 0 {
+		common.ReplyWSErr(s, string(workflow.BatchCreateEdge), req.MsgUUID, code.ParamErr.WithMsg("edge is empty"))
+		return code.ParamErr.WithMsg("edge is empty")
+	}
+
+	nodeUUIDs := make([]uuid.UUID, 0, 2*len(req.Data))
+	handleUUIDs := make([]uuid.UUID, 0, 2*len(req.Data))
+	for _, edge := range req.Data {
+		if edge.SourceHandleUUID.IsNil() ||
+			edge.TargetHandleUUID.IsNil() ||
+			edge.SourceNodeUUID.IsNil() ||
+			edge.TargetNodeUUID.IsNil() {
+
+			common.ReplyWSErr(s, string(workflow.BatchCreateEdge), req.MsgUUID, code.ParamErr.WithMsg("uuid is empty"))
+			return code.ParamErr.WithMsg("uuid is empty")
+		}
+
+		nodeUUIDs = utils.AppendUniqSlice(nodeUUIDs, edge.SourceNodeUUID, edge.TargetNodeUUID)
+		handleUUIDs = utils.AppendUniqSlice(handleUUIDs, edge.SourceHandleUUID, edge.TargetHandleUUID)
+	}
+
+	count, err := w.workflowStore.Count(ctx, &model.WorkflowNode{}, map[string]any{"uuid": nodeUUIDs})
+	if err != nil || count != int64(len(nodeUUIDs)) {
+		common.ReplyWSErr(s, string(workflow.BatchCreateEdge), req.MsgUUID, code.ParamErr.WithMsg("node uuid not exist"))
+		return code.ParamErr.WithMsg("node uuid not exist")
+	}
+
+	count, err = w.workflowStore.Count(ctx, &model.WorkflowHandleTemplate{}, map[string]any{"uuid": handleUUIDs})
+	if err != nil || count != int64(len(nodeUUIDs)) {
+		common.ReplyWSErr(s, string(workflow.BatchCreateEdge), req.MsgUUID, code.ParamErr.WithMsg("handle templet uuid not exist"))
+		return code.ParamErr.WithMsg("handle templet not exist")
+	}
+
+	edgeDatas := utils.FilterSlice(req.Data, func(edge *workflow.WSWorkflowEdge) (*model.WorkflowEdge, bool) {
+		return &model.WorkflowEdge{
+			SourceNodeUUID:   edge.SourceNodeUUID,
+			TargetNodeUUID:   edge.TargetNodeUUID,
+			SourceHandleUUID: edge.SourceHandleUUID,
+			TargetHandleUUID: edge.TargetHandleUUID,
+		}, true
+
+	})
+
+	if err := w.workflowStore.UpsertWorkflowEdge(ctx, edgeDatas); err != nil {
+		common.ReplyWSErr(s, string(workflow.BatchCreateEdge), req.MsgUUID, code.ParamErr.WithMsg("node uuid not exist"))
+		return code.UpsertWorkflowEdgeErr.WithErr(err)
+	}
+
+	respDatas := utils.FilterSlice(edgeDatas, func(data *model.WorkflowEdge) (*workflow.WSWorkflowEdge, bool) {
+		return &workflow.WSWorkflowEdge{
+			UUID:             data.UUID,
+			SourceNodeUUID:   data.SourceNodeUUID,
+			TargetNodeUUID:   data.TargetNodeUUID,
+			SourceHandleUUID: data.SourceHandleUUID,
+			TargetHandleUUID: data.TargetHandleUUID,
+		}, true
+	})
+
+	return common.ReplyWSOk(s, string(workflow.BatchCreateEdge), req.MsgUUID, respDatas)
 }
 
 // 批量删除边
 func (w *workflowImpl) batchDelEdge(ctx context.Context, s *melody.Session, b []byte) error {
-	return nil
+	req := &common.WSData[[]uuid.UUID]{}
+	if err := json.Unmarshal(b, req); err != nil {
+		common.ReplyWSErr(s, string(workflow.BatchDelEdge), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
+		return code.ParamErr.WithMsg(err.Error())
+	}
+
+	if resp, err := w.workflowStore.DeleteWorkflowEdges(ctx, req.Data); err != nil {
+		common.ReplyWSErr(s, string(workflow.BatchDelEdge), req.MsgUUID, code.ParamErr.WithErr(err))
+		return code.UpsertWorkflowEdgeErr.WithErr(err)
+	} else {
+		return common.ReplyWSOk(s, string(workflow.BatchDelEdge), req.MsgUUID, resp)
+	}
 }
 
 func (w *workflowImpl) getWorkflow(ctx context.Context, s *melody.Session) (*model.Workflow, error) {
@@ -348,8 +505,10 @@ func (w *workflowImpl) OnWSConnect(ctx context.Context, s *melody.Session) error
 	}
 
 	workflowUUID := uuidI.(uuid.UUID)
-	exist, _ := w.workflowStore.IsExist(ctx, workflowUUID)
-	if !exist {
+	count, err := w.workflowStore.Count(ctx, &model.Workflow{}, map[string]any{
+		"uuid": workflowUUID,
+	})
+	if err != nil || count == 0 {
 		return code.WorkflowNotExistErr
 	}
 	return nil

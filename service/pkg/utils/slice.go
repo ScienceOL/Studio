@@ -3,11 +3,29 @@ package utils
 
 import "slices"
 
-func AppendUniqSlice[T comparable](slice []T, elem T) []T {
-	if slices.Contains(slice, elem) {
-		return slice
+func AppendUniqSlice[T comparable](slice []T, elems ...T) []T {
+	for _, elem := range elems {
+		if slices.Contains(slice, elem) {
+			continue
+		}
+		slice = append(slice, elem)
 	}
-	return append(slice, elem) // 添加新元素
+	return slice
+}
+
+func FilterUniqSlice[T comparable, V comparable](slice []T, f func(elem T) (V, bool)) []V {
+	tmpMap := make(map[V]struct{})
+	for _, v := range slice {
+		if value, isAdd := f(v); isAdd {
+			tmpMap[value] = struct{}{}
+		}
+	}
+
+	res := make([]V, 0, len(slice))
+	for key, _ := range tmpMap {
+		res = append(res, key)
+	}
+	return res
 }
 
 func Or[T comparable](values ...T) T {

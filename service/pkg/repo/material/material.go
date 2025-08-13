@@ -6,7 +6,6 @@ import (
 
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
-	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/repo/model"
@@ -22,12 +21,12 @@ type NodeHandleInfo struct {
 }
 
 type materialImpl struct {
-	*db.Datastore
+	repo.IDOrUUIDTranslate
 }
 
 func NewMaterialImpl() repo.MaterialRepo {
 	return &materialImpl{
-		Datastore: db.DB(),
+		IDOrUUIDTranslate: repo.NewBaseDB(),
 	}
 }
 

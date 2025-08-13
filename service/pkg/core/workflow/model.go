@@ -102,3 +102,18 @@ type WSCreateNode struct {
 	Pose         datatypes.JSONType[model.Pose]
 	Param        datatypes.JSON
 }
+
+type WSUpdateNode struct {
+	UUID       uuid.UUID                       `json:"uuid"`
+	ParentUUID *uuid.UUID                      `json:"parent_uuid"`
+	Status     *string                         `json:"status"`
+	Type       *string                         `json:"type"`
+	Icon       *string                         `json:"icon"`
+	Pose       *datatypes.JSONType[model.Pose] `json:"pose"`
+	Param      *datatypes.JSON                 `json:"param"`
+}
+
+type WSDelNodes struct {
+	NodeUUIDs []uuid.UUID `json:"node_uuids"`
+	EdgeUUIDs []uuid.UUID `json:"edge_uuids"`
+}

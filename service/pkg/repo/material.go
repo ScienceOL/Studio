@@ -23,6 +23,7 @@ type UpdateNode struct {
 }
 
 type MaterialRepo interface {
+	TranslateIDOrUUID(ctx context.Context, data any) error
 	// 更新或者插入物料
 	UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode) error
 	// 更新或插入 edge

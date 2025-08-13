@@ -6,21 +6,21 @@ import (
 
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
-	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type workflowImpl struct {
-	*db.Datastore
+	repo.IDOrUUIDTranslate
 }
 
 func New() repo.WorkflowRepo {
 	return &workflowImpl{
-		Datastore: db.DB(),
+		IDOrUUIDTranslate: repo.NewBaseDB(),
 	}
 }
 
@@ -132,7 +132,7 @@ func (w *workflowImpl) GetWorkflowGraph(ctx context.Context, userID string, work
 
 	edges := make([]*model.WorkflowEdge, 0, 1)
 	if err := w.DBWithContext(ctx).
-		Where("source_node_uuid in ?", nodeUUIDs).
+		Where("source_node_uuid in ? or target_node_uuid in ?", nodeUUIDs, nodeUUIDs).
 		Find(&edges).Error; err != nil {
 		logger.Errorf(ctx, "GetWorkflowGraph get edge fail err: %+v", err)
 
@@ -222,4 +222,99 @@ func (w *workflowImpl) GetWorkflowNode(ctx context.Context, uuid uuid.UUID) (*mo
 	}
 
 	return data, nil
+}
+
+func (w *workflowImpl) UpdateWorkflowNode(ctx context.Context, workflowUUID uuid.UUID, data *model.WorkflowNode, updateColumns []string) error {
+	if err := w.DBWithContext(ctx).Where("uuid = ?", workflowUUID).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{
+				{Name: "uuid"},
+			},
+			DoUpdates: clause.AssignmentColumns(append(updateColumns, "updated_at")),
+		}).Create(data).Error; err != nil {
+		logger.Errorf(ctx, "UpdateWorkflowNode fail uuid:%v, err: %+v", workflowUUID, err)
+		return code.UpdateDataErr
+	}
+
+	return nil
+}
+
+func (w *workflowImpl) DeleteWorkflowNodes(ctx context.Context, workflowUUIDs []uuid.UUID) (*repo.DeleteWorkflow, error) {
+	if len(workflowUUIDs) == 0 {
+		return &repo.DeleteWorkflow{}, nil
+	}
+
+	resp := &repo.DeleteWorkflow{}
+	if err := w.ExecTx(ctx, func(txCtx context.Context) error {
+		edgeUUIDs := make([]uuid.UUID, 0, len(workflowUUIDs))
+		if err := w.DBWithContext(txCtx).Model(&model.WorkflowEdge{}).
+			Select("uuid").
+			Where("source_node_uuid in ? or target_node_uuid in ?", workflowUUIDs, workflowUUIDs).
+			Find(&edgeUUIDs); err != nil {
+
+			logger.Errorf(txCtx, "DeleteWorkflowNodes get workflow edge uuid fail uuid: %+v, err: %+v", workflowUUIDs, err)
+			return code.QueryRecordErr
+		}
+
+		// 删除工作流，删除边
+
+		if err := w.DBWithContext(ctx).Where("uuid in ?", workflowUUIDs).Delete(&model.WorkflowNode{}).Error; err != nil {
+			logger.Errorf(ctx, "DeleteWorkflowNodes fail uuid: %+v, err: %+v", edgeUUIDs, err)
+			return code.DeleteDataErr
+		}
+
+		if len(edgeUUIDs) > 0 {
+			if err := w.DBWithContext(ctx).Where("uuid in ?", edgeUUIDs).Delete(&model.WorkflowEdge{}).Error; err != nil {
+				logger.Errorf(ctx, "DeleteWorkflowNodes fail uuid: %+v, err: %+v", edgeUUIDs, err)
+				return code.DeleteDataErr
+			}
+		}
+
+		resp.EdgeUUIDs = edgeUUIDs
+		resp.EdgeUUIDs = workflowUUIDs
+		return nil
+	}); err != nil {
+		logger.Errorf(ctx, "DeleteWorkflowNodes fail uuids: %+v, err: %+v", workflowUUIDs, err)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (w *workflowImpl) DeleteWorkflowEdges(ctx context.Context, edgeUUIDs []uuid.UUID) ([]uuid.UUID, error) {
+	if len(edgeUUIDs) == 0 {
+		return []uuid.UUID{}, nil
+	}
+
+	if err := w.DBWithContext(ctx).Where("uuid in ?", edgeUUIDs).Delete(&model.WorkflowEdge{}).Error; err != nil {
+		logger.Errorf(ctx, "DeleteWorkflowEdges fail uuid: %+v, err: %+v", edgeUUIDs, err)
+		return nil, code.DeleteDataErr
+	}
+
+	return edgeUUIDs, nil
+}
+
+func (w *workflowImpl) UpsertWorkflowEdge(ctx context.Context, datas []*model.WorkflowEdge) error {
+	if len(datas) == 0 {
+		return nil
+	}
+
+	statement := w.DBWithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "source_node_uuid"},
+			{Name: "target_node_uuid"},
+			{Name: "source_handle_uuid"},
+			{Name: "target_handle_uuid"},
+		},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"updated_at",
+		}),
+	}).Create(datas)
+
+	if statement.Error != nil {
+		logger.Errorf(ctx, "UpsertWorkflowEdge err: %+v", statement.Error)
+		return code.CreateDataErr.WithMsg(statement.Error.Error())
+	}
+
+	return nil
 }
