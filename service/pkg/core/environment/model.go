@@ -75,14 +75,15 @@ type ResourceReq struct {
 }
 
 type Resource struct {
-	RegName         string              `json:"id" binding:"required"`
-	Description     *string             `json:"description,omitempty"`
-	Icon            string              `json:"icon,omitempty"`
-	Language        string              `json:"registry_type" binding:"required"`
-	Version         string              `json:"version" default:"0.0.1"`
-	FilePath        string              `json:"file_path"`
-	Class           RegClass            `json:"class"`
-	Handles         []*RegHandle        `json:"handles"`
-	InitParamSchema *RegInitParamSchema `json:"init_param_schema,omitempty"`
-	Model           datatypes.JSON      `json:"model"`
+	RegName         string                      `json:"id" binding:"required"`
+	Description     *string                     `json:"description,omitempty"`
+	Icon            string                      `json:"icon,omitempty"`
+	Language        string                      `json:"registry_type" binding:"required"`
+	Version         string                      `json:"version" default:"0.0.1"`
+	FilePath        string                      `json:"file_path"`
+	Class           RegClass                    `json:"class"`
+	Handles         []*RegHandle                `json:"handles"`
+	InitParamSchema *RegInitParamSchema         `json:"init_param_schema,omitempty"`
+	Model           datatypes.JSON              `json:"model"`
+	Tags            datatypes.JSONSlice[string] `json:"category"`
 }

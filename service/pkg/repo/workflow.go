@@ -28,8 +28,11 @@ type WorkflowTemplate struct {
 
 type WorkflowRepo interface {
 	Create(ctx context.Context, data *model.Workflow) error
-	GetWorkflowByUUID(ctx context.Context, uuid uuid.UUID)(*model.Workflow, error)
+	CreateNode(ctx context.Context, data *model.WorkflowNode) error
+	GetWorkflowByUUID(ctx context.Context, uuid uuid.UUID) (*model.Workflow, error)
 	IsExist(ctx context.Context, uuid uuid.UUID) (bool, error)
 	GetWorkflowGraph(ctx context.Context, userID string, uuid uuid.UUID) (*WorkflowGrpah, error)
 	GetWorkflowTemplate(ctx context.Context, labID int64) ([]*WorkflowTemplate, error)
+	GetWorkflowTemplateByUUID(ctx context.Context, tplUUID uuid.UUID) (*WorkflowTemplate, error)
+	GetWorkflowNode(ctx context.Context, uuid uuid.UUID) (*model.WorkflowNode, error)
 }

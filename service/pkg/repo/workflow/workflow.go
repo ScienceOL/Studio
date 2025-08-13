@@ -33,6 +33,15 @@ func (w *workflowImpl) Create(ctx context.Context, data *model.Workflow) error {
 	return nil
 }
 
+func (w *workflowImpl) CreateNode(ctx context.Context, data *model.WorkflowNode) error {
+	if statement := w.DBWithContext(ctx).Create(data); statement.Error != nil {
+		logger.Errorf(ctx, "CreateNode fail err: %+v", statement.Error)
+		return code.CreateDataErr.WithMsg(statement.Error.Error())
+	}
+
+	return nil
+}
+
 func (w *workflowImpl) GetWorkflowByUUID(ctx context.Context, uuid uuid.UUID) (*model.Workflow, error) {
 	data := &model.Workflow{}
 	if err := w.DBWithContext(ctx).Where("uuid = ?", uuid).Take(data).Error; err != nil {
@@ -137,6 +146,34 @@ func (w *workflowImpl) GetWorkflowGraph(ctx context.Context, userID string, work
 	}, nil
 }
 
+func (w *workflowImpl) GetWorkflowTemplateByUUID(ctx context.Context, tplUUID uuid.UUID) (*repo.WorkflowTemplate, error) {
+	tplData := &model.WorkflowNodeTemplate{}
+	if err := w.DBWithContext(ctx).
+		Where("uuid = ?", tplUUID).
+		Take(tplData).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, code.RecordNotFound
+		}
+
+		logger.Errorf(ctx, "GetWorkflowTemplateByUUID fail uuid id: %v, err: %+v", tplUUID, err)
+		return nil, code.QueryRecordErr.WithMsg(err.Error())
+	}
+
+	tplHandleDatas := make([]*model.WorkflowHandleTemplate, 0, 2)
+	if err := w.DBWithContext(ctx).
+		Where("node_template_id = ?", tplData.ID).
+		Find(&tplHandleDatas).Error; err != nil {
+
+		logger.Errorf(ctx, "GetWorkflowTemplateByUUID fail uuid id: %v, err: %+v", tplUUID, err)
+		return nil, code.QueryRecordErr.WithMsg(err.Error())
+	}
+
+	return &repo.WorkflowTemplate{
+		Template: tplData,
+		Handles:  tplHandleDatas,
+	}, nil
+}
+
 func (w *workflowImpl) GetWorkflowTemplate(ctx context.Context, labID int64) ([]*repo.WorkflowTemplate, error) {
 	tpls := make([]*model.WorkflowNodeTemplate, 0, 1)
 	if err := w.DBWithContext(ctx).
@@ -169,4 +206,20 @@ func (w *workflowImpl) GetWorkflowTemplate(ctx context.Context, labID int64) ([]
 			Handles:  handlesMap[tpl.ID],
 		}, true
 	}), nil
+}
+
+func (w *workflowImpl) GetWorkflowNode(ctx context.Context, uuid uuid.UUID) (*model.WorkflowNode, error) {
+	data := &model.WorkflowNode{}
+	if err := w.DBWithContext(ctx).
+		Where("uuid = ?", uuid).
+		Take(data).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, code.RecordNotFound
+		}
+
+		logger.Errorf(ctx, "GetWorkflowNode fail uuid id: %v, err: %+v", uuid, err)
+		return nil, code.QueryRecordErr.WithMsg(err.Error())
+	}
+
+	return data, nil
 }

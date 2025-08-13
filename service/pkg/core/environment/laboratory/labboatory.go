@@ -133,6 +133,7 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 				Module:      item.Class.Module,
 				Language:    item.Language,
 				StatusTypes: item.Class.StatusTypes,
+				Tags:        item.Tags,
 				// DataSchema: utils.TernaryLazy(
 				// 	item.InitParamSchema == nil || item.InitParamSchema.Data == nil,
 				// 	func() datatypes.JSON { return datatypes.JSON{} },

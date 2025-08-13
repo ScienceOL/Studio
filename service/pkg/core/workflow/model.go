@@ -93,3 +93,12 @@ type WSTemplateHandles struct {
 type WSTemplates struct {
 	Templates []*WSTemplateHandles
 }
+
+type WSCreateNode struct {
+	TemplateUUID uuid.UUID
+	ParentUUID   uuid.UUID
+	Type         string
+	Icon         string
+	Pose         datatypes.JSONType[model.Pose]
+	Param        datatypes.JSON
+}

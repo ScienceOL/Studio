@@ -66,6 +66,40 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req *material.GraphNo
 	return nil
 }
 
+func (m *materialImpl) RecalculatePosition(ctx context.Context, req *material.GraphNodeReq) {
+	index := 0
+	_ = utils.FilterSlice(req.Nodes, func(node *material.Node) (*material.Node, bool) {
+		pose := node.Pose.Data()
+		pose.Layout = utils.Or(pose.Layout, "2d")
+		pose.Position = model.Position{
+			X: utils.Or(pose.Position.X, 0),
+			Y: utils.Or(pose.Position.Y, 0),
+			Z: utils.Or(pose.Position.Z, 0),
+		}
+		pose.Size = model.Size{
+			Width:  utils.Or(pose.Size.Width, 200),
+			Height: utils.Or(pose.Size.Height, 200),
+		}
+		pose.Scale = model.Scale{
+			X: utils.Or(pose.Scale.X, 1),
+			Y: utils.Or(pose.Scale.Y, 1),
+			Z: utils.Or(pose.Scale.Z, 1),
+		}
+		pose.Rotation = model.Rotation{
+			X: utils.Or(pose.Rotation.X, 0),
+			Y: utils.Or(pose.Rotation.Y, 0),
+			Z: utils.Or(pose.Rotation.Z, 0),
+		}
+
+		pose.Position.X = (pose.Size.Width + 20) * (index % 10)
+		pose.Position.Y = 2 * pose.Size.Height * (index / 10)
+
+		node.Pose = datatypes.NewJSONType(pose)
+		index += 1
+		return nil, false
+	})
+}
+
 func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laboratory, req *material.GraphNodeReq) error {
 	resTplNames := make([]string, 0, len(req.Nodes))
 	for _, data := range req.Nodes {
@@ -97,6 +131,7 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 		}, true
 	})
 
+	m.RecalculatePosition(ctx, req)
 	levelNodes, err := utils.BuildDAGHierarchy(nodeNames)
 	if err != nil {
 		return code.InvalidDagErr.WithMsg(err.Error())
