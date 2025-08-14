@@ -91,8 +91,8 @@ func (m *materialImpl) RecalculatePosition(ctx context.Context, req *material.Gr
 			Z: utils.Or(pose.Rotation.Z, 0),
 		}
 
-		pose.Position.X = (pose.Size.Width + 20) * (index % 10)
-		pose.Position.Y = 2 * pose.Size.Height * (index / 10)
+		pose.Position.X = float32((pose.Size.Width + 20) * (index % 10))
+		pose.Position.Y = float32(2 * pose.Size.Height * (index / 10))
 
 		node.Pose = datatypes.NewJSONType(pose)
 		index += 1
@@ -132,7 +132,7 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 	})
 
 	m.RecalculatePosition(ctx, req)
-	levelNodes, err := utils.BuildDAGHierarchy(nodeNames)
+	levelNodes, err := utils.BuildHierarchy(nodeNames)
 	if err != nil {
 		return code.InvalidDagErr.WithMsg(err.Error())
 	}
@@ -154,7 +154,6 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 					InitParamData:          n.Data.Config,
 					Data:                   n.Data.Data,
 					Pose:                   n.Data.Pose,
-					Model:                  n.Data.Model,
 					Icon:                   "",
 					Schema:                 n.Data.Schema,
 				}
@@ -169,7 +168,8 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 
 				if resInfo := resMap[n.Data.Class]; resInfo != nil {
 					data.ResourceNodeTemplateID = resInfo.Node.ID
-					data.Icon = resInfo.Node.Icon // TODO: 是否有缺省值
+					data.Icon = resInfo.Node.Icon
+					data.Model = resInfo.Node.Model
 				}
 
 				datas = append(datas, data)
@@ -391,10 +391,12 @@ func (m *materialImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 	}
 
 	switch material.ActionType(msgType.Action) {
-	case material.FetchGrpah: // 首次获取组态图
-		return m.fetchGraph(ctx, s, msgType.MsgUUID)
+	case material.FetchGraph: // 首次获取组态图
+		return m.fetchGraph(ctx, s, msgType.MsgUUID, material.FetchGraph)
 	case material.FetchTemplate: // 首次获取模板
 		return m.fetchDeviceTemplate(ctx, s, msgType.MsgUUID)
+	case material.SaveGraph:
+		return m.saveGraph(ctx, s, b)
 	case material.CreateNode: // TODO: 这个不实现，一次修改数量太多，没必要，通知也复杂
 		return m.createNode(ctx, s, b)
 	case material.UpdateNode: // 批量更新节点
@@ -411,7 +413,7 @@ func (m *materialImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 }
 
 // 获取组态图
-func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUID uuid.UUID) error {
+func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUID uuid.UUID, action material.ActionType) error {
 	// 获取所有组态图信息
 	labData, err := m.getLab(ctx, s)
 	if err != nil {
@@ -419,7 +421,7 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 	}
 	nodes, err := m.materialStore.GetNodesByLabID(ctx, labData.ID)
 	if err != nil {
-		common.ReplyWSErr(s, string(material.FetchGrpah), msgUUID, err)
+		common.ReplyWSErr(s, string(action), msgUUID, err)
 		return err
 	}
 
@@ -437,7 +439,7 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 
 	resHandlesMap, err := m.envStore.GetResourceHandleTemplates(ctx, resTplIDS)
 	if err != nil {
-		common.ReplyWSErr(s, string(material.FetchGrpah), msgUUID, err)
+		common.ReplyWSErr(s, string(action), msgUUID, err)
 		return err
 	}
 
@@ -446,12 +448,12 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 	})
 	edges, err := m.materialStore.GetEdgesByNodeUUID(ctx, nodeUUIDs)
 	if err != nil {
-		common.ReplyWSErr(s, string(material.FetchGrpah), msgUUID, err)
+		common.ReplyWSErr(s, string(action), msgUUID, err)
 		return err
 	}
-	resNodeTplUUIDMap, err := m.envStore.GetResourceNodeTemplateUUID(ctx, resTplIDS)
+	resNodeTplMap, err := m.envStore.GetResourceNodeTemplates(ctx, resTplIDS)
 	if err != nil {
-		common.ReplyWSErr(s, string(material.FetchGrpah), msgUUID, err)
+		common.ReplyWSErr(s, string(action), msgUUID, err)
 		return err
 	}
 
@@ -462,23 +464,29 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 			parentUUID = parentNode.UUID
 		}
 
-		resNodeTplUUID := resNodeTplUUIDMap[nodeItem.ResourceNodeTemplateID]
+		var tplUUID uuid.UUID
+		var tplName string
+		if resNodeTpl, ok := resNodeTplMap[nodeItem.ResourceNodeTemplateID]; ok {
+			tplUUID = resNodeTpl.UUID
+			tplName = resNodeTpl.Name
+		}
 		handles := resHandlesMap[nodeItem.ResourceNodeTemplateID]
 		return &material.WSNode{
-			UUID:                nodeItem.UUID,
-			ParentUUID:          parentUUID,
-			Name:                nodeItem.Name,
-			DisplayName:         nodeItem.DisplayName,
-			Description:         nodeItem.Description,
-			Type:                nodeItem.Type,
-			ResNodeTemplateUUID: resNodeTplUUID,
-			InitParamData:       nodeItem.InitParamData,
-			Schema:              nodeItem.Schema,
-			Data:                nodeItem.Data,
-			Status:              nodeItem.Status,
-			Pose:                nodeItem.Pose,
-			Model:               nodeItem.Model,
-			Icon:                nodeItem.Icon,
+			UUID:            nodeItem.UUID,
+			ParentUUID:      parentUUID,
+			Name:            nodeItem.Name,
+			DisplayName:     nodeItem.DisplayName,
+			Description:     nodeItem.Description,
+			Type:            nodeItem.Type,
+			ResTemplateUUID: tplUUID,
+			ResTemplateName: tplName,
+			InitParamData:   nodeItem.InitParamData,
+			Schema:          nodeItem.Schema,
+			Data:            nodeItem.Data,
+			Status:          nodeItem.Status,
+			Pose:            nodeItem.Pose,
+			Model:           nodeItem.Model,
+			Icon:            nodeItem.Icon,
 			Handles: utils.FilterSlice(handles, func(handleItem *model.ResourceHandleTemplate) (*material.WSHandle, bool) {
 				return &material.WSHandle{
 					UUID:        handleItem.UUID,
@@ -500,17 +508,17 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 			SourceNodeUUID:   item.SourceNodeUUID,
 			TargetNodeUUID:   item.TargetNodeUUID,
 			SourceHandleUUID: item.SourceHandleUUID,
-			TargetHandleUUID: item.SourceHandleUUID,
+			TargetHandleUUID: item.TargetHandleUUID,
 			Type:             "step",
 		}, true
 	})
 
-	resp := &material.GraphResp{
+	resp := &material.WSGraph{
 		Nodes: respNodes,
 		Edges: respEdges,
 	}
 
-	return common.ReplyWSOk(s, string(material.FetchGrpah), msgUUID, resp)
+	return common.ReplyWSOk(s, string(action), msgUUID, resp)
 }
 
 func (m *materialImpl) getLab(ctx context.Context, s *melody.Session) (*model.Laboratory, error) {
@@ -583,6 +591,7 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 			Tags:         nodeItem.Tags,
 			DataSchema:   nodeItem.DataSchema,
 			ConfigSchema: nodeItem.ConfigSchema,
+			ResourceType: nodeItem.ResourceType,
 		}, true
 	})
 	resData := &material.DeviceTemplates{
@@ -590,6 +599,75 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 	}
 
 	return common.ReplyWSOk(s, string(material.FetchTemplate), msgUUID, resData)
+}
+
+// 全量保存
+func (m *materialImpl) saveGraph(ctx context.Context, s *melody.Session, b []byte) error {
+	req := &common.WSData[*material.WSGraph]{}
+	if err := json.Unmarshal(b, req); err != nil {
+		logger.Errorf(ctx, "saveGraph unmarshal data fail err: %+v", err)
+		return common.ReplyWSErr(s, string(material.SaveGraph), req.MsgUUID, code.ParamErr.WithErr(err))
+	}
+	labData, err := m.getLab(ctx, s)
+	if err != nil {
+		logger.Errorf(ctx, "saveGraph get lab fail err: %+v", err)
+		return common.ReplyWSErr(s, string(material.SaveGraph), req.MsgUUID, err)
+	}
+
+	nodeUUIDs := make([]uuid.UUID, 0, len(req.Data.Nodes))
+	tplUUIDs := make([]uuid.UUID, 0, len(req.Data.Nodes))
+	for _, n := range req.Data.Nodes {
+		if n.UUID.IsNil() {
+			logger.Errorf(ctx, "saveGraph check node uuid id empty")
+			return common.ReplyWSErr(s, string(material.SaveGraph), req.MsgUUID, code.ParamErr)
+		}
+
+		if !n.UUID.IsNil() {
+			nodeUUIDs = utils.AppendUniqSlice(nodeUUIDs, n.UUID)
+		}
+
+		if !n.ResTemplateUUID.IsNil() {
+			tplUUIDs = utils.AppendUniqSlice(tplUUIDs, n.ResTemplateUUID)
+		}
+	}
+
+	mUUID2IDMap := m.materialStore.UUID2ID(ctx, &model.MaterialNode{}, nodeUUIDs)
+	resUUID2IDMap := m.materialStore.UUID2ID(ctx, &model.ResourceNodeTemplate{}, tplUUIDs)
+
+	nodes, err := utils.FilterSliceWithErr(req.Data.Nodes, func(item *material.WSNode) ([]*model.MaterialNode, bool, error) {
+		if item.UUID.IsNil() || item.Name == "" {
+			return nil, false, code.ParamErr.WithMsg("saveGraph node uuid is empty")
+		}
+		data := &model.MaterialNode{
+			ParentID:               mUUID2IDMap[item.ParentUUID],
+			LabID:                  labData.ID,
+			Name:                   item.Name,
+			DisplayName:            item.DisplayName,
+			Description:            item.Description,
+			Type:                   item.Type,
+			ResourceNodeTemplateID: resUUID2IDMap[item.ResTemplateUUID],
+			InitParamData:          item.InitParamData,
+			Data:                   item.Data,
+			Pose:                   item.Pose,
+			Model:                  item.Model,
+			Icon:                   item.Icon,
+			Schema:                 item.Schema,
+			// Class:                  item.Class,
+		}
+		return []*model.MaterialNode{data}, true, nil
+	})
+
+	if err != nil {
+		logger.Errorf(ctx, "saveGraph check node param err: %+v", err)
+		return common.ReplyWSErr(s, string(material.SaveGraph), req.MsgUUID, err)
+	}
+
+	if err := m.materialStore.UpsertMaterialNode(ctx, nodes); err != nil {
+		logger.Errorf(ctx, "saveGraph upsert material node err: %+v", err)
+		return common.ReplyWSErr(s, string(material.SaveGraph), req.MsgUUID, err)
+	}
+
+	return m.fetchGraph(ctx, s, req.MsgUUID, material.SaveGraph)
 }
 
 // 批量创建节点
@@ -609,12 +687,12 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 	reqData := req.Data
 	mData := &model.MaterialNode{}
 
-	if reqData.ResNodeTemplateUUID.IsNil() {
+	if reqData.ResTemplateUUID.IsNil() {
 		common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, code.TemplateNodeNotFoundErr)
 		return code.TemplateNodeNotFoundErr
 	}
 
-	if tplNodeID, err := m.envStore.GetResourceTemplateByUUD(ctx, reqData.ResNodeTemplateUUID, []string{"id", "uuid", "icon"}...); err != nil {
+	if tplNodeID, err := m.envStore.GetResourceTemplateByUUD(ctx, reqData.ResTemplateUUID, []string{"id", "uuid", "icon"}...); err != nil {
 		common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, code.TemplateNodeNotFoundErr)
 		return code.TemplateNodeNotFoundErr
 	} else {

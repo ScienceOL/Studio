@@ -34,8 +34,9 @@ type MaterialNode struct {
 	Schema                 datatypes.JSON           `gorm:"type:jsonb" json:"schema"`          // TODO: 从 registry 里面获取，需要 edge 配合修改
 	Data                   datatypes.JSON           `gorm:"type:jsonb" json:"data"`
 	Pose                   datatypes.JSONType[Pose] `gorm:"type:jsonb" json:"pose"`
-	Model                  string                   `gorm:"type:varchar(1000)" json:"model"`
+	Model                  datatypes.JSON           `gorm:"type:varchar(1000)" json:"model"`
 	Icon                   string                   `gorm:"type:text" json:"icon"`
+	// Tags                   datatypes.JSONSlice[string] `gorm:"type:jsonb" json:"tags"` // label 标签
 }
 
 func (*MaterialNode) TableName() string {

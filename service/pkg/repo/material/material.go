@@ -45,7 +45,6 @@ func (m *materialImpl) UpsertMaterialNode(ctx context.Context, datas []*model.Ma
 			"display_name",
 			"description",
 			"type",
-			"status",
 			"resource_node_template_id",
 			"init_param_data",
 			"schema",
@@ -229,7 +228,7 @@ func (m *materialImpl) GetNodesByLabID(ctx context.Context, labID int64, selectK
 		query = query.Select(selectKeys)
 	}
 
-	statement := query.Find(&datas)
+	statement := query.Order("id asc").Find(&datas)
 	if statement.Error != nil {
 		logger.Errorf(ctx, "GetNodesByLabID sql: %+s, err: %+v",
 			statement.Statement.SQL.String(),

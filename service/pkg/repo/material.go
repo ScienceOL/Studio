@@ -5,6 +5,7 @@ import (
 
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/repo/model"
+	"gorm.io/gorm/schema"
 )
 
 type NodeInfo struct {
@@ -23,7 +24,8 @@ type UpdateNode struct {
 }
 
 type MaterialRepo interface {
-	TranslateIDOrUUID(ctx context.Context, data any) error
+	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids []uuid.UUID) map[uuid.UUID]int64
+	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids []int64) map[int64]uuid.UUID
 	// 更新或者插入物料
 	UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode) error
 	// 更新或插入 edge

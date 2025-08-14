@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	MaxPageSize = 50
+	MaxPageSize = 2000
 )
 
 type Error struct {

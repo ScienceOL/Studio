@@ -329,14 +329,10 @@ func (w *workflowImpl) upateNode(ctx context.Context, s *melody.Session, b []byt
 
 	d := &model.WorkflowNode{}
 	keys := make([]string, 0, 1)
-	if reqData.ParentUUID != nil {
-		nodeData := &model.WorkflowNode{}
-		nodeData.UUID = *reqData.ParentUUID
-		if err := w.workflowStore.TranslateIDOrUUID(ctx, nodeData); err != nil {
-			common.ReplyWSErr(s, string(workflow.UpdateNode), req.MsgUUID, err)
-			return code.ParamErr.WithMsg("empty param")
-		}
-		d.ParentID = nodeData.ID
+	if reqData.ParentUUID != nil || !(reqData.ParentUUID.IsNil()) {
+		d.ParentID = w.workflowStore.UUID2ID(ctx,
+			&model.WorkflowNode{},
+			[]uuid.UUID{*reqData.ParentUUID})[*reqData.ParentUUID]
 	}
 
 	if reqData.Status != nil {

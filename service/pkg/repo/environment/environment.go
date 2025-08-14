@@ -7,7 +7,6 @@ import (
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
-	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	repo "github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/repo/model"
@@ -18,12 +17,12 @@ import (
 )
 
 type envImpl struct {
-	*db.Datastore
+	repo.IDOrUUIDTranslate
 }
 
 func New() repo.LaboratoryRepo {
 	return &envImpl{
-		Datastore: db.DB(),
+		IDOrUUIDTranslate: repo.NewBaseDB(),
 	}
 }
 
@@ -98,15 +97,16 @@ func (e *envImpl) UpsertDeviceAction(ctx context.Context, datas []*model.DeviceA
 	return nil
 }
 
-func (e *envImpl) UpsertDeviceTemplate(ctx context.Context, datas []*model.ResourceNodeTemplate) error {
+func (e *envImpl) UpsertResTemplate(ctx context.Context, datas []*model.ResourceNodeTemplate) error {
 	if len(datas) == 0 {
 		return nil
 	}
 	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{
 			{Name: "lab_id"},
+			{Name: "parent_id"},
 			{Name: "name"},
-			{Name: "version"}, // 根据 idx_lrnv 推测是这些字段的组合
+			{Name: "version"},
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"description",
@@ -166,12 +166,13 @@ func (e *envImpl) GetResourceTemplate(ctx context.Context, labID int64, names []
 	}
 
 	type QueryResult struct {
-		ID     int64     `gorm:"column:id"`
-		UUID   uuid.UUID `gorm:"column:uuid"`
-		Name   string    `gorm:"column:name"`
-		LabID  int64     `gorm:"column:lab_id"`
-		UserID string    `gorm:"column:user_id"`
-		Icon   string    `gorm:"column:icon"`
+		ID     int64          `gorm:"column:id"`
+		UUID   uuid.UUID      `gorm:"column:uuid"`
+		Name   string         `gorm:"column:name"`
+		LabID  int64          `gorm:"column:lab_id"`
+		UserID string         `gorm:"column:user_id"`
+		Icon   string         `gorm:"column:icon"`
+		Model  datatypes.JSON `gorm:"column:model"`
 
 		ActionID          *int64          `gorm:"column:action_id"`
 		ActionName        *string         `gorm:"column:action_name"`
@@ -191,6 +192,7 @@ func (e *envImpl) GetResourceTemplate(ctx context.Context, labID int64, names []
             latest_rnt.lab_id,
             latest_rnt.user_id,
             latest_rnt.icon,
+            latest_rnt.model,
             da.id as action_id,
             da.name as action_name,
             da.goal as action_goal,
@@ -228,6 +230,7 @@ func (e *envImpl) GetResourceTemplate(ctx context.Context, labID int64, names []
 					LabID:  result.LabID,
 					UserID: result.UserID,
 					Icon:   result.Icon,
+					Model:  result.Model,
 				},
 			}
 		}
@@ -270,20 +273,20 @@ func (e *envImpl) GetResourceHandleTemplates(ctx context.Context, resIDs []int64
 }
 
 // 根据 device template node id 获取所有的 uuid
-func (e *envImpl) GetResourceNodeTemplateUUID(ctx context.Context, resIDs []int64) (map[int64]uuid.UUID, error) {
+func (e *envImpl) GetResourceNodeTemplates(ctx context.Context, resIDs []int64) (map[int64]*model.ResourceNodeTemplate, error) {
 	if len(resIDs) == 0 {
-		return make(map[int64]uuid.UUID), nil
+		return make(map[int64]*model.ResourceNodeTemplate), nil
 	}
 
 	datas := make([]*model.ResourceNodeTemplate, 0, len(resIDs))
-	statement := e.DBWithContext(ctx).Select("id, uuid").Where("id in ?", resIDs).Find(&datas)
+	statement := e.DBWithContext(ctx).Select("id, uuid, name").Where("id in ?", resIDs).Find(&datas)
 	if statement.Error != nil {
 		logger.Errorf(ctx, "GetResourceNodeTemplateUUID fail ids: %+v, err: %+v", resIDs, statement.Error)
 		return nil, code.QueryRecordErr.WithMsg(statement.Error.Error())
 	}
 
-	return utils.SliceToMap(datas, func(item *model.ResourceNodeTemplate) (int64, uuid.UUID) {
-		return item.ID, item.UUID
+	return utils.SliceToMap(datas, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
+		return item.ID, item
 	}), nil
 }
 
@@ -381,7 +384,7 @@ func (e *envImpl) GetResourceTemplateByUUD(ctx context.Context, uuid uuid.UUID, 
 func (e *envImpl) GetLabList(ctx context.Context, userIDs []string, req *common.PageReq) (*common.PageResp[[]*model.Laboratory], error) {
 	datas := make([]*model.Laboratory, 0, 1)
 	var total int64
-	req.AddPage(1)
+	req.Normalize()
 	if statement := e.DBWithContext(ctx).
 		Model(&model.Laboratory{}).
 		Count(&total).

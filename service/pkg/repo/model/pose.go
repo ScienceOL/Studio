@@ -7,9 +7,9 @@ import (
 )
 
 type Position struct {
-	X int `json:"x"`
-	Y int `json:"y"`
-	Z int `json:"z"`
+	X float32 `json:"x"`
+	Y float32 `json:"y"`
+	Z float32 `json:"z"`
 }
 
 // JSON 序列化
@@ -70,9 +70,9 @@ func (u *Size) UnmarshalJSON(data []byte) error {
 }
 
 type Scale struct {
-	X int `json:"x"`
-	Y int `json:"y"`
-	Z int `json:"z"`
+	X float32 `json:"x"`
+	Y float32 `json:"y"`
+	Z float32 `json:"z"`
 }
 
 // JSON 序列化
@@ -103,9 +103,9 @@ func (u *Scale) UnmarshalJSON(data []byte) error {
 }
 
 type Rotation struct {
-	X int `json:"x"`
-	Y int `json:"y"`
-	Z int `json:"z"`
+	X float32 `json:"x"`
+	Y float32 `json:"y"`
+	Z float32 `json:"z"`
 }
 
 // JSON 序列化

@@ -2,6 +2,7 @@ package environment
 
 import (
 	"github.com/scienceol/studio/service/pkg/common/uuid"
+	"github.com/scienceol/studio/service/pkg/repo/model"
 	"gorm.io/datatypes"
 )
 
@@ -74,11 +75,32 @@ type ResourceReq struct {
 	Resources []Resource `json:"resources"`
 }
 
+type InnerBaseConfig struct {
+	Rotation model.Rotation `json:"rotation"`
+	Category string         `json:"category"`
+	SizeX    float32        `json:"size_x"`
+	SizeY    float32        `json:"size_y"`
+	SizeZ    float32        `json:"size_z"`
+	Type     string         `json:"type"`
+}
+
+type Config struct {
+	Class    string         `json:"class"`
+	Config   datatypes.JSON `json:"config"`
+	Data     datatypes.JSON `json:"data"`
+	ID       string         `json:"id"`
+	Name     string         `json:"name"`
+	Parent   string         `json:"parent"`
+	Position model.Position `json:"position"`
+	Type     string         `json:"type"`
+	// SampleID
+}
+
 type Resource struct {
 	RegName         string                      `json:"id" binding:"required"`
 	Description     *string                     `json:"description,omitempty"`
 	Icon            string                      `json:"icon,omitempty"`
-	Language        string                      `json:"registry_type" binding:"required"`
+	ResourceType    string                      `json:"registry_type" binding:"required"`
 	Version         string                      `json:"version" default:"0.0.1"`
 	FilePath        string                      `json:"file_path"`
 	Class           RegClass                    `json:"class"`
@@ -86,4 +108,5 @@ type Resource struct {
 	InitParamSchema *RegInitParamSchema         `json:"init_param_schema,omitempty"`
 	Model           datatypes.JSON              `json:"model"`
 	Tags            datatypes.JSONSlice[string] `json:"category"`
+	ConfigInfo      []*Config                   `json:"config_info"`
 }

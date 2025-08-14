@@ -8,7 +8,7 @@ type Node[T comparable, D any] struct {
 	Data   D
 }
 
-func BuildDAGHierarchy[T comparable, D any](nodes []*Node[T, D]) ([][]*Node[T, D], error) {
+func BuildHierarchy[T comparable, D any](nodes []*Node[T, D]) ([][]*Node[T, D], error) {
 	if len(nodes) == 0 {
 		return [][]*Node[T, D]{}, nil
 	}

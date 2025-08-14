@@ -42,7 +42,8 @@ type WorkflowRepo interface {
 	UpdateWorkflowNode(ctx context.Context, workflowUUID uuid.UUID, data *model.WorkflowNode, updateColumns []string) error
 	DeleteWorkflowNodes(ctx context.Context, workflowUUIDs []uuid.UUID) (*DeleteWorkflow, error)
 	DeleteWorkflowEdges(ctx context.Context, edgeUUIDs []uuid.UUID) ([]uuid.UUID, error)
-	TranslateIDOrUUID(ctx context.Context, data any) error
 	Count(ctx context.Context, tableModel schema.Tabler, condition map[string]any) (int64, error)
 	UpsertWorkflowEdge(ctx context.Context, datas []*model.WorkflowEdge) error
+	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids []uuid.UUID) map[uuid.UUID]int64
+	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids []int64) map[int64]uuid.UUID
 }

@@ -2,6 +2,7 @@ package laboratory
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -119,26 +120,24 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 	}
 
 	return db.DB().ExecTx(ctx, func(txCtx context.Context) error {
+		mapConfigInfo := make(map[string][]*model.ResourceNodeTemplate)
 		resDatas := utils.FilterSlice(req.Resources, func(item environment.Resource) (*model.ResourceNodeTemplate, bool) {
 			data := &model.ResourceNodeTemplate{
-				Name:        item.RegName,
-				LabID:       labData.ID,     // 实验室的 id
-				UserID:      labData.UserID, // 创建实验室的 user id
-				Header:      item.RegName,
-				Footer:      "",
-				Version:     utils.Or(item.Version, "0.0.1"),
-				Icon:        item.Icon,
-				Description: item.Description,
-				Model:       item.Model,
-				Module:      item.Class.Module,
-				Language:    item.Language,
-				StatusTypes: item.Class.StatusTypes,
-				Tags:        item.Tags,
-				// DataSchema: utils.TernaryLazy(
-				// 	item.InitParamSchema == nil || item.InitParamSchema.Data == nil,
-				// 	func() datatypes.JSON { return datatypes.JSON{} },
-				// 	func() datatypes.JSON { return item.InitParamSchema.Data.Properties }, // 安全！
-				// ),
+				Name:         item.RegName,
+				ParentID:     0,
+				LabID:        labData.ID,     // 实验室的 id
+				UserID:       labData.UserID, // 创建实验室的 user id
+				Header:       item.RegName,
+				Footer:       "",
+				Version:      utils.Or(item.Version, "0.0.1"),
+				Icon:         item.Icon,
+				Description:  item.Description,
+				Model:        item.Model,
+				Module:       item.Class.Module,
+				ResourceType: item.ResourceType,
+				Language:     item.Class.Type,
+				StatusTypes:  item.Class.StatusTypes,
+				Tags:         item.Tags,
 				DataSchema: utils.SafeValue(func() datatypes.JSON {
 					return item.InitParamSchema.Data.Properties
 				}, datatypes.JSON{}),
@@ -147,6 +146,45 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 					datatypes.JSON{}),
 				// Labels      :
 			}
+
+			configs := utils.FilterSlice(item.ConfigInfo, func(config *environment.Config) (*model.ResourceNodeTemplate, bool) {
+				innerConfig := &environment.InnerBaseConfig{}
+			if err := json.Unmarshal(config.Config, innerConfig);err != nil {
+
+				}
+
+
+
+				data := &model.ResourceNodeTemplate{
+					Name:         config.ID,
+					ParentID:     0,
+					LabID:        labData.ID,     // 实验室的 id
+					UserID:       labData.UserID, // 创建实验室的 user id
+					Header:       config.Name,
+					Footer:       "",
+					Version:      utils.Or(item.Version, "0.0.1"),
+					Icon:         item.Icon,
+					Description:  item.Description,
+					Model:        item.Model,
+					Module:       item.Class.Module,
+					ResourceType: config.Type,
+					Language:     item.Class.Type,
+					StatusTypes:  item.Class.StatusTypes,
+					Tags:         item.Tags,
+					DataSchema: utils.SafeValue(func() datatypes.JSON {
+						return item.InitParamSchema.Data.Properties
+					}, datatypes.JSON{}),
+					ConfigSchema: utils.SafeValue(
+						func() datatypes.JSON { return item.InitParamSchema.Config.Properties },
+						datatypes.JSON{}),
+				}
+				return data, true
+			})
+
+			if len(configs) > 0 {
+				mapConfigInfo[item.RegName] = configs
+			}
+
 			return data, true
 		})
 
@@ -154,7 +192,7 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 			return item.Name, item
 		})
 
-		if err := l.envStore.UpsertDeviceTemplate(txCtx, resDatas); err != nil {
+		if err := l.envStore.UpsertResTemplate(txCtx, resDatas); err != nil {
 			return err
 		}
 
@@ -194,7 +232,7 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 			if !ok {
 				return nil, false, code.ResourceNotExistErr
 			}
-			handles := make([]*model.ResourceHandleTemplate, 0, len(item.Class.ActionValueMappings))
+			handles := make([]*model.ResourceHandleTemplate, 0, len(item.Handles))
 			for _, handle := range item.Handles {
 				handles = append(handles, &model.ResourceHandleTemplate{
 					NodeID:      resData.ID,
@@ -212,6 +250,7 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 		if err != nil {
 			return err
 		}
+
 		if err := l.envStore.UpsertDeviceAction(txCtx, resDeviceAction); err != nil {
 			return err
 		}

@@ -4,16 +4,18 @@ import "gorm.io/datatypes"
 
 type ResourceNodeTemplate struct {
 	BaseModel
-	Name         string                      `gorm:"type:varchar(255);not null;uniqueIndex:idx_rnt_lnv,priority:2" json:"name"`
-	LabID        int64                       `gorm:"type:bigint;not null;uniqueIndex:idx_rnt_lnv,priority:1" json:"lab_id"`
+	Name         string                      `gorm:"type:varchar(255);not null;uniqueIndex:idx_rnpt_lnv,priority:2" json:"name"`
+	LabID        int64                       `gorm:"type:bigint;not null;uniqueIndex:idx_rnpt_lnv,priority:1" json:"lab_id"`
 	UserID       string                      `gorm:"type:varchar(120);not null" json:"user_id"`
+	ParentID     int64                       `gorm:"type:bigint;uniqueIndex:idx_rnt_lnpv,priority:3" json:"parent_id"`
 	Header       string                      `gorm:"type:text" json:"header"`
 	Footer       string                      `gorm:"type:text" json:"footer"`
-	Version      string                      `gorm:"type:varchar(50);not null;default:'1.0.0';uniqueIndex:idx_rnt_lnv,priority:3" json:"version"`
+	Version      string                      `gorm:"type:varchar(50);not null;default:'1.0.0';uniqueIndex:idx_rnt_lnpv,priority:4" json:"version"`
 	Icon         string                      `gorm:"type:text" json:"icon"`
 	Description  *string                     `gorm:"type:text" json:"description"`
 	Model        datatypes.JSON              `gorm:"type:jsonb;" json:"model"`
 	Module       string                      `gorm:"type:varchar(1024)" json:"module"`
+	ResourceType string                      `gorm:"type:varchar(255);not null;default:'device'" json:"resource_type"`
 	Language     string                      `gorm:"type:varchar(255);not null;" json:"language"`
 	StatusTypes  datatypes.JSON              `gorm:"type:jsonb" json:"status_types"`
 	Tags         datatypes.JSONSlice[string] `gorm:"type:jsonb" json:"tags"` // label 标签

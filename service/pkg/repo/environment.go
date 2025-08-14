@@ -6,6 +6,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/repo/model"
+	"gorm.io/gorm/schema"
 )
 
 type ResNodeTpl struct {
@@ -14,6 +15,8 @@ type ResNodeTpl struct {
 }
 
 type LaboratoryRepo interface {
+	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids []uuid.UUID) map[uuid.UUID]int64
+	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids []int64) map[int64]uuid.UUID
 	// 创建实验室
 	CreateLaboratoryEnv(ctx context.Context, data *model.Laboratory) error
 	// 根据 uuid 获取实验室
@@ -25,7 +28,7 @@ type LaboratoryRepo interface {
 	// 更新或者插入设备模板
 	UpsertDeviceAction(ctx context.Context, datas []*model.DeviceAction) error
 	// 更新或者插入设备模板
-	UpsertDeviceTemplate(ctx context.Context, datas []*model.ResourceNodeTemplate) error
+	UpsertResTemplate(ctx context.Context, datas []*model.ResourceNodeTemplate) error
 	// 更新或者插入设备模板 handle
 	UpsertDeviceHandleTemplate(ctx context.Context, data []*model.ResourceHandleTemplate) error
 	// 根据实验室获取所有的注册表信息
@@ -33,7 +36,7 @@ type LaboratoryRepo interface {
 	// 根据 device template node id 获取所有的 handle
 	GetResourceHandleTemplates(ctx context.Context, resIDs []int64) (map[int64][]*model.ResourceHandleTemplate, error)
 	// 根据 device template node id 获取所有的 uuid
-	GetResourceNodeTemplateUUID(ctx context.Context, resIDs []int64) (map[int64]uuid.UUID, error)
+	GetResourceNodeTemplates(ctx context.Context, resIDs []int64) (map[int64]*model.ResourceNodeTemplate, error)
 	// 根据实验室 id 获取所有的模板信息
 	GetAllResourceTemplateByLabID(ctx context.Context, labID int64, selectKeys ...string) ([]*model.ResourceNodeTemplate, error)
 	// 根据 device ids 获取所有的 handles

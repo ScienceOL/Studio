@@ -2,22 +2,24 @@ package repo
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
 
 type IDOrUUIDTranslate interface {
-	TranslateIDOrUUID(ctx context.Context, data any) error
+	// TranslateIDOrUUID(ctx context.Context, data any) error
 	DBWithContext(ctx context.Context) *gorm.DB
 	ExecTx(ctx context.Context, fn func(ctx context.Context) error) error
 	Count(ctx context.Context, tableModel schema.Tabler, condition map[string]any) (int64, error)
+	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids []uuid.UUID) map[uuid.UUID]int64
+	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids []int64) map[int64]uuid.UUID
 }
 
 type Base struct {
@@ -38,50 +40,86 @@ func (b *Base) ExecTx(ctx context.Context, fn func(ctx context.Context) error) e
 	return b.Datastore.ExecTx(ctx, fn)
 }
 
-func (b *Base) TranslateIDOrUUID(ctx context.Context, data any) error {
-	// 使用反射获取数据的类型和值
-	v := reflect.ValueOf(data)
-	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		return code.NotPointerErr
+func (b *Base) UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids []uuid.UUID) map[uuid.UUID]int64 {
+	if len(uuids) == 0 {
+		return map[uuid.UUID]int64{}
 	}
 
-	id := int64(0)
-	uuid := uuid.UUID{}
-	switch m := data.(type) {
-	case model.BaseDBModel:
-		if m.GetID() == 0 || m.GetUUID().IsNil() {
-			return code.ParamErr
-		}
-		id = m.GetID()
-		uuid = m.GetUUID()
-	default:
-		return code.NotBaseDBTypeErr
+	datas := make([]*model.BaseModel, 0, len(uuids))
+	if err := b.DBWithContext(ctx).Model(tableModel).
+		Select("id, uuid").Where("uuid in ?", uuids).
+		Find(&datas).Error; err != nil {
+		logger.Errorf(ctx, "TranslateUUID2ID fail uuids: %+v, err: %+v", uuids, err)
+		return map[uuid.UUID]int64{}
 	}
 
-	// 判断转换方向
-	if id <= 0 && !uuid.IsNil() {
-		// UUID 转 ID
-		err := b.DBWithContext(ctx).Model(data).
-			Select("id").
-			Where("uuid = ?", uuid).
-			First(data).Error
-		if err != nil {
-			return code.QueryRecordErr
-		}
-	} else if id > 0 && uuid.IsNil() {
-		err := b.DBWithContext(ctx).Model(data).
-			Select("uuid").
-			Where("id = ?", id).
-			First(data).Error
-		if err != nil {
-			return code.QueryRecordErr
-		}
-	} else {
-		return nil
-	}
-
-	return nil
+	return utils.SliceToMap(datas, func(item *model.BaseModel) (uuid.UUID, int64) {
+		return item.UUID, item.ID
+	})
 }
+
+func (b *Base) ID2UUID(ctx context.Context, tableModel schema.Tabler, ids []int64) map[int64]uuid.UUID {
+	if len(ids) == 0 {
+		return map[int64]uuid.UUID{}
+	}
+
+	datas := make([]*model.BaseModel, 0, len(ids))
+	if err := b.DBWithContext(ctx).Model(tableModel).
+		Select("id, uuid").Where("id in ?", ids).
+		Find(&datas).Error; err != nil {
+		logger.Errorf(ctx, "TranslateID2UUID fail ids: %+v, err: %+v", ids, err)
+		return map[int64]uuid.UUID{}
+	}
+
+	return utils.SliceToMap(datas, func(item *model.BaseModel) (int64, uuid.UUID) {
+		return item.ID, item.UUID
+	})
+}
+
+// func (b *Base) TranslateIDOrUUID(ctx context.Context, data any) error {
+// 	// 使用反射获取数据的类型和值
+// 	v := reflect.ValueOf(data)
+// 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+// 		return code.NotPointerErr
+// 	}
+//
+// 	id := int64(0)
+// 	uuid := uuid.UUID{}
+// 	switch m := data.(type) {
+// 	case model.BaseDBModel:
+// 		if m.GetID() == 0 || m.GetUUID().IsNil() {
+// 			return code.ParamErr
+// 		}
+// 		id = m.GetID()
+// 		uuid = m.GetUUID()
+// 	default:
+// 		return code.NotBaseDBTypeErr
+// 	}
+//
+// 	// 判断转换方向
+// 	if id <= 0 && !uuid.IsNil() {
+// 		// UUID 转 ID
+// 		err := b.DBWithContext(ctx).Model(data).
+// 			Select("id").
+// 			Where("uuid = ?", uuid).
+// 			First(data).Error
+// 		if err != nil {
+// 			return code.QueryRecordErr
+// 		}
+// 	} else if id > 0 && uuid.IsNil() {
+// 		err := b.DBWithContext(ctx).Model(data).
+// 			Select("uuid").
+// 			Where("id = ?", id).
+// 			First(data).Error
+// 		if err != nil {
+// 			return code.QueryRecordErr
+// 		}
+// 	} else {
+// 		return nil
+// 	}
+//
+// 	return nil
+// }
 
 func (b *Base) Count(ctx context.Context, tableModel schema.Tabler, condition map[string]any) (int64, error) {
 	var count int64

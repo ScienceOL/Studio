@@ -9,7 +9,7 @@ import (
 func TestBuildDAGHierarchy(t *testing.T) {
 	t.Run("空节点列表", func(t *testing.T) {
 		nodes := []*Node[string]{}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.NoError(t, err)
 		assert.Empty(t, result)
@@ -19,7 +19,7 @@ func TestBuildDAGHierarchy(t *testing.T) {
 		nodes := []*Node[string]{
 			{Name: "root", Parent: ""},
 		}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 1)
@@ -33,7 +33,7 @@ func TestBuildDAGHierarchy(t *testing.T) {
 			{Name: "child1", Parent: "root"},
 			{Name: "child2", Parent: "root"},
 		}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
@@ -59,7 +59,7 @@ func TestBuildDAGHierarchy(t *testing.T) {
 			{Name: "E", Parent: "B"},
 			{Name: "F", Parent: "C"},
 		}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 4)
@@ -93,7 +93,7 @@ func TestBuildDAGHierarchy(t *testing.T) {
 			{Name: "child1", Parent: "root1"},
 			{Name: "child2", Parent: "root2"},
 		}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
@@ -116,7 +116,7 @@ func TestBuildDAGHierarchy(t *testing.T) {
 			{Name: "duplicate", Parent: ""},
 			{Name: "duplicate", Parent: ""},
 		}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.Error(t, err)
 		assert.Equal(t, "节点名重复", err.Error())
@@ -128,7 +128,7 @@ func TestBuildDAGHierarchy(t *testing.T) {
 			{Name: "A", Parent: "B"},
 			{Name: "B", Parent: "A"},
 		}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.Error(t, err)
 		assert.Equal(t, "图中存在环，这不是一个有效的DAG", err.Error())
@@ -143,7 +143,7 @@ func TestBuildDAGHierarchy(t *testing.T) {
 			{Name: "D", Parent: "C"},
 			{Name: "B", Parent: "D"}, // 这会创建一个环
 		}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.Error(t, err)
 		assert.Equal(t, "节点名重复", err.Error()) // 这个案例会先被节点名重复检查捕获
@@ -157,7 +157,7 @@ func TestBuildDAGHierarchy(t *testing.T) {
 			{Name: "C", Parent: "B"},
 			{Name: "A", Parent: "C"}, // A指向C，但A已经是C的祖先，形成环
 		}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.Error(t, err)
 		assert.Equal(t, "节点名重复", err.Error())
@@ -175,7 +175,7 @@ func TestBuildDAGHierarchy(t *testing.T) {
 			{Name: "F", Parent: "E"},
 			{Name: "A", Parent: "F"}, // F指向A，但A是F的祖先，形成环
 		}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.Error(t, err)
 		assert.Equal(t, "节点名重复", err.Error())
@@ -187,7 +187,7 @@ func TestBuildDAGHierarchy(t *testing.T) {
 			{Name: "root", Parent: ""},
 			{Name: "child", Parent: "nonexistent"},
 		}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 1) // 只有一层，因为两个节点都是根节点（入度为0）
@@ -212,7 +212,7 @@ func TestBuildDAGHierarchy(t *testing.T) {
 			{Name: "G", Parent: "E"},
 			{Name: "G", Parent: "F"}, // G有两个父节点E和F
 		}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.Error(t, err)
 		assert.Equal(t, "节点名重复", err.Error())
@@ -231,7 +231,7 @@ func TestBuildDAGHierarchy(t *testing.T) {
 			{Name: "E", Parent: "C"},
 			{Name: "F", Parent: "D"},
 		}
-		result, err := BuildDAGHierarchy(nodes)
+		result, err := BuildHierarchy(nodes)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 4)

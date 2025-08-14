@@ -9,8 +9,9 @@ import (
 type ActionType string
 
 const (
-	FetchGrpah      ActionType = "fetch_graph"
+	FetchGraph      ActionType = "fetch_graph"
 	FetchTemplate   ActionType = "fetch_template"
+	SaveGraph       ActionType = "save_graph"
 	CreateNode      ActionType = "create_node"
 	UpdateNode      ActionType = "update_node"
 	BatchDelNode    ActionType = "batch_del_nodes"
@@ -107,6 +108,7 @@ type DeviceTemplate struct {
 	Tags         datatypes.JSONSlice[string] `json:"tags"`
 	DataSchema   datatypes.JSON              `json:"data_schema"`
 	ConfigSchema datatypes.JSON              `json:"config_schema"`
+	ResourceType string                      `json:"resource_type"`
 }
 
 // 前端获取 materials 相关数据
@@ -123,22 +125,23 @@ type WSHandle struct {
 }
 
 type WSNode struct {
-	UUID                uuid.UUID                      `json:"uuid"`
-	ParentUUID          uuid.UUID                      `json:"parent_uuid"`
-	Name                string                         `json:"name"`
-	DisplayName         string                         `json:"display_name"`
-	Description         *string                        `json:"description"`
-	Type                model.DEVICETYPE               `json:"type"`
-	ResNodeTemplateUUID uuid.UUID                      `json:"res_node_template_uuid"`
-	InitParamData       datatypes.JSON                 `json:"init_param_data"`
-	Schema              datatypes.JSON                 `json:"schema"`
-	Data                datatypes.JSON                 `json:"data"`
-	Status              string                         `json:"status"`
-	Header              string                         `json:"header"`
-	Pose                datatypes.JSONType[model.Pose] `json:"pose"`
-	Model               string                         `json:"model"`
-	Icon                string                         `json:"icon"`
-	Handles             []*WSHandle                    `json:"handles"`
+	UUID            uuid.UUID                      `json:"uuid"`
+	ParentUUID      uuid.UUID                      `json:"parent_uuid"`
+	Name            string                         `json:"name"`
+	DisplayName     string                         `json:"display_name"`
+	Description     *string                        `json:"description"`
+	Type            model.DEVICETYPE               `json:"type"`
+	ResTemplateUUID uuid.UUID                      `json:"res_template_uuid"`
+	ResTemplateName string                         `json:"res_template_name"`
+	InitParamData   datatypes.JSON                 `json:"init_param_data"`
+	Schema          datatypes.JSON                 `json:"schema"`
+	Data            datatypes.JSON                 `json:"data"`
+	Status          string                         `json:"status"`
+	Header          string                         `json:"header"`
+	Pose            datatypes.JSONType[model.Pose] `json:"pose"`
+	Model           datatypes.JSON                 `json:"model"`
+	Icon            string                         `json:"icon"`
+	Handles         []*WSHandle                    `json:"handles"`
 }
 
 type WSEdge struct {
@@ -150,7 +153,7 @@ type WSEdge struct {
 	Type             string    `json:"type"`
 }
 
-type GraphResp struct {
+type WSGraph struct {
 	Nodes []*WSNode `json:"nodes"`
 	Edges []*WSEdge `json:"edges"`
 }
