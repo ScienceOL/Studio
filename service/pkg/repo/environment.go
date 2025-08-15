@@ -15,8 +15,8 @@ type ResNodeTpl struct {
 }
 
 type LaboratoryRepo interface {
-	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids []uuid.UUID) map[uuid.UUID]int64
-	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids []int64) map[int64]uuid.UUID
+	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids ...uuid.UUID) map[uuid.UUID]int64
+	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID
 	// 创建实验室
 	CreateLaboratoryEnv(ctx context.Context, data *model.Laboratory) error
 	// 根据 uuid 获取实验室

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
@@ -176,9 +177,9 @@ func (w *workflowImpl) GetWorkflowTemplateByUUID(ctx context.Context, tplUUID uu
 
 func (w *workflowImpl) GetWorkflowTemplate(ctx context.Context, labID int64) ([]*repo.WorkflowTemplate, error) {
 	tpls := make([]*model.WorkflowNodeTemplate, 0, 1)
-	if err := w.DBWithContext(ctx).
-		Where("lab_id = ?", labID).
-		Find(&tpls).Error; err != nil {
+
+	query := w.DBWithContext(ctx).Where("lab_id = ?", labID)
+	if err := query.Order("id desc").Find(&tpls).Error; err != nil {
 		logger.Errorf(ctx, "GetWorkflowTemplate fail lab id: %d, err: %+v", labID, err)
 		return nil, code.QueryRecordErr.WithMsg(err.Error())
 	}
@@ -317,4 +318,43 @@ func (w *workflowImpl) UpsertWorkflowEdge(ctx context.Context, datas []*model.Wo
 	}
 
 	return nil
+}
+
+func (w *workflowImpl) GetWorkflowTemplatePage(ctx context.Context, labUUID uuid.UUID, page *common.PageReq) (*common.PageResp[*repo.WorkflowTemplate], error) {
+	return nil, nil
+	// tpls := make([]*model.WorkflowNodeTemplate, 0, 1)
+	// total := int64(0)
+	// query := w.DBWithContext(ctx).
+	// 	Where("lab_uuid = ?", labUUID).
+	// 	Offset(page.Offest()).
+	// 	Limit(page.PageSize)
+	//
+	// if err := query.Order("id desc").Find(&tpls).Error; err != nil {
+	// 	logger.Errorf(ctx, "GetWorkflowTemplatePage fail lab uuid: %d, err: %+v", labUUID, err)
+	// 	return nil, code.QueryRecordErr.WithMsg(err.Error())
+	// }
+	//
+	// tplsIDs := utils.FilterSlice(tpls, func(tpl *model.WorkflowNodeTemplate) (int64, bool) {
+	// 	return tpl.ID, true
+	// })
+	//
+	// handles := make([]*model.WorkflowHandleTemplate, 0, 1)
+	// if err := w.DBWithContext(ctx).
+	// 	Where("node_template_id in ?", tplsIDs).
+	// 	Find(&handles).Error; err != nil {
+	// 	logger.Errorf(ctx, "GetWorkflowTemplate get handle fail lab id: %d, err: %+v", labID, err)
+	// 	return nil, code.QueryRecordErr.WithMsg(err.Error())
+	// }
+	//
+	// handlesMap := utils.SliceToMapSlice(handles, func(h *model.WorkflowHandleTemplate) (
+	// 	int64, *model.WorkflowHandleTemplate, bool) {
+	// 	return h.NodeTemplateID, h, true
+	// })
+	//
+	// return utils.FilterSlice(tpls, func(tpl *model.WorkflowNodeTemplate) (*repo.WorkflowTemplate, bool) {
+	// 	return &repo.WorkflowTemplate{
+	// 		Template: tpl,
+	// 		Handles:  handlesMap[tpl.ID],
+	// 	}, true
+	// }), nil
 }

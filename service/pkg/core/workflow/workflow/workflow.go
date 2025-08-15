@@ -33,7 +33,7 @@ func New() workflow.Service {
 	}
 }
 
-func (w *workflowImpl) Add(ctx context.Context, data *workflow.WorkflowReq) (*workflow.WorkflowResp, error) {
+func (w *workflowImpl) Create(ctx context.Context, data *workflow.WorkflowReq) (*workflow.WorkflowResp, error) {
 	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
 		return nil, code.UnLogin
@@ -62,8 +62,39 @@ func (w *workflowImpl) Add(ctx context.Context, data *workflow.WorkflowReq) (*wo
 	}, nil
 }
 
-func (w *workflowImpl) NodeTemplateList(ctx context.Context) {
-	// TODO: 未实现
+func (w *workflowImpl) NodeTemplateList(ctx context.Context, req *workflow.TplPageReq) (*common.PageResp[[]*workflow.TemplateNodeResp], error) {
+	if req.LabUUID.IsNil() {
+		return nil, code.ParamErr.WithMsg("lab uuid is empty")
+	}
+
+	resp, err := w.workflowStore.GetWorkflowTemplatePage(ctx, req.LabUUID, &req.PageReq)
+	if err != nil {
+		return nil, err
+	}
+	_ = resp
+
+	// tplNodes := utils.FilterSlice(resp, func(item *repo.WorkflowTemplate) (*workflow.TemplateNodeResp, bool) {
+	// 	return &workflow.TemplateNodeResp{
+	// 		UUID: item.Template.UUID,
+	// 		Type: item.Template.NodeType,
+	// 		Icon: item.Template.Icon,
+	// 		Name: item.Template.Name,
+	// 		TemplateHandles: utils.FilterSlice(item.Handles, func(h *model.WorkflowHandleTemplate) (*workflow.TemplateHandle, bool) {
+	// 			return &workflow.TemplateHandle{
+	// 				HandleKey: h.HandleKey,
+	// 				IoType:    h.IoType,
+	// 			}, true
+	// 		}),
+	// 	}, true
+	// })
+	// _ = tplNodes
+
+	// return &common.PageResp[*workflow.TemplateNodeResp]{
+	// 	Total   :tplNode
+	// Page    :
+	// PageSize:
+	// }, nil
+	return nil, nil
 }
 
 func (w *workflowImpl) ForkTemplate(ctx context.Context) {
@@ -94,7 +125,7 @@ func (w *workflowImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 	}
 
 	switch workflow.ActionType(msgType.Action) {
-	case workflow.FetchGrpah: // 首次获取组态图
+	case workflow.FetchGraph: // 首次获取组态图
 		return w.fetchGraph(ctx, s, msgType.MsgUUID)
 	case workflow.FetchTemplate: // 首次获取模板
 		return w.fetchNodeTemplate(ctx, s, msgType.MsgUUID)
@@ -120,7 +151,7 @@ func (w *workflowImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 	userInfo := auth.GetCurrentUser(ctx)
 	resp, err := w.workflowStore.GetWorkflowGraph(ctx, userInfo.ID, workflowUUID)
 	if err != nil {
-		common.ReplyWSErr(s, string(workflow.FetchGrpah), msgUUID, err)
+		common.ReplyWSErr(s, string(workflow.FetchGraph), msgUUID, err)
 		return err
 	}
 
@@ -174,7 +205,7 @@ func (w *workflowImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 		Edges: edges,
 	}
 
-	return common.ReplyWSOk(s, string(workflow.FetchGrpah), msgUUID, wsResp)
+	return common.ReplyWSOk(s, string(workflow.FetchGraph), msgUUID, wsResp)
 }
 
 // 获取实验所有节点模板
@@ -332,7 +363,7 @@ func (w *workflowImpl) upateNode(ctx context.Context, s *melody.Session, b []byt
 	if reqData.ParentUUID != nil || !(reqData.ParentUUID.IsNil()) {
 		d.ParentID = w.workflowStore.UUID2ID(ctx,
 			&model.WorkflowNode{},
-			[]uuid.UUID{*reqData.ParentUUID})[*reqData.ParentUUID]
+			*reqData.ParentUUID)[*reqData.ParentUUID]
 	}
 
 	if reqData.Status != nil {

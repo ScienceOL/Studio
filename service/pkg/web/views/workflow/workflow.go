@@ -35,7 +35,18 @@ func NewWorkflowHandle() *workflowHandle {
 }
 
 // 工作流模板列表
-func (w *workflowHandle) TemplateList(ctx *gin.Context) {}
+func (w *workflowHandle) TemplateList(ctx *gin.Context) {
+	req := workflow.TplPageReq{}
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+	if res, err := w.wService.NodeTemplateList(ctx, &req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx, res)
+	}
+}
 
 // 工作流模板详情
 func (w *workflowHandle) TemplateDetail(ctx *gin.Context) {}
@@ -53,14 +64,14 @@ func (w *workflowHandle) NodeTemplateDetail(ctx *gin.Context) {}
 func (w *workflowHandle) UpdateNodeTemplate(ctx *gin.Context) {}
 
 // 我创建的工作流
-func (w *workflowHandle) Add(ctx *gin.Context) {
+func (w *workflowHandle) Create(ctx *gin.Context) {
 	req := &workflow.WorkflowReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
 		return
 	}
 
-	if res, err := w.wService.Add(ctx, req); err != nil {
+	if res, err := w.wService.Create(ctx, req); err != nil {
 		common.ReplyErr(ctx, err)
 	} else {
 		common.ReplyOk(ctx, res)

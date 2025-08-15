@@ -149,11 +149,9 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 
 			configs := utils.FilterSlice(item.ConfigInfo, func(config *environment.Config) (*model.ResourceNodeTemplate, bool) {
 				innerConfig := &environment.InnerBaseConfig{}
-			if err := json.Unmarshal(config.Config, innerConfig);err != nil {
+				if err := json.Unmarshal(config.Config, innerConfig); err != nil {
 
 				}
-
-
 
 				data := &model.ResourceNodeTemplate{
 					Name:         config.ID,

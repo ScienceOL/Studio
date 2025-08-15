@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	"gorm.io/datatypes"
@@ -22,11 +23,30 @@ type WorkflowResp struct {
 	Description *string   `json:"description,omitempty"`
 }
 
+type TemplateHandle struct {
+	HandleKey string `json:"handle_key"`
+	IoType    string `json:"io_type"`
+}
+
+type TemplateNodeResp struct {
+	UUID            uuid.UUID         `json:"uuid"`
+	Name            string            `json:"name"`
+	UserID          string            `json:"user_id"`
+	Type            string            `json:"type"`
+	Icon            string            `json:"icon"`
+	TemplateHandles []*TemplateHandle `json:"template_handles"`
+}
+
+type TplPageReq struct {
+	LabUUID uuid.UUID `json:"lab_uuid" binding:"required"`
+	common.PageReq
+}
+
 // ======================================websocket============================
 type ActionType string
 
 const (
-	FetchGrpah      ActionType = "fetch_graph"
+	FetchGraph      ActionType = "fetch_graph"
 	FetchTemplate   ActionType = "fetch_template"
 	CreateNode      ActionType = "create_node"
 	UpdateNode      ActionType = "update_node"

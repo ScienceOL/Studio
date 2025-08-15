@@ -631,8 +631,8 @@ func (m *materialImpl) saveGraph(ctx context.Context, s *melody.Session, b []byt
 		}
 	}
 
-	mUUID2IDMap := m.materialStore.UUID2ID(ctx, &model.MaterialNode{}, nodeUUIDs)
-	resUUID2IDMap := m.materialStore.UUID2ID(ctx, &model.ResourceNodeTemplate{}, tplUUIDs)
+	mUUID2IDMap := m.materialStore.UUID2ID(ctx, &model.MaterialNode{}, nodeUUIDs...)
+	resUUID2IDMap := m.materialStore.UUID2ID(ctx, &model.ResourceNodeTemplate{}, tplUUIDs...)
 
 	nodes, err := utils.FilterSliceWithErr(req.Data.Nodes, func(item *material.WSNode) ([]*model.MaterialNode, bool, error) {
 		if item.UUID.IsNil() || item.Name == "" {

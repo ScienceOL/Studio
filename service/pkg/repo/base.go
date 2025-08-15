@@ -18,8 +18,8 @@ type IDOrUUIDTranslate interface {
 	DBWithContext(ctx context.Context) *gorm.DB
 	ExecTx(ctx context.Context, fn func(ctx context.Context) error) error
 	Count(ctx context.Context, tableModel schema.Tabler, condition map[string]any) (int64, error)
-	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids []uuid.UUID) map[uuid.UUID]int64
-	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids []int64) map[int64]uuid.UUID
+	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids ...uuid.UUID) map[uuid.UUID]int64
+	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID
 }
 
 type Base struct {
@@ -40,7 +40,7 @@ func (b *Base) ExecTx(ctx context.Context, fn func(ctx context.Context) error) e
 	return b.Datastore.ExecTx(ctx, fn)
 }
 
-func (b *Base) UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids []uuid.UUID) map[uuid.UUID]int64 {
+func (b *Base) UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids ...uuid.UUID) map[uuid.UUID]int64 {
 	if len(uuids) == 0 {
 		return map[uuid.UUID]int64{}
 	}
@@ -58,7 +58,7 @@ func (b *Base) UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids []uu
 	})
 }
 
-func (b *Base) ID2UUID(ctx context.Context, tableModel schema.Tabler, ids []int64) map[int64]uuid.UUID {
+func (b *Base) ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID {
 	if len(ids) == 0 {
 		return map[int64]uuid.UUID{}
 	}

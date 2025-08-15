@@ -87,13 +87,13 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 			{
 				workflowHandle := workflow.NewWorkflowHandle()
 				workflowRouter := labRouter.Group("/workflow")
-				workflowRouter.POST("", workflowHandle.Add)
-				workflowRouter.GET("/node/list", workflowHandle.NodeTemplateList)
-				workflowRouter.PUT("/fork", workflowHandle.ForkTemplate)
-				workflowRouter.GET("/node/detail", workflowHandle.NodeTemplateDetail)
-				workflowRouter.GET("/template/detail", workflowHandle.TemplateDetail)
-				workflowRouter.GET("/template/list", workflowHandle.TemplateList)
-				workflowRouter.PUT("/node", workflowHandle.UpdateNodeTemplate)
+				workflowRouter.POST("", workflowHandle.Create)                        // 创建工作流
+				workflowRouter.GET("/list", workflowHandle.NodeTemplateList)          // 节点列表
+				workflowRouter.PUT("/fork", workflowHandle.ForkTemplate)              // fork 工作流
+				workflowRouter.GET("/node/detail", workflowHandle.NodeTemplateDetail) // 节点详情
+				workflowRouter.GET("/template/detail", workflowHandle.TemplateDetail) // 模板相信
+				workflowRouter.GET("/template/list", workflowHandle.TemplateList)     // 模板列表
+				workflowRouter.PUT("/node", workflowHandle.UpdateNodeTemplate)        // 更新节点
 
 				workflowRouter.GET("/ws/workflow/:uuid", workflowHandle.LabWorkflow) // TODO: websocket 是否放在统一的路由下
 			}

@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 
+	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	"gorm.io/datatypes"
@@ -44,6 +45,7 @@ type WorkflowRepo interface {
 	DeleteWorkflowEdges(ctx context.Context, edgeUUIDs []uuid.UUID) ([]uuid.UUID, error)
 	Count(ctx context.Context, tableModel schema.Tabler, condition map[string]any) (int64, error)
 	UpsertWorkflowEdge(ctx context.Context, datas []*model.WorkflowEdge) error
-	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids []uuid.UUID) map[uuid.UUID]int64
-	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids []int64) map[int64]uuid.UUID
+	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids ...uuid.UUID) map[uuid.UUID]int64
+	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID
+	GetWorkflowTemplatePage(ctx context.Context, labID uuid.UUID, page *common.PageReq) (*common.PageResp[*WorkflowTemplate], error)
 }
