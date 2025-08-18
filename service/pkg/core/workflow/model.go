@@ -67,6 +67,7 @@ type WSNodeHandle struct {
 
 type WSNode struct {
 	UUID         uuid.UUID                      `json:"uuid"`
+	Name         string                         `json:"name"`
 	TemplateUUID uuid.UUID                      `json:"template_uuid"`
 	ParentUUID   uuid.UUID                      `json:"parent_uuid"`
 	UserID       string                         `json:"user_id"`
@@ -77,6 +78,7 @@ type WSNode struct {
 	Param        datatypes.JSON                 `json:"param"`
 	Schema       datatypes.JSON                 `json:"schema"`
 	Handles      []*WSNodeHandle                `json:"handles"`
+	Footer       string                         `json:"footer"`
 }
 
 type WSWorkflowEdge struct {
@@ -126,6 +128,7 @@ type WSCreateNode struct {
 	Icon         string                         `json:"icon"`
 	Pose         datatypes.JSONType[model.Pose] `json:"pose"`
 	Param        datatypes.JSON                 `json:"param"`
+	Footer       string                         `json:"footer"`
 }
 
 type WSUpdateNode struct {

@@ -42,6 +42,7 @@ func (u *Position) UnmarshalJSON(data []byte) error {
 type Size struct {
 	Width  int `json:"width"`
 	Height int `json:"height"`
+	Depth  int `json:"depth"`
 }
 
 // JSON 序列化
@@ -50,6 +51,7 @@ func (u Size) MarshalJSON() ([]byte, error) {
 	return json.Marshal(Alias{
 		Width:  utils.Or(u.Width, 200),
 		Height: utils.Or(u.Height, 200),
+		Depth:  utils.Or(u.Depth, 20),
 	})
 }
 
@@ -66,6 +68,7 @@ func (u *Size) UnmarshalJSON(data []byte) error {
 	}
 	u.Width = utils.Or(u.Width, 200)
 	u.Height = utils.Or(u.Height, 200)
+	u.Depth = utils.Or(u.Depth, 20)
 	return nil
 }
 

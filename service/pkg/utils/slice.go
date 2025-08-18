@@ -52,6 +52,14 @@ func TernaryLazy[T any](condition bool, trueFn, falseFn func() T) T {
 	return falseFn()
 }
 
+func Ternary[T any](condition bool, okValue T, defaultValue T) T {
+	if condition {
+		return okValue
+	}
+
+	return defaultValue
+}
+
 func SafeValue[T any](f func() T, defaultVal T) (res T) {
 	defer func() {
 		if r := recover(); r != nil {

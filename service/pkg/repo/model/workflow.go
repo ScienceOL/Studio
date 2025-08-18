@@ -28,6 +28,7 @@ type WorkflowNode struct {
 	Icon       string                   `gorm:"type:text" json:"icon"`
 	Pose       datatypes.JSONType[Pose] `gorm:"type:jsonb" json:"pose"`
 	Param      datatypes.JSON           `gorm:"type:jsonb" json:"param"`
+	Footer     string                   `gorm:"type:text" json:"footer"`
 }
 
 func (*WorkflowNode) TableName() string {

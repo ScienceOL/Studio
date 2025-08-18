@@ -12,6 +12,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/core/environment"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
+	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/repo/casdoor"
 	eStore "github.com/scienceol/studio/service/pkg/repo/environment"
@@ -120,8 +121,7 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 	}
 
 	return db.DB().ExecTx(ctx, func(txCtx context.Context) error {
-		mapConfigInfo := make(map[string][]*model.ResourceNodeTemplate)
-		resDatas := utils.FilterSlice(req.Resources, func(item environment.Resource) (*model.ResourceNodeTemplate, bool) {
+		resDatas := utils.FilterSlice(req.Resources, func(item *environment.Resource) (*model.ResourceNodeTemplate, bool) {
 			data := &model.ResourceNodeTemplate{
 				Name:         item.RegName,
 				ParentID:     0,
@@ -144,136 +144,189 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 				ConfigSchema: utils.SafeValue(
 					func() datatypes.JSON { return item.InitParamSchema.Config.Properties },
 					datatypes.JSON{}),
-				// Labels      :
 			}
-
-			configs := utils.FilterSlice(item.ConfigInfo, func(config *environment.Config) (*model.ResourceNodeTemplate, bool) {
-				innerConfig := &environment.InnerBaseConfig{}
-				if err := json.Unmarshal(config.Config, innerConfig); err != nil {
-
-				}
-
-				data := &model.ResourceNodeTemplate{
-					Name:         config.ID,
-					ParentID:     0,
-					LabID:        labData.ID,     // 实验室的 id
-					UserID:       labData.UserID, // 创建实验室的 user id
-					Header:       config.Name,
-					Footer:       "",
-					Version:      utils.Or(item.Version, "0.0.1"),
-					Icon:         item.Icon,
-					Description:  item.Description,
-					Model:        item.Model,
-					Module:       item.Class.Module,
-					ResourceType: config.Type,
-					Language:     item.Class.Type,
-					StatusTypes:  item.Class.StatusTypes,
-					Tags:         item.Tags,
-					DataSchema: utils.SafeValue(func() datatypes.JSON {
-						return item.InitParamSchema.Data.Properties
-					}, datatypes.JSON{}),
-					ConfigSchema: utils.SafeValue(
-						func() datatypes.JSON { return item.InitParamSchema.Config.Properties },
-						datatypes.JSON{}),
-				}
-				return data, true
-			})
-
-			if len(configs) > 0 {
-				mapConfigInfo[item.RegName] = configs
-			}
-
+			item.SelfDB = data
 			return data, true
-		})
-
-		resDataMap := utils.SliceToMap(resDatas, func(item *model.ResourceNodeTemplate) (string, *model.ResourceNodeTemplate) {
-			return item.Name, item
 		})
 
 		if err := l.envStore.UpsertResTemplate(txCtx, resDatas); err != nil {
 			return err
 		}
 
-		// device actions
-		resDeviceAction, err := utils.FilterSliceWithErr(req.Resources, func(item environment.Resource) ([]*model.DeviceAction, bool, error) {
-			resData, ok := resDataMap[item.RegName]
-			if !ok {
-				return nil, false, code.ResourceNotExistErr
-			}
-			actions := make([]*model.DeviceAction, 0, len(item.Class.ActionValueMappings))
-			for actionName, action := range item.Class.ActionValueMappings {
-				if actionName == "" {
-					return nil, false, code.RegActionNameEmptyErr
-				}
+		if err := l.createConfigInfo(txCtx, req.Resources); err != nil {
+			return err
+		}
 
-				actions = append(actions, &model.DeviceAction{
-					LabID:       resData.LabID,
-					ResNodeID:   resData.ID,
-					Name:        actionName,
-					Goal:        action.Goal,
-					GoalDefault: action.GoalDefault,
-					Feedback:    action.Feedback,
-					Result:      action.Result,
-					Schema:      action.Schema,
-					Type:        action.Type,
-					Handles:     action.Handles,
-					GoalSchema: utils.SafeValue(func() datatypes.JSON {
-						data := struct {
-							Properties struct {
-								Goal datatypes.JSON `json:"goal"`
-							} `json:"properties"`
-						}{}
-						if err := json.Unmarshal(action.Schema, &data); err != nil {
-							return datatypes.JSON{}
-						}
-						return data.Properties.Goal
-					}, datatypes.JSON{}),
-				})
-			}
-			return actions, true, nil
-		})
+		if err := l.createHandle(txCtx, req.Resources); err != nil {
+			return err
+		}
+
+		actions, err := l.createAction(txCtx, req.Resources)
 		if err != nil {
 			return err
 		}
 
-		// device handles
-		resDeviceHandles, err := utils.FilterSliceWithErr(req.Resources, func(item environment.Resource) ([]*model.ResourceHandleTemplate, bool, error) {
-			resData, ok := resDataMap[item.RegName]
-			if !ok {
-				return nil, false, code.ResourceNotExistErr
-			}
-			handles := make([]*model.ResourceHandleTemplate, 0, len(item.Handles))
-			for _, handle := range item.Handles {
-				handles = append(handles, &model.ResourceHandleTemplate{
-					NodeID:      resData.ID,
-					Name:        handle.HandlerKey,
-					DisplayName: handle.Label,
-					Type:        handle.DataType,
-					IOType:      handle.IoType,
-					Source:      handle.DataSource,
-					Key:         handle.DataKey,
-					Side:        handle.Side,
-				})
-			}
-			return handles, true, nil
-		})
-		if err != nil {
-			return err
-		}
-
-		// 创建 device action
-		if err := l.envStore.UpsertDeviceAction(txCtx, resDeviceAction); err != nil {
-			return err
-		}
-
-		// 创建 device handle
-		if err := l.envStore.UpsertDeviceHandleTemplate(txCtx, resDeviceHandles); err != nil {
-			return err
-		}
-
-		// 创建 action handles
-		return l.createActionHandles(ctx, resDeviceAction)
+		return l.createActionHandles(ctx, actions)
 	})
+}
+
+func (l *lab) createAction(ctx context.Context, res []*environment.Resource) ([]*model.DeviceAction, error) {
+	resDeviceAction, err := utils.FilterSliceWithErr(res, func(item *environment.Resource) ([]*model.DeviceAction, bool, error) {
+		actions := make([]*model.DeviceAction, 0, len(item.Class.ActionValueMappings))
+		for actionName, action := range item.Class.ActionValueMappings {
+			if actionName == "" {
+				return nil, false, code.RegActionNameEmptyErr
+			}
+
+			actions = append(actions, &model.DeviceAction{
+				LabID:       item.SelfDB.LabID,
+				ResNodeID:   item.SelfDB.ID,
+				Name:        actionName,
+				Goal:        action.Goal,
+				GoalDefault: action.GoalDefault,
+				Feedback:    action.Feedback,
+				Result:      action.Result,
+				Schema:      action.Schema,
+				Type:        action.Type,
+				Handles:     action.Handles,
+				GoalSchema: utils.SafeValue(func() datatypes.JSON {
+					data := struct {
+						Properties struct {
+							Goal datatypes.JSON `json:"goal"`
+						} `json:"properties"`
+					}{}
+					if err := json.Unmarshal(action.Schema, &data); err != nil {
+						return datatypes.JSON{}
+					}
+					return data.Properties.Goal
+				}, datatypes.JSON{}),
+			})
+		}
+		return actions, true, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return resDeviceAction, l.envStore.UpsertDeviceAction(ctx, resDeviceAction)
+}
+
+func (l *lab) createHandle(ctx context.Context, res []*environment.Resource) error {
+	resDeviceHandles, err := utils.FilterSliceWithErr(res, func(item *environment.Resource) ([]*model.ResourceHandleTemplate, bool, error) {
+		handles := make([]*model.ResourceHandleTemplate, 0, len(item.Handles))
+		for _, handle := range item.Handles {
+			handles = append(handles, &model.ResourceHandleTemplate{
+				NodeID:      item.SelfDB.ID,
+				Name:        handle.HandlerKey,
+				DisplayName: handle.Label,
+				Type:        handle.DataType,
+				IOType:      handle.IoType,
+				Source:      handle.DataSource,
+				Key:         handle.DataKey,
+				Side:        handle.Side,
+			})
+		}
+		return handles, true, nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return l.envStore.UpsertDeviceHandleTemplate(ctx, resDeviceHandles)
+
+}
+func (l *lab) createConfigInfo(ctx context.Context, res []*environment.Resource) error {
+	_, err := utils.FilterSliceWithErr(res, func(item *environment.Resource) ([]*model.ResourceNodeTemplate, bool, error) {
+		res, err := utils.FilterSliceWithErr(item.ConfigInfo, func(conf *environment.Config) ([]*model.ResourceNodeTemplate, bool, error) {
+			innerConfig := &environment.InnerBaseConfig{}
+			if err := json.Unmarshal(conf.Config, innerConfig); err != nil {
+				logger.Errorf(ctx, "CreateResource Unmarshal innerbaseconfig fail err: %+v", err)
+				return nil, false, err
+			}
+
+			pose := model.Pose{
+				Layout:   "2d",
+				Position: conf.Position,
+				Size: model.Size{
+					Width:  int(innerConfig.SizeX),
+					Height: int(innerConfig.SizeY),
+					Depth:  int(innerConfig.SizeZ),
+				},
+				Scale: model.Scale{},
+				Rotation: model.Rotation{
+					X: innerConfig.Rotation.X,
+					Y: innerConfig.Rotation.Y,
+					Z: innerConfig.Rotation.Z,
+				},
+			}
+
+			data := &model.ResourceNodeTemplate{
+				Name:         conf.ID,
+				ParentID:     utils.Ternary(conf.Parent == "", item.SelfDB.ID, 0),
+				LabID:        item.SelfDB.LabID,
+				UserID:       item.SelfDB.UserID,
+				Header:       conf.Name,
+				Footer:       "",
+				Version:      utils.Or(item.Version, "0.0.1"),
+				Icon:         "",
+				Description:  nil,
+				Model:        datatypes.JSON{},
+				Module:       "",
+				ResourceType: conf.Type,
+				Language:     "",
+				StatusTypes:  datatypes.JSON{},
+				Tags:         datatypes.JSONSlice[string]{},
+				DataSchema:   conf.Data,
+				ConfigSchema: conf.Config,
+				Pose:         datatypes.NewJSONType(pose),
+
+				ParentNode: item.SelfDB,
+				ParentName: conf.Parent,
+			}
+			return []*model.ResourceNodeTemplate{data}, true, nil
+		})
+
+		preBuildNodes := utils.FilterSlice(res, func(item *model.ResourceNodeTemplate) (*utils.Node[string, *model.ResourceNodeTemplate], bool) {
+			return &utils.Node[string, *model.ResourceNodeTemplate]{
+				Name:   item.Name,
+				Parent: item.ParentName,
+				Data:   item,
+			}, true
+		})
+
+		buildNodes, err := utils.BuildHierarchy(preBuildNodes)
+		if err != nil {
+			return nil, false, err
+		}
+
+		// FIXME: 是否还有优化空间
+		upsertNodeMap := make(map[string]*model.ResourceNodeTemplate)
+		for _, datas := range buildNodes {
+			for _, data := range datas {
+				if data.ParentName != "" {
+					parentNode, ok := upsertNodeMap[data.ParentName]
+					if ok {
+						data.ParentID = parentNode.ID
+					} else {
+						logger.Errorf(ctx, "can not found config info parent config: %+v", data)
+						return nil, false, code.ParamErr.WithMsg(fmt.Sprintf("can not found config info parent config: %+v", data))
+					}
+				}
+			}
+
+			if err := l.envStore.UpsertResTemplate(ctx, datas); err != nil {
+				return nil, false, err
+			}
+
+			for _, data := range datas {
+				upsertNodeMap[data.Name] = data
+			}
+		}
+
+		return res, true, err
+	})
+
+	return err
 }
 
 func (l *lab) createActionHandles(ctx context.Context, actions []*model.DeviceAction) error {

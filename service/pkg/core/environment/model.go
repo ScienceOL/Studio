@@ -72,7 +72,7 @@ type RegInitParamSchema struct {
 }
 
 type ResourceReq struct {
-	Resources []Resource `json:"resources"`
+	Resources []*Resource `json:"resources"`
 }
 
 type InnerBaseConfig struct {
@@ -109,4 +109,6 @@ type Resource struct {
 	Model           datatypes.JSON              `json:"model"`
 	Tags            datatypes.JSONSlice[string] `json:"category"`
 	ConfigInfo      []*Config                   `json:"config_info"`
+
+	SelfDB *model.ResourceNodeTemplate
 }

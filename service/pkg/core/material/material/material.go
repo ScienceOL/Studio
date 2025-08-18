@@ -146,17 +146,17 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 				data := &model.MaterialNode{
 					ParentID:               0,
 					LabID:                  labData.ID,
-					Name:                   n.Data.DeviceID,
-					DisplayName:            n.Data.Name,
-					Description:            n.Data.Description,
-					Class:                  n.Data.Class,
-					Type:                   n.Data.Type,
+					Name:                   n.DeviceID,
+					DisplayName:            n.Name,
+					Description:            n.Description,
+					Class:                  n.Class,
+					Type:                   n.Type,
 					ResourceNodeTemplateID: 0,
-					InitParamData:          n.Data.Config,
-					Data:                   n.Data.Data,
-					Pose:                   n.Data.Pose,
+					InitParamData:          n.Config,
+					Data:                   n.Data,
+					Pose:                   n.Pose,
 					Icon:                   "",
-					Schema:                 n.Data.Schema,
+					Schema:                 n.Schema,
 				}
 				if data.Pose.Data().Layout == "" {
 					poseData := data.Pose.Data()
@@ -167,7 +167,7 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 					data.ParentID = node.ID
 				}
 
-				if resInfo := resMap[n.Data.Class]; resInfo != nil {
+				if resInfo := resMap[n.Class]; resInfo != nil {
 					data.ResourceNodeTemplateID = resInfo.Node.ID
 					data.Icon = resInfo.Node.Icon
 					data.Model = resInfo.Node.Model
@@ -448,11 +448,15 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 		common.ReplyWSErr(s, string(action), msgUUID, err)
 		return err
 	}
-	resNodeTplMap, err := m.envStore.GetResourceNodeTemplates(ctx, resTplIDS)
+	resNodes, err := m.envStore.GetResourceNodeTemplates(ctx, resTplIDS)
 	if err != nil {
 		common.ReplyWSErr(s, string(action), msgUUID, err)
 		return err
 	}
+
+	resNodeTplMap := utils.SliceToMap(resNodes, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
+		return item.ID, item
+	})
 
 	respNodes := utils.FilterSlice(nodes, func(nodeItem *model.MaterialNode) (*material.WSNode, bool) {
 		var parentUUID uuid.UUID
@@ -535,15 +539,63 @@ func (m *materialImpl) getLab(ctx context.Context, s *melody.Session) (*model.La
 	return labData, nil
 }
 
+func (m *materialImpl) buildTplNode(ctx context.Context, nodes []*model.ResourceNodeTemplate) []*model.ResourceNodeTemplate {
+	nodeMap := utils.SliceToMap(nodes, func(node *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
+		return node.ID, node
+	})
+
+	rootNodes := make([]*model.ResourceNodeTemplate, 0, len(nodes))
+
+	for _, n := range nodes {
+		if n.ParentID != 0 {
+			node, ok := nodeMap[n.ParentID]
+			if ok {
+				node.ConfigInfo = append(node.ConfigInfo, n)
+			} else {
+				logger.Errorf(ctx, "buildTplNode can not found parent node id: %d, parent id: %d", n.ID, n.ParentID)
+			}
+		} else {
+			rootNodes = append(rootNodes, n)
+		}
+	}
+	return rootNodes
+}
+
+func (m *materialImpl) getChildren(ctx context.Context, node *model.ResourceNodeTemplate, maxDeep int) ([]*model.ResourceNodeTemplate, error) {
+	if maxDeep <= 0 {
+		return nil, code.MaxTplNodeDeepErr
+	}
+
+	children := make([]*model.ResourceNodeTemplate, 0, len(node.ConfigInfo))
+	for _, child := range node.ConfigInfo {
+		if child == nil {
+			continue
+		}
+
+		if len(child.ConfigInfo) > 0 {
+			deepChildren, err := m.getChildren(ctx, child, maxDeep-1)
+			if err != nil {
+				return nil, err
+			}
+			children = append(children, deepChildren...)
+		}
+
+		children = append(children, child)
+	}
+	return children, nil
+}
+
 // 获取设备模板
 func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Session, msgUUID uuid.UUID) error {
 	labData, err := m.getLab(ctx, s)
 	if err != nil {
+		common.ReplyWSErr(s, string(material.FetchTemplate), msgUUID, err)
 		return err
 	}
 
 	tplNodes, err := m.envStore.GetAllResourceTemplateByLabID(ctx, labData.ID)
 	if err != nil {
+		common.ReplyWSErr(s, string(material.FetchTemplate), msgUUID, err)
 		return err
 	}
 	tplIDs := utils.FilterSlice(tplNodes, func(item *model.ResourceNodeTemplate) (int64, bool) {
@@ -552,11 +604,23 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 
 	tplHandles, err := m.envStore.GetAllDeviceTemplateHandlesByID(ctx, tplIDs)
 	if err != nil {
+		common.ReplyWSErr(s, string(material.FetchTemplate), msgUUID, err)
 		return err
 	}
 
-	tplDatas := utils.FilterSlice(tplNodes, func(nodeItem *model.ResourceNodeTemplate) (*material.DeviceTemplate, bool) {
-		return &material.DeviceTemplate{
+	tplNodeMap := utils.SliceToMap(tplNodes, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
+		return item.ID, item
+	})
+
+	rootNode := m.buildTplNode(ctx, tplNodes)
+
+	tplDatas, err := utils.FilterSliceWithErr(rootNode, func(nodeItem *model.ResourceNodeTemplate) ([]*material.DeviceTemplate, bool, error) {
+		childrenNodes, err := m.getChildren(ctx, nodeItem, 5)
+		if err != nil {
+			return nil, false, err
+		}
+
+		return []*material.DeviceTemplate{&material.DeviceTemplate{
 			Handles: utils.FilterSlice(tplHandles, func(handleItem *model.ResourceHandleTemplate) (*material.DeviceHandleTemplate, bool) {
 				// FIXME: 此处效率可以优化
 				if handleItem.NodeID != nodeItem.ID {
@@ -573,7 +637,14 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 					Side:        handleItem.Side,
 				}, true
 			}),
-			UUID:         nodeItem.UUID,
+			UUID: nodeItem.UUID,
+			ParentUUID: utils.SafeValue(func() uuid.UUID {
+				if node, ok := tplNodeMap[nodeItem.ParentID]; ok {
+					return node.UUID
+				} else {
+					return uuid.UUID{}
+				}
+			}, uuid.UUID{}),
 			Name:         nodeItem.Name,
 			UserID:       nodeItem.UserID,
 			Header:       nodeItem.Header,
@@ -589,8 +660,43 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 			DataSchema:   nodeItem.DataSchema,
 			ConfigSchema: nodeItem.ConfigSchema,
 			ResourceType: nodeItem.ResourceType,
-		}, true
+			ConfigInfos: utils.FilterSlice(childrenNodes, func(child *model.ResourceNodeTemplate) (*material.DeviceTemplate, bool) {
+				return &material.DeviceTemplate{
+					UUID: child.UUID,
+					ParentUUID: utils.SafeValue(func() uuid.UUID {
+						if node, ok := tplNodeMap[child.ParentID]; ok && node.ParentID != 0 {
+							return node.UUID
+						} else {
+							return uuid.UUID{}
+						}
+					}, uuid.UUID{}),
+					Name:         child.Name,
+					UserID:       child.UserID,
+					Header:       child.Header,
+					Footer:       child.Footer,
+					Version:      child.Version,
+					Icon:         child.Icon,
+					Description:  child.Description,
+					Model:        child.Model,
+					Module:       child.Module,
+					Language:     child.Language,
+					StatusTypes:  child.StatusTypes,
+					Tags:         child.Tags,
+					DataSchema:   child.DataSchema,
+					ConfigSchema: child.ConfigSchema,
+					ResourceType: child.ResourceType,
+					Pose:         child.Pose,
+				}, true
+
+			}),
+		}}, true, nil
 	})
+
+	if err != nil {
+		common.ReplyWSErr(s, string(material.FetchTemplate), msgUUID, err)
+		return err
+	}
+
 	resData := &material.DeviceTemplates{
 		Templates: tplDatas,
 	}

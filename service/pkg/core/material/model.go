@@ -79,23 +79,26 @@ type DeviceParamTemplate struct {
 }
 
 type DeviceTemplate struct {
-	Handles      []*DeviceHandleTemplate     `json:"handles"`
-	UUID         uuid.UUID                   `json:"uuid"`
-	Name         string                      `json:"name"`
-	UserID       string                      `json:"user_id"`
-	Header       string                      `json:"header"`
-	Footer       string                      `json:"footer"`
-	Version      string                      `json:"version"`
-	Icon         string                      `json:"icon"`
-	Description  *string                     `json:"description"`
-	Model        datatypes.JSON              `json:"model"`
-	Module       string                      `json:"module"`
-	Language     string                      `json:"language"`
-	StatusTypes  datatypes.JSON              `json:"status_types"`
-	Tags         datatypes.JSONSlice[string] `json:"tags"`
-	DataSchema   datatypes.JSON              `json:"data_schema"`
-	ConfigSchema datatypes.JSON              `json:"config_schema"`
-	ResourceType string                      `json:"resource_type"`
+	Handles      []*DeviceHandleTemplate        `json:"handles"`
+	UUID         uuid.UUID                      `json:"uuid"`
+	ParentUUID   uuid.UUID                      `json:"parent_uuid"`
+	Name         string                         `json:"name"`
+	UserID       string                         `json:"user_id"`
+	Header       string                         `json:"header"`
+	Footer       string                         `json:"footer"`
+	Version      string                         `json:"version"`
+	Icon         string                         `json:"icon"`
+	Description  *string                        `json:"description"`
+	Model        datatypes.JSON                 `json:"model"`
+	Module       string                         `json:"module"`
+	Language     string                         `json:"language"`
+	StatusTypes  datatypes.JSON                 `json:"status_types"`
+	Tags         datatypes.JSONSlice[string]    `json:"tags"`
+	DataSchema   datatypes.JSON                 `json:"data_schema"`
+	ConfigSchema datatypes.JSON                 `json:"config_schema"`
+	ResourceType string                         `json:"resource_type"`
+	ConfigInfos  []*DeviceTemplate              `json:"config_infos,omitempty"`
+	Pose         datatypes.JSONType[model.Pose] `json:"pose"`
 }
 
 // 前端获取 materials 相关数据

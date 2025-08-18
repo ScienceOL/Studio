@@ -201,7 +201,10 @@ info: ## 显示项目信息
 
 
 stringer-install:
-	go install golang.org/x/tools/cmd/stringer@latest
+	@if ! command -v stringer > /dev/null; then \
+		echo "📦 安装 stringer..."; \
+		go install golang.org/x/tools/cmd/stringer@latest; \
+	fi
 # 生成错误码
 generate: stringer-install
 	go generate ./pkg/...

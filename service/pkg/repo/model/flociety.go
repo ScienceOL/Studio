@@ -21,7 +21,11 @@ type ResourceNodeTemplate struct {
 	Tags         datatypes.JSONSlice[string] `gorm:"type:jsonb" json:"tags"` // label 标签
 	DataSchema   datatypes.JSON              `gorm:"type:jsonb" json:"data_schema"`
 	ConfigSchema datatypes.JSON              `gorm:"type:jsonb" json:"config_schema"`
-	// ConfigInfo   datatypes.JSON `gorm:"type:jsonb" json:"config_info"` // FIXME: 拓展一张表，一个很大个 json object
+	Pose         datatypes.JSONType[Pose]    `gorm:"type:jsonb;not null;default:'{}'" json:"pose"`
+
+	ParentNode *ResourceNodeTemplate   `gorm:"-"`
+	ParentName string                  `gorm:"-"`
+	ConfigInfo []*ResourceNodeTemplate `gorm:"-"`
 }
 
 func (*ResourceNodeTemplate) TableName() string {

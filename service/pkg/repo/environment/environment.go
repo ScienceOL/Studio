@@ -10,7 +10,6 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	repo "github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/repo/model"
-	"github.com/scienceol/studio/service/pkg/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -274,9 +273,9 @@ func (e *envImpl) GetResourceHandleTemplates(ctx context.Context, resIDs []int64
 }
 
 // 根据 device template node id 获取所有的 uuid
-func (e *envImpl) GetResourceNodeTemplates(ctx context.Context, resIDs []int64) (map[int64]*model.ResourceNodeTemplate, error) {
+func (e *envImpl) GetResourceNodeTemplates(ctx context.Context, resIDs []int64) ([]*model.ResourceNodeTemplate, error) {
 	if len(resIDs) == 0 {
-		return make(map[int64]*model.ResourceNodeTemplate), nil
+		return []*model.ResourceNodeTemplate{}, nil
 	}
 
 	datas := make([]*model.ResourceNodeTemplate, 0, len(resIDs))
@@ -286,9 +285,7 @@ func (e *envImpl) GetResourceNodeTemplates(ctx context.Context, resIDs []int64) 
 		return nil, code.QueryRecordErr.WithMsg(statement.Error.Error())
 	}
 
-	return utils.SliceToMap(datas, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
-		return item.ID, item
-	}), nil
+	return datas, nil
 }
 
 func (e *envImpl) GetLabByAkSk(ctx context.Context, accessKey string, accessSecret string) (*model.Laboratory, error) {

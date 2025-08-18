@@ -8,9 +8,9 @@ type Node[T comparable, D any] struct {
 	Data   D
 }
 
-func BuildHierarchy[T comparable, D any](nodes []*Node[T, D]) ([][]*Node[T, D], error) {
+func BuildHierarchy[T comparable, D any](nodes []*Node[T, D]) ([][]D, error) {
 	if len(nodes) == 0 {
-		return [][]*Node[T, D]{}, nil
+		return [][]D{}, nil
 	}
 
 	// 获取零值用于判断根节点
@@ -24,7 +24,7 @@ func BuildHierarchy[T comparable, D any](nodes []*Node[T, D]) ([][]*Node[T, D], 
 	})
 
 	if len(nodes) != len(nodeMap) {
-		return [][]*Node[T, D]{}, errors.New("节点名重复")
+		return [][]D{}, errors.New("节点名重复")
 	}
 
 	inDegree := SliceToMap(nodes, func(item *Node[T, D]) (T, int) {
@@ -92,5 +92,13 @@ func BuildHierarchy[T comparable, D any](nodes []*Node[T, D]) ([][]*Node[T, D], 
 		}
 	}
 
-	return levels, nil
+	res := make([][]D, 0, len(levels))
+	for _, datas := range levels {
+		lN := make([]D, 0, len(datas))
+		for _, data := range datas {
+			lN = append(lN, data.Data)
+		}
+		res = append(res, lN)
+	}
+	return res, nil
 }

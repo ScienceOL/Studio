@@ -103,6 +103,7 @@ const (
 	ParentNodeNotFoundErr                          // parent node not found error
 	TemplateNodeNotFoundErr                        // template node not found error
 	InvalidDagErr                                  // invalid dag error
+	MaxTplNodeDeepErr                              // max template node deep error
 )
 
 // notify module errors

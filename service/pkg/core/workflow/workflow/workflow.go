@@ -161,6 +161,7 @@ func (w *workflowImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 	nodes := utils.FilterSlice(resp.Nodes, func(node *repo.WorkflowNodeInfo) (*workflow.WSNode, bool) {
 		data := &workflow.WSNode{
 			UUID: node.Node.UUID,
+			Name: node.Action.Name,
 			TemplateUUID: utils.SafeValue(func() uuid.UUID {
 				return node.Action.UUID
 			}, uuid.UUID{}),
@@ -170,6 +171,7 @@ func (w *workflowImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 			Type:       node.Node.Type,
 			Icon:       node.Node.Icon,
 			Pose:       node.Node.Pose,
+			Footer:     utils.Or(node.Node.Footer, node.Action.Class),
 			Param:      node.Node.Param,
 			Schema:     node.Action.GoalSchema,
 			Handles: utils.FilterSlice(node.Handles, func(h *model.ActionHandleTemplate) (*workflow.WSNodeHandle, bool) {
@@ -226,11 +228,16 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session,
 		return item.ResNodeID, true
 	})
 
-	resMap, err := w.labStore.GetResourceNodeTemplates(ctx, respResNodeIDs)
-	if err != nil || len(resMap) != len(respResNodeIDs) {
+	resNodes, err := w.labStore.GetResourceNodeTemplates(ctx, respResNodeIDs)
+
+	if err != nil || len(resNodes) != len(respResNodeIDs) {
 		common.ReplyWSErr(s, string(workflow.FetchTemplate), msgUUID, err)
 		return err
 	}
+
+	resMap := utils.SliceToMap(resNodes, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
+		return item.ID, item
+	})
 
 	actionIDs := utils.FilterSlice(resp, func(item *model.DeviceAction) (int64, bool) {
 		return item.ID, true
@@ -349,6 +356,7 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		Icon:       utils.Or(deviceAction[0].Icon, reqData.Icon),
 		Pose:       reqData.Pose,
 		Param:      reqData.Param,
+		Footer:     utils.Or(reqData.Footer, deviceAction[0].Class),
 	}
 	err = w.workflowStore.CreateNode(ctx, nodeData)
 	if err != nil {
@@ -367,6 +375,7 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		Pose:         nodeData.Pose,
 		Param:        nodeData.Param,
 		Schema:       deviceAction[0].GoalSchema,
+		Footer:       nodeData.Footer,
 		Handles: utils.FilterSlice(actionHandles, func(h *model.ActionHandleTemplate) (*workflow.WSNodeHandle, bool) {
 			return &workflow.WSNodeHandle{
 				UUID:        h.UUID,

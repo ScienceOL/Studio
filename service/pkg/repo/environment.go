@@ -36,7 +36,7 @@ type LaboratoryRepo interface {
 	// 根据 device template node id 获取所有的 handle
 	GetResourceHandleTemplates(ctx context.Context, resIDs []int64) (map[int64][]*model.ResourceHandleTemplate, error)
 	// 根据 device template node id 获取所有的 uuid
-	GetResourceNodeTemplates(ctx context.Context, resIDs []int64) (map[int64]*model.ResourceNodeTemplate, error)
+	GetResourceNodeTemplates(ctx context.Context, resIDs []int64) ([]*model.ResourceNodeTemplate, error)
 	// 根据实验室 id 获取所有的模板信息
 	GetAllResourceTemplateByLabID(ctx context.Context, labID int64, selectKeys ...string) ([]*model.ResourceNodeTemplate, error)
 	// 根据 device ids 获取所有的 handles

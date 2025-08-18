@@ -43,6 +43,7 @@ func _() {
 	_ = x[ParentNodeNotFoundErr-22007]
 	_ = x[TemplateNodeNotFoundErr-22008]
 	_ = x[InvalidDagErr-22009]
+	_ = x[MaxTplNodeDeepErr-22010]
 	_ = x[NotifyActionAlreadyRegistryErr-24000]
 	_ = x[NotifySubscribeChannelErr-24001]
 	_ = x[NotifySendMsgErr-24002]
@@ -60,7 +61,7 @@ const (
 	_ErrCode_name_2 = "login configuration errorset login state errorrefresh token failedstate verification failedexchange token failedcallback parameter errorget user info failedlogin process user info failednot logged inlogin verification format errorinvalid tokenrefresh token parameter error"
 	_ErrCode_name_3 = "database create data errordatabase update data errordatabase record not founddatabase query errordatabase delete errornot base db type error"
 	_ErrCode_name_4 = "reg action name emptyresource is emptyresource not exist"
-	_ErrCode_name_5 = "resource not existedge node not existnode handle not existunknown material websocket actionunmarshal material websocket data errorcannot get lab id errorupdate material node errorparent node not found errortemplate node not found errorinvalid dag error"
+	_ErrCode_name_5 = "resource not existedge node not existnode handle not existunknown material websocket actionunmarshal material websocket data errorcannot get lab id errorupdate material node errorparent node not found errortemplate node not found errorinvalid dag errormax template node deep error"
 	_ErrCode_name_6 = "notify action already registrynotify subscribe channel failnotify send message error"
 	_ErrCode_name_7 = "create lab user errorquery lab user error"
 	_ErrCode_name_8 = "can not get workflow uuidworkflow not existupsert workflow edge errorpermission denied"
@@ -72,7 +73,7 @@ var (
 	_ErrCode_index_2 = [...]uint16{0, 25, 46, 66, 91, 112, 136, 156, 186, 199, 230, 243, 272}
 	_ErrCode_index_3 = [...]uint8{0, 26, 52, 77, 97, 118, 140}
 	_ErrCode_index_4 = [...]uint8{0, 21, 38, 56}
-	_ErrCode_index_5 = [...]uint8{0, 18, 37, 58, 91, 130, 153, 179, 206, 235, 252}
+	_ErrCode_index_5 = [...]uint16{0, 18, 37, 58, 91, 130, 153, 179, 206, 235, 252, 280}
 	_ErrCode_index_6 = [...]uint8{0, 30, 59, 84}
 	_ErrCode_index_7 = [...]uint8{0, 21, 41}
 	_ErrCode_index_8 = [...]uint8{0, 25, 43, 69, 86}
@@ -94,7 +95,7 @@ func (i ErrCode) String() string {
 	case 20000 <= i && i <= 20002:
 		i -= 20000
 		return _ErrCode_name_4[_ErrCode_index_4[i]:_ErrCode_index_4[i+1]]
-	case 22000 <= i && i <= 22009:
+	case 22000 <= i && i <= 22010:
 		i -= 22000
 		return _ErrCode_name_5[_ErrCode_index_5[i]:_ErrCode_index_5[i+1]]
 	case 24000 <= i && i <= 24002:
