@@ -20,7 +20,7 @@ func (*Workflow) TableName() string {
 type WorkflowNode struct {
 	BaseModel
 	WorkflowID int64                    `gorm:"type:bigint;not null;index:idx_workflow_id" json:"workflow_id"`
-	TemplateID int64                    `gorm:"type:bigint;not null" json:"template_id"`
+	ActionID   int64                    `gorm:"type:bigint;not null" json:"action_id"`
 	ParentID   int64                    `gorm:"type:bigint;not null" json:"parent_id"`
 	UserID     string                   `gorm:"type:varchar(120);not null" json:"user_id"`
 	Status     string                   `gorm:"type:varchar(20);not null;default:'draft'" json:"status"`

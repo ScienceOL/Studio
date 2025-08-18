@@ -33,13 +33,13 @@ type LaboratoryResp struct {
 }
 
 type RegAction struct {
-	Feedback    datatypes.JSON `json:"feedback"`
-	Goal        datatypes.JSON `json:"goal"`
-	GoalDefault datatypes.JSON `json:"goal_default"`
-	Result      datatypes.JSON `json:"result"`
-	Schema      datatypes.JSON `json:"schema"`
-	Type        string         `json:"type"`
-	Handles     datatypes.JSON `json:"handles"`
+	Feedback    datatypes.JSON                         `json:"feedback"`
+	Goal        datatypes.JSON                         `json:"goal"`
+	GoalDefault datatypes.JSON                         `json:"goal_default"`
+	Result      datatypes.JSON                         `json:"result"`
+	Schema      datatypes.JSON                         `json:"schema"`
+	Type        string                                 `json:"type"`
+	Handles     datatypes.JSONType[model.ActionHandle] `json:"handles"`
 }
 
 type RegClass struct {

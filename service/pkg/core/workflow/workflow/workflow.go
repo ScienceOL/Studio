@@ -16,7 +16,6 @@ import (
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	wfl "github.com/scienceol/studio/service/pkg/repo/workflow"
 	"github.com/scienceol/studio/service/pkg/utils"
-	"gorm.io/datatypes"
 )
 
 type workflowImpl struct {
@@ -163,7 +162,7 @@ func (w *workflowImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 		data := &workflow.WSNode{
 			UUID: node.Node.UUID,
 			TemplateUUID: utils.SafeValue(func() uuid.UUID {
-				return node.Template.UUID
+				return node.Action.UUID
 			}, uuid.UUID{}),
 			ParentUUID: nodeIDUUIDMap[node.Node.ParentID],
 			UserID:     node.Node.UserID,
@@ -172,10 +171,8 @@ func (w *workflowImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 			Icon:       node.Node.Icon,
 			Pose:       node.Node.Pose,
 			Param:      node.Node.Param,
-			Schema: utils.SafeValue(func() datatypes.JSON {
-				return node.Template.Schema
-			}, datatypes.JSON{}),
-			Handles: utils.FilterSlice(node.Handles, func(h *model.WorkflowHandleTemplate) (*workflow.WSNodeHandle, bool) {
+			Schema:     node.Action.GoalSchema,
+			Handles: utils.FilterSlice(node.Handles, func(h *model.ActionHandleTemplate) (*workflow.WSNodeHandle, bool) {
 				return &workflow.WSNodeHandle{
 					UUID:        h.UUID,
 					HandleKey:   h.HandleKey,
@@ -216,43 +213,81 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session,
 		return err
 	}
 
-	resp, err := w.workflowStore.GetWorkflowTemplate(ctx, data.LabID)
+	resp, err := w.workflowStore.GetDeviceAction(ctx, map[string]any{
+		"lab_id": data.LabID,
+	})
+
 	if err != nil {
 		common.ReplyWSErr(s, string(workflow.FetchTemplate), msgUUID, err)
 		return err
 	}
 
-	templateInfos := utils.FilterSlice(resp, func(item *repo.WorkflowTemplate) (*workflow.WSTemplateHandles, bool) {
-		return &workflow.WSTemplateHandles{
-			Template: &workflow.WSTemplate{
-				UUID:          item.Template.UUID,
-				Name:          item.Template.Name,
-				DisplayName:   item.Template.DisplayName,
-				Header:        item.Template.Header,
-				Footer:        item.Template.Footer,
-				ParamType:     item.Template.ParamType,
-				Schema:        item.Template.Schema,
-				ExecuteScript: item.Template.ExecuteScript,
-				NodeType:      item.Template.NodeType,
-				Icon:          item.Template.Icon,
-			},
-			Handles: utils.FilterSlice(item.Handles, func(h *model.WorkflowHandleTemplate) (*workflow.WSNodeHandle, bool) {
-				return &workflow.WSNodeHandle{
-					UUID:        h.UUID,
-					HandleKey:   h.HandleKey,
-					IoType:      h.IoType,
-					DisplayName: h.DisplayName,
-					Type:        h.Type,
-					DataSource:  h.DataSource,
-					DataKey:     h.DataKey,
-				}, true
-
-			}),
-		}, true
+	respResNodeIDs := utils.FilterUniqSlice(resp, func(item *model.DeviceAction) (int64, bool) {
+		return item.ResNodeID, true
 	})
 
+	resMap, err := w.labStore.GetResourceNodeTemplates(ctx, respResNodeIDs)
+	if err != nil || len(resMap) != len(respResNodeIDs) {
+		common.ReplyWSErr(s, string(workflow.FetchTemplate), msgUUID, err)
+		return err
+	}
+
+	actionIDs := utils.FilterSlice(resp, func(item *model.DeviceAction) (int64, bool) {
+		return item.ID, true
+	})
+
+	respHandles, err := w.workflowStore.GetDeviceActionHandles(ctx, actionIDs)
+	if err != nil {
+		common.ReplyWSErr(s, string(workflow.FetchTemplate), msgUUID, err)
+		return err
+	}
+
+	respActionMap := utils.SliceToMapSlice(resp, func(item *model.DeviceAction) (int64, *model.DeviceAction, bool) {
+		return item.ResNodeID, item, true
+	})
+
+	respHandleMap := utils.SliceToMapSlice(respHandles, func(item *model.ActionHandleTemplate) (int64, *model.ActionHandleTemplate, bool) {
+		return item.ActionID, item, true
+	})
+
+	templates := make([]*workflow.WSNodeTpl, 0, len(resMap))
+	for id, resNode := range resMap {
+		templates = append(templates, &workflow.WSNodeTpl{
+			Name: resNode.Name,
+			UUID: resNode.UUID,
+			HandleTemplates: utils.FilterSlice(respActionMap[id], func(item *model.DeviceAction) (*workflow.WSTemplateHandles, bool) {
+				return &workflow.WSTemplateHandles{
+
+					Template: &workflow.WSTemplate{
+						UUID:          item.UUID,
+						Name:          item.Name,
+						DisplayName:   item.Name,
+						Header:        item.Class,
+						Footer:        &item.Name,
+						Schema:        item.GoalSchema,
+						ExecuteScript: "",
+						NodeType:      "DeviceTemplate",
+						Icon:          item.Icon,
+					},
+					Handles: utils.FilterSlice(respHandleMap[item.ID], func(h *model.ActionHandleTemplate) (*workflow.WSNodeHandle, bool) {
+						return &workflow.WSNodeHandle{
+							UUID:        h.UUID,
+							HandleKey:   h.HandleKey,
+							IoType:      h.IoType,
+							DisplayName: h.DisplayName,
+							Type:        h.Type,
+							DataSource:  h.DataSource,
+							DataKey:     h.DataKey,
+						}, true
+					}),
+				}, true
+			}),
+		})
+	}
+
+
 	return common.ReplyWSOk(s, string(workflow.FetchTemplate), msgUUID, &workflow.WSTemplates{
-		Templates: templateInfos,
+		Templates: templates,
 	})
 }
 
@@ -282,30 +317,37 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		return err
 	}
 
-	tplNode, err := w.workflowStore.GetWorkflowTemplateByUUID(ctx, reqData.TemplateUUID)
+	deviceAction, err := w.workflowStore.GetDeviceAction(ctx, map[string]any{
+		"uuid": reqData.TemplateUUID,
+	})
+
+	if err != nil || len(deviceAction) != 1 {
+		common.ReplyWSErr(s, string(workflow.CreateNode), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
+		return err
+	}
+
+	actionHandles, err := w.workflowStore.GetDeviceActionHandles(ctx, []int64{deviceAction[0].ID})
 	if err != nil {
 		common.ReplyWSErr(s, string(workflow.CreateNode), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
 		return err
 	}
-	// TODO: 如果有 parent uuid 获取 paternt id
+
 	parentID := int64(0)
 	if !reqData.ParentUUID.IsNil() {
-		if parentNode, err := w.workflowStore.GetWorkflowNode(ctx, reqData.ParentUUID); err != nil {
-			common.ReplyWSErr(s, string(workflow.CreateNode), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
+		if parentID = w.workflowStore.UUID2ID(ctx, &model.WorkflowNode{}, reqData.ParentUUID)[reqData.ParentUUID]; parentID == 0 {
+			common.ReplyWSErr(s, string(workflow.CreateNode), req.MsgUUID, code.ParamErr.WithMsg("can not get parent node info"))
 			return err
-		} else {
-			parentID = parentNode.ID
 		}
 	}
 
 	nodeData := &model.WorkflowNode{
 		WorkflowID: wk.ID,
-		TemplateID: tplNode.Template.ID,
+		ActionID:   deviceAction[0].ID,
 		ParentID:   parentID,
 		UserID:     userInfo.ID,
 		Status:     "draft",
 		Type:       utils.Or(reqData.Type, "Device"),
-		Icon:       utils.Or(tplNode.Template.Icon, reqData.Icon),
+		Icon:       utils.Or(deviceAction[0].Icon, reqData.Icon),
 		Pose:       reqData.Pose,
 		Param:      reqData.Param,
 	}
@@ -325,8 +367,8 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		Icon:         nodeData.Icon,
 		Pose:         nodeData.Pose,
 		Param:        nodeData.Param,
-		Schema:       tplNode.Template.Schema,
-		Handles: utils.FilterSlice(tplNode.Handles, func(h *model.WorkflowHandleTemplate) (*workflow.WSNodeHandle, bool) {
+		Schema:       deviceAction[0].GoalSchema,
+		Handles: utils.FilterSlice(actionHandles, func(h *model.ActionHandleTemplate) (*workflow.WSNodeHandle, bool) {
 			return &workflow.WSNodeHandle{
 				UUID:        h.UUID,
 				HandleKey:   h.HandleKey,
@@ -465,11 +507,11 @@ func (w *workflowImpl) batchCreateEdge(ctx context.Context, s *melody.Session, b
 		return code.ParamErr.WithMsg("node uuid not exist")
 	}
 
-	count, err = w.workflowStore.Count(ctx, &model.WorkflowHandleTemplate{}, map[string]any{"uuid": handleUUIDs})
-	if err != nil || count != int64(len(handleUUIDs)) {
-		common.ReplyWSErr(s, string(workflow.BatchCreateEdge), req.MsgUUID, code.ParamErr.WithMsg("handle templet uuid not exist"))
-		return code.ParamErr.WithMsg("handle templet not exist")
-	}
+	// count, err = w.workflowStore.Count(ctx, &model.WorkflowHandleTemplate{}, map[string]any{"uuid": handleUUIDs})
+	// if err != nil || count != int64(len(handleUUIDs)) {
+	// 	common.ReplyWSErr(s, string(workflow.BatchCreateEdge), req.MsgUUID, code.ParamErr.WithMsg("handle templet uuid not exist"))
+	// 	return code.ParamErr.WithMsg("handle templet not exist")
+	// }
 
 	edgeDatas := utils.FilterSlice(req.Data, func(edge *workflow.WSWorkflowEdge) (*model.WorkflowEdge, bool) {
 		return &model.WorkflowEdge{

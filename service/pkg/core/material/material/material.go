@@ -103,6 +103,7 @@ func (m *materialImpl) RecalculatePosition(ctx context.Context, req *material.Gr
 func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laboratory, req *material.GraphNodeReq) error {
 	resTplNames := make([]string, 0, len(req.Nodes))
 	for _, data := range req.Nodes {
+		// TODO: 以后所有的材料都有模板
 		if data.Type == model.MATERIALDEVICE ||
 			data.Type == model.MATERIALCONTAINER {
 			resTplNames = utils.AppendUniqSlice(resTplNames, data.Class)
@@ -179,10 +180,6 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 			if err := m.materialStore.UpsertMaterialNode(txCtx, datas); err != nil {
 				return err
 			}
-
-			if err := m.createActionTemplate(txCtx, datas, resMap); err != nil {
-				return err
-			}
 		}
 
 		return nil
@@ -193,108 +190,108 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 	return nil
 }
 
-func (m *materialImpl) createActionTemplate(ctx context.Context, nodes []*model.MaterialNode, resMap map[string]*repo.ResNodeTpl) error {
-	type wnTpl struct {
-		Node    *model.WorkflowNodeTemplate
-		Handles []*model.WorkflowHandleTemplate
-	}
-	wnTpls := make([]*wnTpl, 0, 10)
-	for _, mNode := range nodes {
-		if mNode.ResourceNodeTemplateID == 0 {
-			continue
-		}
-
-		resTpl, ok := resMap[mNode.Class]
-		if !ok {
-			continue
-		}
-
-		for _, action := range resTpl.Actions {
-			tl := &wnTpl{}
-			tl.Node = &model.WorkflowNodeTemplate{
-				Name:                   action.Name,
-				LabID:                  mNode.LabID,
-				ResourceNodeTemplateID: resTpl.Node.ID,
-				DeviceActionID:         action.ID,
-				MaterialNodeID:         mNode.ID,
-				DisplayName:            action.Name,
-				Header:                 action.Name,
-				Footer:                 &mNode.Class,
-				ParamType:              "DEFAULT",
-				Schema: utils.SafeValue(func() datatypes.JSON {
-					data := struct {
-						Properties struct {
-							Goal datatypes.JSON `json:"goal"`
-						} `json:"properties"`
-					}{}
-					if err := json.Unmarshal(action.Schema, &data); err != nil {
-						return datatypes.JSON{}
-					}
-					return data.Properties.Goal
-				}, datatypes.JSON{}),
-				ExecuteScript: "",
-				NodeType:      "",
-			}
-			tl.Handles = append(tl.Handles, &model.WorkflowHandleTemplate{
-				HandleKey: "ready",
-				IoType:    "target",
-			})
-			tl.Handles = append(tl.Handles, &model.WorkflowHandleTemplate{
-				HandleKey: "ready",
-				IoType:    "source",
-			})
-
-			hs := material.ActionHandle{}
-			if err := json.Unmarshal(action.Handles, &hs); err != nil {
-				logger.Errorf(ctx, "unmarshal action handles id: %d, err: %+v", action.ID, err)
-				continue
-			}
-			inHandles := utils.FilterSlice(hs.Input, func(h *material.Handle) (*model.WorkflowHandleTemplate, bool) {
-				return &model.WorkflowHandleTemplate{
-					HandleKey:   h.HandlerKey,
-					IoType:      "target",
-					DisplayName: h.Label,
-					Type:        h.DataType,
-					DataSource:  h.DataSource,
-					DataKey:     h.DataKey,
-				}, true
-			})
-			tl.Handles = append(tl.Handles, inHandles...)
-			outHandles := utils.FilterSlice(hs.Input, func(h *material.Handle) (*model.WorkflowHandleTemplate, bool) {
-				return &model.WorkflowHandleTemplate{
-					HandleKey:   h.HandlerKey,
-					IoType:      "source",
-					DisplayName: h.Label,
-					Type:        h.DataType,
-					DataSource:  h.DataSource,
-					DataKey:     h.DataKey,
-				}, true
-			})
-			tl.Handles = append(tl.Handles, outHandles...)
-			wnTpls = append(wnTpls, tl)
-		}
-	}
-
-	tls := utils.FilterSlice(wnTpls, func(item *wnTpl) (*model.WorkflowNodeTemplate, bool) {
-		return item.Node, true
-	})
-
-	if err := m.materialStore.UpsertWorkflowNodeTemplate(ctx, tls); err != nil {
-		return err
-	}
-
-	tlHandles, _ := utils.FilterSliceWithErr(wnTpls, func(item *wnTpl) ([]*model.WorkflowHandleTemplate, bool, error) {
-		hs := utils.FilterSlice(item.Handles, func(h *model.WorkflowHandleTemplate) (*model.WorkflowHandleTemplate, bool) {
-			h.NodeTemplateID = item.Node.ID
-			return h, true
-		})
-		return hs, true, nil
-	})
-
-	if err := m.materialStore.UpsertWorkflowHandleTemplate(ctx, tlHandles); err != nil {
-		return err
-	}
-
+func (m *materialImpl) createActionTemplate(_ context.Context, _ []*model.MaterialNode, _ map[string]*repo.ResNodeTpl) error {
+	// type wnTpl struct {
+	// 	Node    *model.WorkflowNodeTemplate
+	// 	Handles []*model.WorkflowHandleTemplate
+	// }
+	//
+	// wnTpls := make([]*wnTpl, 0, 10)
+	// for _, mNode := range nodes {
+	// 	if mNode.ResourceNodeTemplateID == 0 {
+	// 		continue
+	// 	}
+	//
+	// 	resTpl, ok := resMap[mNode.Class]
+	// 	if !ok {
+	// 		continue
+	// 	}
+	//
+	// 	for _, action := range resTpl.Actions {
+	// 		tl := &wnTpl{}
+	// 		tl.Node = &model.WorkflowNodeTemplate{
+	// 			Name:                   action.Name,
+	// 			LabID:                  mNode.LabID,
+	// 			ResourceNodeTemplateID: resTpl.Node.ID,
+	// 			DeviceActionID:         action.ID,
+	// 			DisplayName:            action.Name,
+	// 			Header:                 action.Name,
+	// 			Footer:                 &mNode.Class,
+	// 			ParamType:              "DEFAULT",
+	// 			Schema: utils.SafeValue(func() datatypes.JSON {
+	// 				data := struct {
+	// 					Properties struct {
+	// 						Goal datatypes.JSON `json:"goal"`
+	// 					} `json:"properties"`
+	// 				}{}
+	// 				if err := json.Unmarshal(action.Schema, &data); err != nil {
+	// 					return datatypes.JSON{}
+	// 				}
+	// 				return data.Properties.Goal
+	// 			}, datatypes.JSON{}),
+	// 			ExecuteScript: "",
+	// 			NodeType:      "",
+	// 		}
+	// 		tl.Handles = append(tl.Handles, &model.WorkflowHandleTemplate{
+	// 			HandleKey: "ready",
+	// 			IoType:    "target",
+	// 		})
+	// 		tl.Handles = append(tl.Handles, &model.WorkflowHandleTemplate{
+	// 			HandleKey: "ready",
+	// 			IoType:    "source",
+	// 		})
+	//
+	// 		hs := material.ActionHandle{}
+	// 		if err := json.Unmarshal(action.Handles, &hs); err != nil {
+	// 			logger.Errorf(ctx, "unmarshal action handles id: %d, err: %+v", action.ID, err)
+	// 			continue
+	// 		}
+	// 		inHandles := utils.FilterSlice(hs.Input, func(h *material.Handle) (*model.WorkflowHandleTemplate, bool) {
+	// 			return &model.WorkflowHandleTemplate{
+	// 				HandleKey:   h.HandlerKey,
+	// 				IoType:      "target",
+	// 				DisplayName: h.Label,
+	// 				Type:        h.DataType,
+	// 				DataSource:  h.DataSource,
+	// 				DataKey:     h.DataKey,
+	// 			}, true
+	// 		})
+	// 		tl.Handles = append(tl.Handles, inHandles...)
+	// 		outHandles := utils.FilterSlice(hs.Input, func(h *material.Handle) (*model.WorkflowHandleTemplate, bool) {
+	// 			return &model.WorkflowHandleTemplate{
+	// 				HandleKey:   h.HandlerKey,
+	// 				IoType:      "source",
+	// 				DisplayName: h.Label,
+	// 				Type:        h.DataType,
+	// 				DataSource:  h.DataSource,
+	// 				DataKey:     h.DataKey,
+	// 			}, true
+	// 		})
+	// 		tl.Handles = append(tl.Handles, outHandles...)
+	// 		wnTpls = append(wnTpls, tl)
+	// 	}
+	// }
+	//
+	// tls := utils.FilterSlice(wnTpls, func(item *wnTpl) (*model.WorkflowNodeTemplate, bool) {
+	// 	return item.Node, true
+	// })
+	//
+	// if err := m.materialStore.UpsertWorkflowNodeTemplate(ctx, tls); err != nil {
+	// 	return err
+	// }
+	//
+	// tlHandles, _ := utils.FilterSliceWithErr(wnTpls, func(item *wnTpl) ([]*model.WorkflowHandleTemplate, bool, error) {
+	// 	hs := utils.FilterSlice(item.Handles, func(h *model.WorkflowHandleTemplate) (*model.WorkflowHandleTemplate, bool) {
+	// 		h.NodeTemplateID = item.Node.ID
+	// 		return h, true
+	// 	})
+	// 	return hs, true, nil
+	// })
+	//
+	// if err := m.materialStore.UpsertWorkflowHandleTemplate(ctx, tlHandles); err != nil {
+	// 	return err
+	// }
+	//
 	return nil
 }
 
@@ -1089,6 +1086,7 @@ func (m *materialImpl) addWSEdges(ctx context.Context, edges []material.WSEdge) 
 			TargetNodeUUID:   data.TargetNodeUUID,
 			SourceHandleUUID: data.SourceHandleUUID,
 			TargetHandleUUID: data.TargetHandleUUID,
+			Type:             "step",
 		}, true
 	})
 

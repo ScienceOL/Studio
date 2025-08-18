@@ -47,7 +47,7 @@ type MaterialRepo interface {
 	// 根据 uuid 获取节点 ID
 	GetNodeIDByUUID(ctx context.Context, nodeUUID uuid.UUID) (int64, error)
 	// 批量插入 workflowTpl
-	UpsertWorkflowNodeTemplate(ctx context.Context, datas []*model.WorkflowNodeTemplate) error
+	// UpsertWorkflowNodeTemplate(ctx context.Context, datas []*model.WorkflowNodeTemplate) error
 	// 批量插入 workflowHandleTpl
-	UpsertWorkflowHandleTemplate(ctx context.Context, datas []*model.WorkflowHandleTemplate) error
+	// UpsertWorkflowHandleTemplate(ctx context.Context, datas []*model.WorkflowHandleTemplate) error
 }

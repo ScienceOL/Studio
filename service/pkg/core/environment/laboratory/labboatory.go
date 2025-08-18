@@ -207,6 +207,7 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 				}
 
 				actions = append(actions, &model.DeviceAction{
+					LabID:       resData.LabID,
 					ResNodeID:   resData.ID,
 					Name:        actionName,
 					Goal:        action.Goal,
@@ -216,6 +217,17 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 					Schema:      action.Schema,
 					Type:        action.Type,
 					Handles:     action.Handles,
+					GoalSchema: utils.SafeValue(func() datatypes.JSON {
+						data := struct {
+							Properties struct {
+								Goal datatypes.JSON `json:"goal"`
+							} `json:"properties"`
+						}{}
+						if err := json.Unmarshal(action.Schema, &data); err != nil {
+							return datatypes.JSON{}
+						}
+						return data.Properties.Goal
+					}, datatypes.JSON{}),
 				})
 			}
 			return actions, true, nil
@@ -249,14 +261,65 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 			return err
 		}
 
+		// 创建 device action
 		if err := l.envStore.UpsertDeviceAction(txCtx, resDeviceAction); err != nil {
 			return err
 		}
+
+		// 创建 device handle
 		if err := l.envStore.UpsertDeviceHandleTemplate(txCtx, resDeviceHandles); err != nil {
 			return err
 		}
-		return nil
+
+		// 创建 action handles
+		return l.createActionHandles(ctx, resDeviceAction)
 	})
+}
+
+func (l *lab) createActionHandles(ctx context.Context, actions []*model.DeviceAction) error {
+	resHandles, _ := utils.FilterSliceWithErr(actions, func(item *model.DeviceAction) ([]*model.ActionHandleTemplate, bool, error) {
+		resHi, _ := utils.FilterSliceWithErr(item.Handles.Data().Input, func(h *model.Handle) ([]*model.ActionHandleTemplate, bool, error) {
+			return []*model.ActionHandleTemplate{&model.ActionHandleTemplate{
+				ActionID:    item.ID,
+				HandleKey:   h.HandlerKey,
+				IoType:      "source",
+				DisplayName: h.Label,
+				Type:        h.DataType,
+				DataSource:  h.DataSource,
+				DataKey:     h.DataKey,
+			}}, true, nil
+		})
+		resHo, _ := utils.FilterSliceWithErr(item.Handles.Data().Output, func(h *model.Handle) ([]*model.ActionHandleTemplate, bool, error) {
+			return []*model.ActionHandleTemplate{&model.ActionHandleTemplate{
+				ActionID:    item.ID,
+				HandleKey:   h.HandlerKey,
+				IoType:      "source",
+				DisplayName: h.Label,
+				Type:        h.DataType,
+				DataSource:  h.DataSource,
+				DataKey:     h.DataKey,
+			}}, true, nil
+		})
+
+		resH := make([]*model.ActionHandleTemplate, 0, len(resHi)+len(resHo)+2)
+
+		resH = append(resH, &model.ActionHandleTemplate{
+			ActionID:  item.ID,
+			HandleKey: "ready",
+			IoType:    "target",
+		})
+		resH = append(resH, &model.ActionHandleTemplate{
+			ActionID:  item.ID,
+			HandleKey: "ready",
+			IoType:    "source",
+		})
+		resH = append(resH, resHi...)
+		resH = append(resH, resHo...)
+
+		return resH, true, nil
+	})
+
+	return l.envStore.UpsertActionHandleTemplate(ctx, resHandles)
 }
 
 func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageResp[[]*environment.LaboratoryResp], error) {

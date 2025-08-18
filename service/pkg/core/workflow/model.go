@@ -98,7 +98,6 @@ type WSTemplate struct {
 	DisplayName   string         `json:"display_name"`
 	Header        string         `json:"header"`
 	Footer        *string        `json:"footer"`
-	ParamType     string         `json:"param_type"`
 	Schema        datatypes.JSON `json:"schema"`
 	ExecuteScript string         `json:"execute_script"`
 	NodeType      string         `json:"node_type"`
@@ -110,8 +109,14 @@ type WSTemplateHandles struct {
 	Handles  []*WSNodeHandle `json:"handles"`
 }
 
+type WSNodeTpl struct {
+	Name            string               `json:"name"`
+	UUID            uuid.UUID            `json:"uuid"`
+	HandleTemplates []*WSTemplateHandles `json:"handles"`
+}
+
 type WSTemplates struct {
-	Templates []*WSTemplateHandles `json:"templates"`
+	Templates []*WSNodeTpl `json:"templates"`
 }
 
 type WSCreateNode struct {
