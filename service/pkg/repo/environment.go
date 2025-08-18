@@ -45,4 +45,6 @@ type LaboratoryRepo interface {
 	GetResourceTemplateByUUD(ctx context.Context, uuid uuid.UUID, selectKeys ...string) (*model.ResourceNodeTemplate, error)
 	// 获取实验室列表
 	GetLabList(ctx context.Context, userIDs []string, req *common.PageReq) (*common.PageResp[[]*model.Laboratory], error)
+	// 创建 action handle
+	UpsertActionHandleTemplate(ctx context.Context, datas []*model.ActionHandleTemplate) error
 }

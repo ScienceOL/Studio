@@ -17,12 +17,13 @@ func Table(_ context.Context) error {
 			&model.DeviceAction{},           // 实验室动作
 			&model.MaterialNode{},           // 物料节点
 			&model.MaterialEdge{},           // 物料边
-			&model.WorkflowNodeTemplate{},   // 动作节点模板
-			&model.WorkflowHandleTemplate{},
+			// &model.WorkflowNodeTemplate{},   // 动作节点模板
+			// &model.WorkflowHandleTemplate{},
 			&model.Workflow{},
 			&model.WorkflowNode{},
 			&model.WorkflowEdge{},
 			&model.WorkflowConsole{},
+			&model.ActionHandleTemplate{},
 		) // 动作节点handle 模板
 	})
 }

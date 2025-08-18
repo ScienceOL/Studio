@@ -101,6 +101,7 @@ func (e *envImpl) UpsertResTemplate(ctx context.Context, datas []*model.Resource
 	if len(datas) == 0 {
 		return nil
 	}
+
 	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{
 			{Name: "lab_id"},
@@ -125,7 +126,7 @@ func (e *envImpl) UpsertResTemplate(ctx context.Context, datas []*model.Resource
 
 	if statement.Error != nil {
 		logger.Errorf(ctx, "UpsertDeviceTemplate err: %+v", statement.Error)
-		return code.CreateDataErr
+		return code.CreateDataErr.WithErr(statement.Error)
 	}
 
 	return nil
@@ -174,13 +175,13 @@ func (e *envImpl) GetResourceTemplate(ctx context.Context, labID int64, names []
 		Icon   string         `gorm:"column:icon"`
 		Model  datatypes.JSON `gorm:"column:model"`
 
-		ActionID          *int64          `gorm:"column:action_id"`
-		ActionName        *string         `gorm:"column:action_name"`
-		ActionGoal        *datatypes.JSON `gorm:"column:action_goal"`
-		ActionGoalDefault *datatypes.JSON `gorm:"column:action_goal_default"`
-		ActionSchema      *datatypes.JSON `gorm:"column:action_schema"`
-		ActionType        *string         `gorm:"column:action_type"`
-		ActionHandles     *datatypes.JSON `gorm:"column:action_handles"`
+		ActionID          *int64                                  `gorm:"column:action_id"`
+		ActionName        *string                                 `gorm:"column:action_name"`
+		ActionGoal        *datatypes.JSON                         `gorm:"column:action_goal"`
+		ActionGoalDefault *datatypes.JSON                         `gorm:"column:action_goal_default"`
+		ActionSchema      *datatypes.JSON                         `gorm:"column:action_schema"`
+		ActionType        *string                                 `gorm:"column:action_type"`
+		ActionHandles     *datatypes.JSONType[model.ActionHandle] `gorm:"column:action_handles"`
 	}
 	results := make([]QueryResult, 0)
 	statement := e.DBWithContext(ctx).
@@ -402,4 +403,33 @@ func (e *envImpl) GetLabList(ctx context.Context, userIDs []string, req *common.
 		Page:     req.Page,
 		PageSize: req.PageSize,
 	}, nil
+}
+
+// 创建 action handle
+func (e *envImpl) UpsertActionHandleTemplate(ctx context.Context, datas []*model.ActionHandleTemplate) error {
+	if len(datas) == 0 {
+		return nil
+	}
+
+	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "action_id"},
+			{Name: "handle_key"},
+			{Name: "io_type"},
+		},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"display_name",
+			"type",
+			"data_source",
+			"data_key",
+			"updated_at",
+		}),
+	}).Create(datas)
+
+	if statement.Error != nil {
+		logger.Errorf(ctx, "UpsertActionHandleTemplate err: %+v", statement.Error)
+		return code.CreateDataErr.WithMsg(statement.Error.Error())
+	}
+
+	return nil
 }

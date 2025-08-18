@@ -83,51 +83,50 @@ func (w *workflowImpl) GetWorkflowGraph(ctx context.Context, userID string, work
 		Where("workflow_id =  ?", workflow.ID).
 		Find(&nodes).Error; err != nil {
 		logger.Errorf(ctx, "GetWorkflowGraph get node fail err: %+v", err)
-		return nil, code.QueryRecordErr
+		return nil, code.QueryRecordErr.WithMsg("get node fail")
 	}
+
+	actionIDs := utils.FilterUniqSlice(nodes, func(node *model.WorkflowNode) (int64, bool) {
+		if node.ActionID == 0 {
+			return 0, false
+		}
+
+		return node.ActionID, true
+	})
+
+	actions := make([]*model.DeviceAction, 0, 1)
+	if err := w.DBWithContext(ctx).
+		Where("id in  ?", actionIDs).
+		Find(&actions).Error; err != nil {
+		logger.Errorf(ctx, "GetWorkflowGraph get node fail err: %+v", err)
+		return nil, code.QueryRecordErr.WithMsg("get node fail")
+	}
+	actionMap := utils.SliceToMap(actions, func(action *model.DeviceAction) (int64, *model.DeviceAction) {
+		return action.ID, action
+	})
+
+	actionHandles := make([]*model.ActionHandleTemplate, 0, 1)
+	if err := w.DBWithContext(ctx).
+		Where("action_id in  ?", actionIDs).
+		Find(&actionHandles).Error; err != nil {
+		logger.Errorf(ctx, "GetWorkflowGraph get action handles fail err: %+v", err)
+		return nil, code.QueryRecordErr.WithMsg("get action handles")
+	}
+
+	actionHandleMap := utils.SliceToMapSlice(actionHandles, func(item *model.ActionHandleTemplate) (int64, *model.ActionHandleTemplate, bool) {
+		return item.ActionID, item, true
+	})
 
 	nodeUUIDs := utils.FilterSlice(nodes, func(node *model.WorkflowNode) (uuid.UUID, bool) {
 		return node.UUID, true
 	})
 
-	templateIDs := make([]int64, 0, len(nodes))
-	for _, node := range nodes {
-		templateIDs = utils.AppendUniqSlice(templateIDs, node.TemplateID)
-	}
-
-	tplNodes := make([]*model.WorkflowNodeTemplate, 0, len(templateIDs))
-	if err := w.DBWithContext(ctx).
-		Select("id, uuid, schema, header, footer").
-		Where("id in ?", templateIDs).
-		Find(&tplNodes).Error; err != nil {
-		logger.Errorf(ctx, "GetWorkflowGraph get template fail tpl ids: %+v, err: %+v", templateIDs, err)
-
-		return nil, code.QueryRecordErr
-	}
-	tplNodeMap := utils.SliceToMap(tplNodes, func(tpl *model.WorkflowNodeTemplate) (int64, *model.WorkflowNodeTemplate) {
-		return tpl.ID, tpl
-	})
-
-	tplHandles := make([]*model.WorkflowHandleTemplate, 0, len(templateIDs))
-	if err := w.DBWithContext(ctx).
-		Where("node_template_id in ?", templateIDs).
-		Find(&tplHandles).Error; err != nil {
-
-		logger.Errorf(ctx, "GetWorkflowGraph get template handle fail template ids: %+v, err: %+v", templateIDs, err)
-		return nil, code.QueryRecordErr
-	}
-
-	mapTplHandle := make(map[int64][]*model.WorkflowHandleTemplate, len(tplHandles))
-	for _, tplHandle := range tplHandles {
-		mapTplHandle[tplHandle.NodeTemplateID] = append(mapTplHandle[tplHandle.NodeTemplateID], tplHandle)
-	}
-
 	nodesInfo := make([]*repo.WorkflowNodeInfo, 0, len(nodes))
 	for _, node := range nodes {
 		nodesInfo = append(nodesInfo, &repo.WorkflowNodeInfo{
-			Node:     node,
-			Handles:  mapTplHandle[node.TemplateID],
-			Template: tplNodeMap[node.TemplateID],
+			Node:    node,
+			Action:  actionMap[node.ActionID],
+			Handles: actionHandleMap[node.ActionID],
 		})
 	}
 
@@ -137,7 +136,7 @@ func (w *workflowImpl) GetWorkflowGraph(ctx context.Context, userID string, work
 		Find(&edges).Error; err != nil {
 		logger.Errorf(ctx, "GetWorkflowGraph get edge fail err: %+v", err)
 
-		return nil, code.QueryRecordErr
+		return nil, code.QueryRecordErr.WithMsg("get edge fail")
 	}
 
 	return &repo.WorkflowGrpah{
@@ -147,78 +146,65 @@ func (w *workflowImpl) GetWorkflowGraph(ctx context.Context, userID string, work
 	}, nil
 }
 
-func (w *workflowImpl) GetWorkflowTemplateByUUID(ctx context.Context, tplUUID uuid.UUID) (*repo.WorkflowTemplate, error) {
-	tplData := &model.WorkflowNodeTemplate{}
-	if err := w.DBWithContext(ctx).
-		Where("uuid = ?", tplUUID).
-		Take(tplData).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, code.RecordNotFound
-		}
+// func (w *workflowImpl) GetWorkflowTemplateByUUID(ctx context.Context, tplUUID uuid.UUID) (*repo.WorkflowTemplate, error) {
+// 	tplData := &model.WorkflowNodeTemplate{}
+// 	if err := w.DBWithContext(ctx).
+// 		Where("uuid = ?", tplUUID).
+// 		Take(tplData).Error; err != nil {
+// 		if errors.Is(err, gorm.ErrRecordNotFound) {
+// 			return nil, code.RecordNotFound
+// 		}
+//
+// 		logger.Errorf(ctx, "GetWorkflowTemplateByUUID fail uuid id: %v, err: %+v", tplUUID, err)
+// 		return nil, code.QueryRecordErr.WithMsg(err.Error())
+// 	}
+// 	return nil, nil
+//
+// 	// tplHandleDatas := make([]*model.WorkflowHandleTemplate, 0, 2)
+// 	// if err := w.DBWithContext(ctx).
+// 	// 	Where("node_template_id = ?", tplData.ID).
+// 	// 	Find(&tplHandleDatas).Error; err != nil {
+// 	//
+// 	// 	logger.Errorf(ctx, "GetWorkflowTemplateByUUID fail uuid id: %v, err: %+v", tplUUID, err)
+// 	// 	return nil, code.QueryRecordErr.WithMsg(err.Error())
+// 	// }
+// 	//
+// 	// return &repo.WorkflowTemplate{
+// 	// 	Template: tplData,
+// 	// 	Handles:  tplHandleDatas,
+// 	// }, nil
+// }
 
-		logger.Errorf(ctx, "GetWorkflowTemplateByUUID fail uuid id: %v, err: %+v", tplUUID, err)
+func (w *workflowImpl) GetDeviceAction(ctx context.Context, condition map[string]any) ([]*model.DeviceAction, error) {
+	deviceActions := make([]*model.DeviceAction, 0, 1)
+
+	query := w.DBWithContext(ctx).Where(condition)
+	if err := query.Order("id desc").Find(&deviceActions).Error; err != nil {
+		logger.Errorf(ctx, "GetDeviceAction fail lab id: %v, err: %+v", condition, err)
 		return nil, code.QueryRecordErr.WithMsg(err.Error())
 	}
 
-	tplHandleDatas := make([]*model.WorkflowHandleTemplate, 0, 2)
-	if err := w.DBWithContext(ctx).
-		Where("node_template_id = ?", tplData.ID).
-		Find(&tplHandleDatas).Error; err != nil {
-
-		logger.Errorf(ctx, "GetWorkflowTemplateByUUID fail uuid id: %v, err: %+v", tplUUID, err)
-		return nil, code.QueryRecordErr.WithMsg(err.Error())
-	}
-
-	return &repo.WorkflowTemplate{
-		Template: tplData,
-		Handles:  tplHandleDatas,
-	}, nil
+	return deviceActions, nil
 }
 
-func (w *workflowImpl) GetWorkflowTemplate(ctx context.Context, labID int64) ([]*repo.WorkflowTemplate, error) {
-	tpls := make([]*model.WorkflowNodeTemplate, 0, 1)
-
-	query := w.DBWithContext(ctx).Where("lab_id = ?", labID)
-	if err := query.Order("id desc").Find(&tpls).Error; err != nil {
-		logger.Errorf(ctx, "GetWorkflowTemplate fail lab id: %d, err: %+v", labID, err)
+func (w *workflowImpl) GetDeviceActionHandles(ctx context.Context, actionIDs []int64) ([]*model.ActionHandleTemplate, error) {
+	actionHandles := make([]*model.ActionHandleTemplate, 0, 1)
+	query := w.DBWithContext(ctx).Where("action_id in ?", actionIDs)
+	if err := query.Order("id desc").Find(&actionHandles).Error; err != nil {
+		logger.Errorf(ctx, "GetDeviceActionHandles fail action ids: %v, err: %+v", actionIDs, err)
 		return nil, code.QueryRecordErr.WithMsg(err.Error())
 	}
 
-	tplsIDs := utils.FilterSlice(tpls, func(tpl *model.WorkflowNodeTemplate) (int64, bool) {
-		return tpl.ID, true
-	})
-
-	handles := make([]*model.WorkflowHandleTemplate, 0, 1)
-	if err := w.DBWithContext(ctx).
-		Where("node_template_id in ?", tplsIDs).
-		Find(&handles).Error; err != nil {
-		logger.Errorf(ctx, "GetWorkflowTemplate get handle fail lab id: %d, err: %+v", labID, err)
-		return nil, code.QueryRecordErr.WithMsg(err.Error())
-	}
-
-	handlesMap := utils.SliceToMapSlice(handles, func(h *model.WorkflowHandleTemplate) (
-		int64, *model.WorkflowHandleTemplate, bool) {
-		return h.NodeTemplateID, h, true
-	})
-
-	return utils.FilterSlice(tpls, func(tpl *model.WorkflowNodeTemplate) (*repo.WorkflowTemplate, bool) {
-		return &repo.WorkflowTemplate{
-			Template: tpl,
-			Handles:  handlesMap[tpl.ID],
-		}, true
-	}), nil
+	return actionHandles, nil
 }
 
-func (w *workflowImpl) GetWorkflowNode(ctx context.Context, uuid uuid.UUID) (*model.WorkflowNode, error) {
-	data := &model.WorkflowNode{}
+func (w *workflowImpl) GetWorkflowNode(ctx context.Context, condition map[string]any) ([]*model.WorkflowNode, error) {
+	data := make([]*model.WorkflowNode, 0, 1)
 	if err := w.DBWithContext(ctx).
-		Where("uuid = ?", uuid).
-		Take(data).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, code.RecordNotFound
-		}
+		Where(condition).
+		Find(data).Error; err != nil {
 
-		logger.Errorf(ctx, "GetWorkflowNode fail uuid id: %v, err: %+v", uuid, err)
+		logger.Errorf(ctx, "GetWorkflowNode fail condition: %v, err: %+v", condition, err)
 		return nil, code.QueryRecordErr.WithMsg(err.Error())
 	}
 

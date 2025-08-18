@@ -308,64 +308,35 @@ func (m *materialImpl) GetNodeIDByUUID(ctx context.Context, nodeUUID uuid.UUID) 
 }
 
 // 批量插入 workflowTpl
-func (m *materialImpl) UpsertWorkflowNodeTemplate(ctx context.Context, datas []*model.WorkflowNodeTemplate) error {
-	if len(datas) == 0 {
-		return nil
-	}
-
-	statement := m.DBWithContext(ctx).Clauses(clause.OnConflict{
-		Columns: []clause.Column{
-			{Name: "lab_id"},
-			{Name: "name"},
-			{Name: "device_action_id"},
-			{Name: "material_node_id"},
-		},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"resource_node_template_id",
-			"display_name",
-			"header",
-			"footer",
-			"param_type",
-			"schema",
-			"execute_script",
-			"node_type",
-			"updated_at",
-		}),
-	}).Create(datas)
-
-	if statement.Error != nil {
-		logger.Errorf(ctx, "UpsertWorkflowHandleTemplate err: %+v", statement.Error)
-		return code.CreateDataErr.WithMsg(statement.Error.Error())
-	}
-
-	return nil
-}
-
-// 批量插入 workflowHandleTpl
-func (m *materialImpl) UpsertWorkflowHandleTemplate(ctx context.Context, datas []*model.WorkflowHandleTemplate) error {
-	if len(datas) == 0 {
-		return nil
-	}
-
-	statement := m.DBWithContext(ctx).Clauses(clause.OnConflict{
-		Columns: []clause.Column{
-			{Name: "node_template_id"},
-			{Name: "handle_key"},
-			{Name: "io_type"},
-		},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"display_name",
-			"type",
-			"data_source",
-			"data_key",
-			"updated_at",
-		}),
-	}).Create(datas)
-
-	if statement.Error != nil {
-		logger.Errorf(ctx, "UpsertWorkflowHandleTemplate err: %+v", statement.Error)
-		return code.CreateDataErr.WithMsg(statement.Error.Error())
-	}
-
-	return nil
-}
+// func (m *materialImpl) UpsertWorkflowNodeTemplate(ctx context.Context, datas []*model.WorkflowNodeTemplate) error {
+// 	if len(datas) == 0 {
+// 		return nil
+// 	}
+//
+// 	statement := m.DBWithContext(ctx).Clauses(clause.OnConflict{
+// 		Columns: []clause.Column{
+// 			{Name: "lab_id"},
+// 			{Name: "name"},
+// 			{Name: "device_action_id"},
+// 			{Name: "material_node_id"},
+// 		},
+// 		DoUpdates: clause.AssignmentColumns([]string{
+// 			"resource_node_template_id",
+// 			"display_name",
+// 			"header",
+// 			"footer",
+// 			"param_type",
+// 			"schema",
+// 			"execute_script",
+// 			"node_type",
+// 			"updated_at",
+// 		}),
+// 	}).Create(datas)
+//
+// 	if statement.Error != nil {
+// 		logger.Errorf(ctx, "UpsertWorkflowHandleTemplate err: %+v", statement.Error)
+// 		return code.CreateDataErr.WithMsg(statement.Error.Error())
+// 	}
+//
+// 	return nil
+// }
