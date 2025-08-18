@@ -16,7 +16,7 @@ type Service interface {
 	TemplateDetail(ctx context.Context)
 	TemplateList(ctx context.Context)
 	UpdateNodeTemplate(ctx context.Context)
-	GetWorkflowList(ctx context.Context, req *WorkflowListReq) (*common.PageResp[[]*WorkflowListResp], error)
+	GetWorkflowList(ctx context.Context, req *WorkflowListReq) (*WorkflowListResult, error)
 	GetWorkflowDetail(ctx context.Context, workflowUUID uuid.UUID) (*WorkflowDetailResp, error)
 	OnWSMsg(ctx context.Context, s *melody.Session, b []byte) error
 	OnWSConnect(ctx context.Context, s *melody.Session) error

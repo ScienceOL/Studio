@@ -285,7 +285,6 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session,
 		})
 	}
 
-
 	return common.ReplyWSOk(s, string(workflow.FetchTemplate), msgUUID, &workflow.WSTemplates{
 		Templates: templates,
 	})
@@ -584,7 +583,7 @@ func (w *workflowImpl) OnWSConnect(ctx context.Context, s *melody.Session) error
 }
 
 // GetWorkflowList 获取工作流列表
-func (w *workflowImpl) GetWorkflowList(ctx context.Context, req *workflow.WorkflowListReq) (*common.PageResp[[]*workflow.WorkflowListResp], error) {
+func (w *workflowImpl) GetWorkflowList(ctx context.Context, req *workflow.WorkflowListReq) (*workflow.WorkflowListResult, error) {
 	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
 		return nil, code.UnLogin
@@ -616,11 +615,10 @@ func (w *workflowImpl) GetWorkflowList(ctx context.Context, req *workflow.Workfl
 		}, true
 	})
 
-	return &common.PageResp[[]*workflow.WorkflowListResp]{
-		Total:    total,
-		Page:     req.Page,
-		PageSize: req.PageSize,
-		Data:     respList,
+	hasMore := int64(req.Page*req.PageSize) < total
+	return &workflow.WorkflowListResult{
+		HasMore: hasMore,
+		Data:    respList,
 	}, nil
 }
 

@@ -157,6 +157,12 @@ type WorkflowListResp struct {
 	UserID      string    `json:"user_id"`
 }
 
+// 工作流列表返回（滚动加载）
+type WorkflowListResult struct {
+	HasMore bool                `json:"has_more"`
+	Data    []*WorkflowListResp `json:"data"`
+}
+
 // 工作流详情响应
 type WorkflowDetailResp struct {
 	UUID        uuid.UUID `json:"uuid"`
