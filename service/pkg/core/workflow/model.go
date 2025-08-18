@@ -137,3 +137,25 @@ type WSDelNodes struct {
 	NodeUUIDs []uuid.UUID `json:"node_uuids"`
 	EdgeUUIDs []uuid.UUID `json:"edge_uuids"`
 }
+
+// 工作流列表请求
+type WorkflowListReq struct {
+	LabUUID uuid.UUID `json:"lab_uuid" form:"lab_uuid"`
+	common.PageReq
+}
+
+// 工作流列表响应
+type WorkflowListResp struct {
+	UUID        uuid.UUID `json:"uuid"`
+	Name        string    `json:"name"`
+	Description *string   `json:"description,omitempty"`
+	UserID      string    `json:"user_id"`
+}
+
+// 工作流详情响应
+type WorkflowDetailResp struct {
+	UUID        uuid.UUID `json:"uuid"`
+	Name        string    `json:"name"`
+	Description *string   `json:"description,omitempty"`
+	UserID      string    `json:"user_id"`
+}

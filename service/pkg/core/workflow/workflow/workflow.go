@@ -540,3 +540,70 @@ func (w *workflowImpl) OnWSConnect(ctx context.Context, s *melody.Session) error
 	}
 	return nil
 }
+
+// GetWorkflowList 获取工作流列表
+func (w *workflowImpl) GetWorkflowList(ctx context.Context, req *workflow.WorkflowListReq) (*common.PageResp[[]*workflow.WorkflowListResp], error) {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return nil, code.UnLogin
+	}
+
+	// 获取实验室ID
+	var labID int64 = 0
+	if !req.LabUUID.IsNil() {
+		lab, err := w.labStore.GetLabByUUID(ctx, req.LabUUID)
+		if err != nil {
+			return nil, err
+		}
+		labID = lab.ID
+	}
+
+	// 从数据库获取工作流列表
+	workflows, total, err := w.workflowStore.GetWorkflowList(ctx, userInfo.ID, labID, &req.PageReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// 转换为响应格式
+	respList := utils.FilterSlice(workflows, func(wf *model.Workflow) (*workflow.WorkflowListResp, bool) {
+		return &workflow.WorkflowListResp{
+			UUID:        wf.UUID,
+			Name:        wf.Name,
+			Description: wf.Description,
+			UserID:      wf.UserID,
+		}, true
+	})
+
+	return &common.PageResp[[]*workflow.WorkflowListResp]{
+		Total:    total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+		Data:     respList,
+	}, nil
+}
+
+// GetWorkflowDetail 获取工作流详情
+func (w *workflowImpl) GetWorkflowDetail(ctx context.Context, workflowUUID uuid.UUID) (*workflow.WorkflowDetailResp, error) {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return nil, code.UnLogin
+	}
+
+	// 从数据库获取工作流详情
+	wf, err := w.workflowStore.GetWorkflowByUUID(ctx, workflowUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 检查权限（只能查看自己的工作流）
+	if wf.UserID != userInfo.ID {
+		return nil, code.PermissionDenied
+	}
+
+	return &workflow.WorkflowDetailResp{
+		UUID:        wf.UUID,
+		Name:        wf.Name,
+		Description: wf.Description,
+		UserID:      wf.UserID,
+	}, nil
+}

@@ -123,4 +123,5 @@ const (
 	CanNotGetWorkflowUUIDErr ErrCode = iota + 28000 // can not get workflow uuid
 	WorkflowNotExistErr                             // workflow not exist
 	UpsertWorkflowEdgeErr                           // upsert workflow edge error
+	PermissionDenied                                // permission denied
 )

@@ -358,3 +358,37 @@ func (w *workflowImpl) GetWorkflowTemplatePage(ctx context.Context, labUUID uuid
 	// 	}, true
 	// }), nil
 }
+
+// GetWorkflowList 获取工作流列表
+func (w *workflowImpl) GetWorkflowList(ctx context.Context, userID string, labID int64, page *common.PageReq) ([]*model.Workflow, int64, error) {
+	workflows := make([]*model.Workflow, 0, 1)
+	total := int64(0)
+
+	// 构建查询条件
+	query := w.DBWithContext(ctx).Model(&model.Workflow{})
+
+	// 如果指定了实验室ID，则按实验室过滤
+	if labID > 0 {
+		query = query.Where("lab_id = ?", labID)
+	}
+
+	// 按用户ID过滤
+	query = query.Where("user_id = ?", userID)
+
+	// 获取总数
+	if err := query.Count(&total).Error; err != nil {
+		logger.Errorf(ctx, "GetWorkflowList count fail user_id: %s, lab_id: %d, err: %+v", userID, labID, err)
+		return nil, 0, code.QueryRecordErr.WithMsg(err.Error())
+	}
+
+	// 分页查询
+	if err := query.Offset(page.Offest()).
+		Limit(page.PageSize).
+		Order("created_at desc").
+		Find(&workflows).Error; err != nil {
+		logger.Errorf(ctx, "GetWorkflowList query fail user_id: %s, lab_id: %d, err: %+v", userID, labID, err)
+		return nil, 0, code.QueryRecordErr.WithMsg(err.Error())
+	}
+
+	return workflows, total, nil
+}

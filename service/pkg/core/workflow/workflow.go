@@ -5,6 +5,7 @@ import (
 
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 )
 
 type Service interface {
@@ -15,6 +16,8 @@ type Service interface {
 	TemplateDetail(ctx context.Context)
 	TemplateList(ctx context.Context)
 	UpdateNodeTemplate(ctx context.Context)
+	GetWorkflowList(ctx context.Context, req *WorkflowListReq) (*common.PageResp[[]*WorkflowListResp], error)
+	GetWorkflowDetail(ctx context.Context, workflowUUID uuid.UUID) (*WorkflowDetailResp, error)
 	OnWSMsg(ctx context.Context, s *melody.Session, b []byte) error
 	OnWSConnect(ctx context.Context, s *melody.Session) error
 }

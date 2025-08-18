@@ -51,6 +51,7 @@ func _() {
 	_ = x[CanNotGetWorkflowUUIDErr-28000]
 	_ = x[WorkflowNotExistErr-28001]
 	_ = x[UpsertWorkflowEdgeErr-28002]
+	_ = x[PermissionDenied-28003]
 }
 
 const (
@@ -62,7 +63,7 @@ const (
 	_ErrCode_name_5 = "resource not existedge node not existnode handle not existunknown material websocket actionunmarshal material websocket data errorcannot get lab id errorupdate material node errorparent node not found errortemplate node not found errorinvalid dag error"
 	_ErrCode_name_6 = "notify action already registrynotify subscribe channel failnotify send message error"
 	_ErrCode_name_7 = "create lab user errorquery lab user error"
-	_ErrCode_name_8 = "can not get workflow uuidworkflow not existupsert workflow edge error"
+	_ErrCode_name_8 = "can not get workflow uuidworkflow not existupsert workflow edge errorpermission denied"
 )
 
 var (
@@ -74,7 +75,7 @@ var (
 	_ErrCode_index_5 = [...]uint8{0, 18, 37, 58, 91, 130, 153, 179, 206, 235, 252}
 	_ErrCode_index_6 = [...]uint8{0, 30, 59, 84}
 	_ErrCode_index_7 = [...]uint8{0, 21, 41}
-	_ErrCode_index_8 = [...]uint8{0, 25, 43, 69}
+	_ErrCode_index_8 = [...]uint8{0, 25, 43, 69, 86}
 )
 
 func (i ErrCode) String() string {
@@ -102,7 +103,7 @@ func (i ErrCode) String() string {
 	case 26000 <= i && i <= 26001:
 		i -= 26000
 		return _ErrCode_name_7[_ErrCode_index_7[i]:_ErrCode_index_7[i+1]]
-	case 28000 <= i && i <= 28002:
+	case 28000 <= i && i <= 28003:
 		i -= 28000
 		return _ErrCode_name_8[_ErrCode_index_8[i]:_ErrCode_index_8[i+1]]
 	default:

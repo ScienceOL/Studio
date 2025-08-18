@@ -78,6 +78,41 @@ func (w *workflowHandle) Create(ctx *gin.Context) {
 	}
 }
 
+// GetWorkflowList 获取工作流列表
+func (w *workflowHandle) GetWorkflowList(ctx *gin.Context) {
+	req := &workflow.WorkflowListReq{}
+	if err := ctx.ShouldBindQuery(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
+	if res, err := w.wService.GetWorkflowList(ctx, req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx, res)
+	}
+}
+
+// GetWorkflowDetail 获取工作流详情
+func (w *workflowHandle) GetWorkflowDetail(ctx *gin.Context) {
+	req := &workflow.LabWorkflow{}
+	if err := ctx.ShouldBindUri(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
+	if req.UUID.IsNil() {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg("workflow uuid is empty"))
+		return
+	}
+
+	if res, err := w.wService.GetWorkflowDetail(ctx, req.UUID); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx, res)
+	}
+}
+
 func (m *workflowHandle) initMaterialWebSocket() {
 	m.wsClient.HandleClose(func(s *melody.Session, i int, s2 string) error {
 		if ctx, ok := s.Get("ctx"); ok {

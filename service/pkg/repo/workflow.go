@@ -48,4 +48,5 @@ type WorkflowRepo interface {
 	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids ...uuid.UUID) map[uuid.UUID]int64
 	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID
 	GetWorkflowTemplatePage(ctx context.Context, labID uuid.UUID, page *common.PageReq) (*common.PageResp[*WorkflowTemplate], error)
+	GetWorkflowList(ctx context.Context, userID string, labID int64, page *common.PageReq) ([]*model.Workflow, int64, error)
 }
