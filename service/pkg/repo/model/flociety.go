@@ -45,7 +45,7 @@ type DeviceAction struct {
 	Schema      datatypes.JSON                   `gorm:"type:jsonb" json:"schema"`
 	Type        string                           `gorm:"type:varchar(120);not null" json:"type"`
 	Handles     datatypes.JSONType[ActionHandle] `gorm:"type:jsonb" json:"handles"`
-	GoalSchema  datatypes.JSON                   `gorm:"type:jsonb" json:"goal_schema"`
+	GoalSchema  datatypes.JSON                   `gorm:"type:jsonb" json:"goal_schema"` // 这个字段实际没有用，计划删掉
 	Icon        string                           `gorm:"type:text" json:"icon"`
 }
 

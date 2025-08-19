@@ -129,6 +129,7 @@ type WSCreateNode struct {
 	Pose         datatypes.JSONType[model.Pose] `json:"pose"`
 	Param        datatypes.JSON                 `json:"param"`
 	Footer       string                         `json:"footer"`
+	Name         string                         `json:"name"`
 }
 
 type WSUpdateNode struct {
@@ -139,6 +140,8 @@ type WSUpdateNode struct {
 	Icon       *string                         `json:"icon"`
 	Pose       *datatypes.JSONType[model.Pose] `json:"pose"`
 	Param      *datatypes.JSON                 `json:"param"`
+	Footer     *string                         `json:"footer"`
+	Name       *string                         `json:"name"`
 }
 
 type WSDelNodes struct {

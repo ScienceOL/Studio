@@ -271,7 +271,7 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session,
 						DisplayName:   item.Name,
 						Header:        item.Class,
 						Footer:        &item.Name,
-						Schema:        item.GoalSchema,
+						Schema:        item.Schema,
 						ExecuteScript: "",
 						NodeType:      "DeviceTemplate",
 						Icon:          item.Icon,
@@ -351,6 +351,7 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		ActionID:   deviceAction[0].ID,
 		ParentID:   parentID,
 		UserID:     userInfo.ID,
+		Name:       utils.Or(reqData.Name, deviceAction[0].Name),
 		Status:     "draft",
 		Type:       utils.Or(reqData.Type, "Device"),
 		Icon:       utils.Or(deviceAction[0].Icon, reqData.Icon),
@@ -439,6 +440,16 @@ func (w *workflowImpl) upateNode(ctx context.Context, s *melody.Session, b []byt
 	if reqData.Param != nil {
 		d.Param = *reqData.Param
 		keys = append(keys, "param")
+	}
+
+	if reqData.Name != nil {
+		d.Name = *reqData.Name
+		keys = append(keys, "name")
+	}
+
+	if reqData.Footer != nil {
+		d.Footer = *reqData.Footer
+		keys = append(keys, "footer")
 	}
 
 	if len(keys) == 0 {

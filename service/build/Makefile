@@ -215,7 +215,7 @@ migrate:
 
 # 运行服务
 apiserver: generate
-	go run cmd/api/main.go apiserver
+	go run main.go apiserver
 
 fmt-install:
 	go install mvdan.cc/gofumpt@v0.8.0
@@ -234,5 +234,5 @@ lint-go: fmt-go lint-install-go
 
 
 build-web: fmt 
-	go build -o ./bin/web cmd/api/main.go
+	go build -o ./bin/web main.go
 

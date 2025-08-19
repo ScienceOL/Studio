@@ -1,4 +1,4 @@
-package app
+package api
 
 import (
 	"context"
@@ -10,13 +10,13 @@ import (
 	"strconv"
 	"time"
 
+	_ "github.com/scienceol/studio/service/docs" // 导入自动生成的 docs 包
 	"github.com/scienceol/studio/service/internal/configs/webapp"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/nacos"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
 	"github.com/scienceol/studio/service/pkg/middleware/trace"
-	"github.com/scienceol/studio/service/pkg/repo/migrate"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"github.com/scienceol/studio/service/pkg/web"
 	"gopkg.in/yaml.v2"
@@ -28,43 +28,20 @@ import (
 )
 
 func NewWeb() *cobra.Command {
-	rootCtx := utils.SetupSignalContext()
-	rootCommand := &cobra.Command{
-		SilenceUsage:       true,
-		PersistentPreRunE:  initGlobalResource,
-		PersistentPostRunE: cleanGlobalResource,
-	}
-	rootCommand.SetContext(rootCtx)
-
 	webServer := &cobra.Command{
 		Use:  "apiserver",
 		Long: `api server start`,
 
 		// stop printing usage when the command errors
-		SilenceUsage: true,
-		PreRunE:      initWeb,
-		RunE:         newRouter,
-		PostRunE:     cleanWebResource,
+		SilenceUsage:       true,
+		PersistentPreRunE:  initGlobalResource,
+		PersistentPostRunE: cleanGlobalResource,
+		PreRunE:            initWeb,
+		RunE:               newRouter,
+		PostRunE:           cleanWebResource,
 	}
-	webServer.SetContext(rootCtx)
-	migrate := &cobra.Command{
-		Use:          "migrate",
-		Long:         `api server db migrate`,
-		SilenceUsage: true,
-		PreRunE:      initMigrate,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return migrate.Table(cmd.Context())
-		},
-		PostRunE: func(cmd *cobra.Command, _ []string) error {
-			db.ClosePostgres(cmd.Context())
-			return nil
-		},
-	}
-	migrate.SetContext(rootCtx)
 
-	rootCommand.AddCommand(webServer)
-	rootCommand.AddCommand(migrate)
-	return rootCommand
+	return webServer
 }
 
 func initGlobalResource(_ *cobra.Command, _ []string) error {
@@ -174,7 +151,7 @@ func initWeb(cmd *cobra.Command, _ []string) error {
 func newRouter(cmd *cobra.Command, _ []string) error {
 	router := gin.Default()
 
-	web.NewRouter(cmd.Context(), router)
+	web.NewRouter(cmd.Root().Context(), router)
 	port := webapp.Config().Server.Port
 	addr := ":" + strconv.Itoa(port)
 

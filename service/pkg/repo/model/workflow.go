@@ -22,6 +22,7 @@ type WorkflowNode struct {
 	WorkflowID int64                    `gorm:"type:bigint;not null;index:idx_workflow_id" json:"workflow_id"`
 	ActionID   int64                    `gorm:"type:bigint;not null" json:"action_id"`
 	ParentID   int64                    `gorm:"type:bigint;not null" json:"parent_id"`
+	Name       string                   `gorm:"type:varchar(200);not null;default:'unknow'" json:"name"`
 	UserID     string                   `gorm:"type:varchar(120);not null" json:"user_id"`
 	Status     string                   `gorm:"type:varchar(20);not null;default:'draft'" json:"status"`
 	Type       string                   `gorm:"type:varchar(20);not null" json:"type"`
