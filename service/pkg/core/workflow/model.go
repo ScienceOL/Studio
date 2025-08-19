@@ -49,6 +49,7 @@ const (
 	FetchGraph      ActionType = "fetch_graph"
 	FetchTemplate   ActionType = "fetch_template"
 	CreateNode      ActionType = "create_node"
+	CreateGroup     ActionType = "create_group"
 	UpdateNode      ActionType = "update_node"
 	BatchDelNode    ActionType = "batch_del_nodes"
 	BatchCreateEdge ActionType = "batch_create_edges"
@@ -63,6 +64,17 @@ type WSNodeHandle struct {
 	Type        string    `json:"type"`
 	DataSource  string    `json:"data_source"`
 	DataKey     string    `json:"data_key"`
+}
+
+type WSGroup struct {
+	Children []uuid.UUID                    `json:"children"`
+	Pose     datatypes.JSONType[model.Pose] `json:"pose"`
+}
+
+type WSGroupRes struct {
+	UUID     uuid.UUID   `json:"uuid"`
+	Type     string      `json:"type"`
+	Children []uuid.UUID `json:"children"`
 }
 
 type WSNode struct {
@@ -127,7 +139,7 @@ type WSCreateNode struct {
 	Type         string                         `json:"type"`
 	Icon         string                         `json:"icon"`
 	Pose         datatypes.JSONType[model.Pose] `json:"pose"`
-	Param        datatypes.JSON                 `json:"param"`
+	Param        *datatypes.JSON                `json:"param,omitempty"`
 	Footer       string                         `json:"footer"`
 	Name         string                         `json:"name"`
 }

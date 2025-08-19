@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
@@ -131,6 +132,13 @@ func (m *workflowHandle) initMaterialWebSocket() {
 		if errors.Is(err, melody.ErrMessageBufferFull) {
 			return
 		}
+
+		if closeErr, ok := err.(*websocket.CloseError); ok {
+			if closeErr.Code == websocket.CloseGoingAway {
+				return
+			}
+		}
+
 		if ctx, ok := s.Get("ctx"); ok {
 			logger.Errorf(ctx.(context.Context), "websocket find keys: %+v, err: %+v", s.Keys, err)
 		}

@@ -211,16 +211,27 @@ func (w *workflowImpl) GetWorkflowNode(ctx context.Context, condition map[string
 	return data, nil
 }
 
-func (w *workflowImpl) UpdateWorkflowNode(ctx context.Context, workflowUUID uuid.UUID, data *model.WorkflowNode, updateColumns []string) error {
-	if err := w.DBWithContext(ctx).Where("uuid = ?", workflowUUID).
-		Clauses(clause.OnConflict{
-			Columns: []clause.Column{
-				{Name: "uuid"},
-			},
-			DoUpdates: clause.AssignmentColumns(append(updateColumns, "updated_at")),
-		}).Create(data).Error; err != nil {
-		logger.Errorf(ctx, "UpdateWorkflowNode fail uuid:%v, err: %+v", workflowUUID, err)
-		return code.UpdateDataErr
+func (w *workflowImpl) UpdateWorkflowNode(ctx context.Context, nodeUUID uuid.UUID, data *model.WorkflowNode, updateColumns []string) error {
+	data.UUID = nodeUUID
+	if err := w.DBWithContext(ctx).
+		Where("uuid = ?", nodeUUID).
+		Select(append(updateColumns, "updated_at")).
+		Updates(data).Error; err != nil {
+		logger.Errorf(ctx, "UpdateWorkflowNode fail uuid:%v, err: %+v", nodeUUID, err)
+		return code.UpdateDataErr.WithErr(err)
+	}
+
+	return nil
+}
+
+func (w *workflowImpl) UpdateWorkflowNodes(ctx context.Context, nodeUUIDs []uuid.UUID, data *model.WorkflowNode, updateColumns []string) error {
+	if err := w.DBWithContext(ctx).
+		Where("uuid in ?", nodeUUIDs).
+		Select(append(updateColumns, "updated_at")).
+		Updates(data).Error; err != nil {
+		logger.Errorf(ctx, "UpdateWorkflowNodes fail uuid:%v, err: %+v", nodeUUIDs, err)
+
+		return code.UpdateDataErr.WithErr(err)
 	}
 
 	return nil
@@ -243,8 +254,9 @@ func (w *workflowImpl) DeleteWorkflowNodes(ctx context.Context, workflowUUIDs []
 			return code.QueryRecordErr
 		}
 
-		// 删除工作流，删除边
+		// FIXME: 重置父节点
 
+		// 删除工作流节点
 		if err := w.DBWithContext(ctx).Where("uuid in ?", workflowUUIDs).Delete(&model.WorkflowNode{}).Error; err != nil {
 			logger.Errorf(ctx, "DeleteWorkflowNodes fail uuid: %+v, err: %+v", edgeUUIDs, err)
 			return code.DeleteDataErr

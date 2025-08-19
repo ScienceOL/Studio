@@ -16,6 +16,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	wfl "github.com/scienceol/studio/service/pkg/repo/workflow"
 	"github.com/scienceol/studio/service/pkg/utils"
+	"gorm.io/datatypes"
 )
 
 type workflowImpl struct {
@@ -128,6 +129,8 @@ func (w *workflowImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 		return w.fetchGraph(ctx, s, msgType.MsgUUID)
 	case workflow.FetchTemplate: // 首次获取模板
 		return w.fetchNodeTemplate(ctx, s, msgType.MsgUUID)
+	case workflow.CreateGroup:
+		return w.createGroup(ctx, s, b)
 	case workflow.CreateNode:
 		return w.createNode(ctx, s, b)
 	case workflow.UpdateNode: // 批量更新节点
@@ -297,6 +300,66 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session,
 	})
 }
 
+func (w *workflowImpl) createGroup(ctx context.Context, s *melody.Session, b []byte) error {
+	req := &common.WSData[*workflow.WSGroup]{}
+	err := json.Unmarshal(b, req)
+	if err != nil || req.Data == nil {
+		common.ReplyWSErr(s, string(workflow.CreateGroup), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
+		return err
+	}
+
+	reqData := req.Data
+	if reqData == nil ||
+		len(reqData.Children) == 0 ||
+		reqData.Pose == datatypes.NewJSONType(model.Pose{}) {
+		common.ReplyWSErr(s, string(workflow.CreateGroup), req.MsgUUID, code.ParamErr.WithMsg("data is empty"))
+		return err
+	}
+
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		common.ReplyWSErr(s, string(workflow.CreateGroup), req.MsgUUID, code.UnLogin)
+		return nil
+	}
+
+	wk, err := w.getWorkflow(ctx, s)
+	if err != nil {
+		common.ReplyWSErr(s, string(workflow.CreateGroup), req.MsgUUID, nil)
+		return err
+	}
+
+	groupData := &model.WorkflowNode{
+		WorkflowID: wk.ID,
+		ActionID:   0,
+		ParentID:   0,
+		Name:       "group",
+		UserID:     userInfo.ID,
+		Status:     "draft",
+		Type:       "Group",
+		Icon:       "",
+		Pose:       reqData.Pose,
+		Param:      datatypes.JSON{},
+		Footer:     "",
+	}
+
+	w.workflowStore.ExecTx(ctx, func(txCtx context.Context) error {
+		if err := w.workflowStore.CreateNode(txCtx, groupData); err != nil {
+			common.ReplyWSErr(s, string(workflow.CreateGroup), req.MsgUUID, err)
+			return err
+		}
+
+		if err := w.workflowStore.UpdateWorkflowNodes(txCtx, reqData.Children, &model.WorkflowNode{
+			ParentID: groupData.ID}, []string{"parent_id"}); err != nil {
+			common.ReplyWSErr(s, string(workflow.CreateGroup), req.MsgUUID, err)
+			return err
+		}
+
+		return nil
+	})
+
+	return nil
+}
+
 // 创建工作流节点
 func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []byte) error {
 	req := &common.WSData[*workflow.WSCreateNode]{}
@@ -313,7 +376,7 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 
 	wk, err := w.getWorkflow(ctx, s)
 	if err != nil {
-		common.ReplyWSErr(s, string(workflow.CreateNode), uuid.NewV4(), nil)
+		common.ReplyWSErr(s, string(workflow.CreateNode), req.MsgUUID, nil)
 		return err
 	}
 
@@ -353,11 +416,16 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		UserID:     userInfo.ID,
 		Name:       utils.Or(reqData.Name, deviceAction[0].Name),
 		Status:     "draft",
-		Type:       utils.Or(reqData.Type, "Device"),
+		Type:       utils.Or(reqData.Type, "ILab"),
 		Icon:       utils.Or(deviceAction[0].Icon, reqData.Icon),
 		Pose:       reqData.Pose,
-		Param:      reqData.Param,
-		Footer:     utils.Or(reqData.Footer, deviceAction[0].Class),
+		Param: utils.SafeValue(func() datatypes.JSON {
+			if deviceAction[0].GoalDefault.String() == "" {
+				return deviceAction[0].GoalDefault
+			}
+			return deviceAction[0].Goal
+		}, deviceAction[0].Goal),
+		Footer: utils.Or(reqData.Footer, deviceAction[0].Class),
 	}
 	err = w.workflowStore.CreateNode(ctx, nodeData)
 	if err != nil {
@@ -371,6 +439,7 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		ParentUUID:   reqData.ParentUUID,
 		UserID:       nodeData.UserID,
 		Status:       nodeData.Type,
+		Name:         utils.Or(reqData.Name, deviceAction[0].Name),
 		Type:         nodeData.Type,
 		Icon:         nodeData.Icon,
 		Pose:         nodeData.Pose,
@@ -411,10 +480,11 @@ func (w *workflowImpl) upateNode(ctx context.Context, s *melody.Session, b []byt
 
 	d := &model.WorkflowNode{}
 	keys := make([]string, 0, 1)
-	if reqData.ParentUUID != nil || !(reqData.ParentUUID.IsNil()) {
+	if reqData.ParentUUID != nil && !(reqData.ParentUUID.IsNil()) {
 		d.ParentID = w.workflowStore.UUID2ID(ctx,
 			&model.WorkflowNode{},
 			*reqData.ParentUUID)[*reqData.ParentUUID]
+		keys = append(keys, "parent_id")
 	}
 
 	if reqData.Status != nil {

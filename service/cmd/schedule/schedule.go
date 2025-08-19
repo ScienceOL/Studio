@@ -20,4 +20,4 @@ func New() *cobra.Command {
 	}
 }
 
-
+// 资源列表 db、redis、log、监听端口下发 websocket 命令、

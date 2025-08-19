@@ -8,7 +8,7 @@ MODULE_NAME := studio/service
 BINARY_NAME := api
 BINARY_DIR := bin
 BUILD_DIR := build
-CMD_DIR := cmd/api
+CMD_DIR := ./
 
 # Go 配置
 GO := go
@@ -211,7 +211,7 @@ generate: stringer-install
 
 # 运行 migrate 
 migrate:
-	go run cmd/api/main.go migrate
+	go run /main.go migrate
 
 # 运行服务
 apiserver: generate
