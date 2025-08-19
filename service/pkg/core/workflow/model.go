@@ -46,14 +46,14 @@ type TplPageReq struct {
 type ActionType string
 
 const (
-	FetchGraph      ActionType = "fetch_graph"
-	FetchTemplate   ActionType = "fetch_template"
-	CreateNode      ActionType = "create_node"
-	CreateGroup     ActionType = "create_group"
-	UpdateNode      ActionType = "update_node"
-	BatchDelNode    ActionType = "batch_del_nodes"
-	BatchCreateEdge ActionType = "batch_create_edges"
-	BatchDelEdge    ActionType = "batch_del_edges"
+	FetchGraph        ActionType = "fetch_graph"
+	FetchTemplate     ActionType = "fetch_template"
+	CreateNode        ActionType = "create_node"
+	CreateGroup       ActionType = "create_group"
+	UpdateNode        ActionType = "update_node"
+	BatchDelGroupNode ActionType = "batch_del_group_nodes"
+	BatchCreateEdge   ActionType = "batch_create_edges"
+	BatchDelEdge      ActionType = "batch_del_edges"
 )
 
 type WSNodeHandle struct {

@@ -25,7 +25,7 @@ ARG BUILD_ENV
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags="-w -s" \
     -o backend \
-    cmd/api/main.go
+    main.go
 
 # 生产环境镜像
 FROM alpine:latest AS production

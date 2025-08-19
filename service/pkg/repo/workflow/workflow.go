@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
@@ -237,40 +238,42 @@ func (w *workflowImpl) UpdateWorkflowNodes(ctx context.Context, nodeUUIDs []uuid
 	return nil
 }
 
-func (w *workflowImpl) DeleteWorkflowNodes(ctx context.Context, workflowUUIDs []uuid.UUID) (*repo.DeleteWorkflow, error) {
+func (w *workflowImpl) DeleteWorkflowGroupNodes(ctx context.Context, workflowUUIDs []uuid.UUID) (*repo.DeleteWorkflow, error) {
 	if len(workflowUUIDs) == 0 {
 		return &repo.DeleteWorkflow{}, nil
 	}
 
 	resp := &repo.DeleteWorkflow{}
 	if err := w.ExecTx(ctx, func(txCtx context.Context) error {
-		edgeUUIDs := make([]uuid.UUID, 0, len(workflowUUIDs))
-		if err := w.DBWithContext(txCtx).Model(&model.WorkflowEdge{}).
-			Select("uuid").
-			Where("source_node_uuid in ? or target_node_uuid in ?", workflowUUIDs, workflowUUIDs).
-			Find(&edgeUUIDs); err != nil {
+		nodes := make([]*model.WorkflowNode, 0, len(workflowUUIDs))
+		if err := w.DBWithContext(txCtx).Clauses(
+			clause.Returning{
+				Columns: []clause.Column{
+					{Name: "id"},
+				},
+			}).
+			Where("uuid in ?", workflowUUIDs).
+			Delete(&nodes).Error; err != nil {
 
-			logger.Errorf(txCtx, "DeleteWorkflowNodes get workflow edge uuid fail uuid: %+v, err: %+v", workflowUUIDs, err)
-			return code.QueryRecordErr
+			logger.Errorf(ctx, "DeleteWorkflowGroupNodes fail uuids: %+v, err: %+v", workflowUUIDs, err)
+			return code.DeleteDataErr.WithErr(err)
 		}
 
-		// FIXME: 重置父节点
+		parentIDs := utils.FilterSlice(nodes, func(item *model.WorkflowNode) (int64, bool) {
+			return item.ID, true
+		})
 
-		// 删除工作流节点
-		if err := w.DBWithContext(ctx).Where("uuid in ?", workflowUUIDs).Delete(&model.WorkflowNode{}).Error; err != nil {
-			logger.Errorf(ctx, "DeleteWorkflowNodes fail uuid: %+v, err: %+v", edgeUUIDs, err)
-			return code.DeleteDataErr
+		updateData := &model.WorkflowNode{}
+		updateData.UpdatedAt = time.Now()
+		if err := w.DBWithContext(txCtx).
+			Where("parent_id in ?", parentIDs).
+			Select("parent_id", "updated_at").
+			Updates(updateData).Error; err != nil {
+			logger.Errorf(ctx, "DeleteWorkflowGroupNodes set parent node fail parent ids: %+v, err: %+v", parentIDs, err)
+			return code.DeleteDataErr.WithErr(err)
 		}
 
-		if len(edgeUUIDs) > 0 {
-			if err := w.DBWithContext(ctx).Where("uuid in ?", edgeUUIDs).Delete(&model.WorkflowEdge{}).Error; err != nil {
-				logger.Errorf(ctx, "DeleteWorkflowNodes fail uuid: %+v, err: %+v", edgeUUIDs, err)
-				return code.DeleteDataErr
-			}
-		}
-
-		resp.EdgeUUIDs = edgeUUIDs
-		resp.EdgeUUIDs = workflowUUIDs
+		resp.NodeUUIDs = workflowUUIDs
 		return nil
 	}); err != nil {
 		logger.Errorf(ctx, "DeleteWorkflowNodes fail uuids: %+v, err: %+v", workflowUUIDs, err)
@@ -316,45 +319,6 @@ func (w *workflowImpl) UpsertWorkflowEdge(ctx context.Context, datas []*model.Wo
 	}
 
 	return nil
-}
-
-func (w *workflowImpl) GetWorkflowTemplatePage(ctx context.Context, labUUID uuid.UUID, page *common.PageReq) (*common.PageResp[*repo.WorkflowTemplate], error) {
-	return nil, nil
-	// tpls := make([]*model.WorkflowNodeTemplate, 0, 1)
-	// total := int64(0)
-	// query := w.DBWithContext(ctx).
-	// 	Where("lab_uuid = ?", labUUID).
-	// 	Offset(page.Offest()).
-	// 	Limit(page.PageSize)
-	//
-	// if err := query.Order("id desc").Find(&tpls).Error; err != nil {
-	// 	logger.Errorf(ctx, "GetWorkflowTemplatePage fail lab uuid: %d, err: %+v", labUUID, err)
-	// 	return nil, code.QueryRecordErr.WithMsg(err.Error())
-	// }
-	//
-	// tplsIDs := utils.FilterSlice(tpls, func(tpl *model.WorkflowNodeTemplate) (int64, bool) {
-	// 	return tpl.ID, true
-	// })
-	//
-	// handles := make([]*model.WorkflowHandleTemplate, 0, 1)
-	// if err := w.DBWithContext(ctx).
-	// 	Where("node_template_id in ?", tplsIDs).
-	// 	Find(&handles).Error; err != nil {
-	// 	logger.Errorf(ctx, "GetWorkflowTemplate get handle fail lab id: %d, err: %+v", labID, err)
-	// 	return nil, code.QueryRecordErr.WithMsg(err.Error())
-	// }
-	//
-	// handlesMap := utils.SliceToMapSlice(handles, func(h *model.WorkflowHandleTemplate) (
-	// 	int64, *model.WorkflowHandleTemplate, bool) {
-	// 	return h.NodeTemplateID, h, true
-	// })
-	//
-	// return utils.FilterSlice(tpls, func(tpl *model.WorkflowNodeTemplate) (*repo.WorkflowTemplate, bool) {
-	// 	return &repo.WorkflowTemplate{
-	// 		Template: tpl,
-	// 		Handles:  handlesMap[tpl.ID],
-	// 	}, true
-	// }), nil
 }
 
 // GetWorkflowList 获取工作流列表
