@@ -9,6 +9,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -160,54 +161,45 @@ func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []uuid.UUID) (*re
 	res := &repo.DelNodeInfo{}
 	if err := m.ExecTx(ctx, func(txCtx context.Context) error {
 		// 获取所有删除 id 的 node id 和 uuid
-		// TODO: node 的 parent id 如果被删除了，所有子 node 要删除么？目前处理是吧 parent id 设置为 0
 		delNodes := []*model.MaterialNode{}
-		if err := m.DBWithContext(txCtx).
-			Select("id, uuid").
+		if err := m.DBWithContext(txCtx).Clauses(
+			clause.Returning{
+				Columns: []clause.Column{
+					{Name: "id"},
+					{Name: "uuid"},
+				},
+			}).
 			Where("uuid in ?", nodeUUIDs).
-			Find(&delNodes).Error; err != nil {
-			logger.Errorf(ctx, "DelNodes query node fail uuids: %+v, err: %+v", nodeUUIDs, err)
-			return code.QueryRecordErr
+			Delete(&delNodes).Error; err != nil {
+			logger.Errorf(ctx, "DelNodes delete query node fail uuids: %+v, err: %+v", nodeUUIDs, err)
+			return code.DeleteDataErr.WithErr(err)
 		}
 
-		nodeIDs := make([]int64, 0, len(delNodes))
-		queryNodeUUIDs := make([]uuid.UUID, 0, len(delNodes))
-		for _, n := range delNodes {
-			nodeIDs = append(nodeIDs, n.ID)
-			queryNodeUUIDs = append(queryNodeUUIDs, n.UUID)
-		}
-		if len(nodeIDs) == 0 {
+		res.NodeUUIDs = utils.FilterSlice(delNodes, func(node *model.MaterialNode) (uuid.UUID, bool) {
+			return node.UUID, true
+		})
+
+		if len(res.NodeUUIDs) == 0 {
 			return nil
 		}
 
 		delNodeEdges := []*model.MaterialEdge{}
-		if err := m.DBWithContext(txCtx).
-			Select("id, uuid").
+		if err := m.DBWithContext(txCtx).Clauses(
+			clause.Returning{
+				Columns: []clause.Column{
+					{Name: "id"},
+					{Name: "uuid"},
+				},
+			}).
 			Where("source_node_uuid in ? or target_node_uuid in ? ", nodeUUIDs, nodeUUIDs).
-			Find(&delNodeEdges).Error; err != nil {
-			logger.Errorf(ctx, "DelNodes query edge fail uuids: %+v, err: %+v", nodeUUIDs, err)
-			return code.QueryRecordErr
-		}
-		edgeIDs := make([]int64, 0, len(delNodeEdges))
-		edgeUUIDs := make([]uuid.UUID, 0, len(delNodeEdges))
-		for _, e := range delNodeEdges {
-			edgeIDs = append(edgeIDs, e.ID)
-			edgeUUIDs = append(edgeUUIDs, e.UUID)
+			Delete(&delNodeEdges).Error; err != nil {
+			logger.Errorf(ctx, "DelNodes delete edge fail uuids: %+v, err: %+v", nodeUUIDs, err)
+			return code.QueryRecordErr.WithErr(err)
 		}
 
-		// 删除节点
-		if err := m.DBWithContext(txCtx).Delete(&model.MaterialNode{}, nodeIDs).Error; err != nil {
-			logger.Errorf(txCtx, "DelNodes fail ids: %+v, err: %+v", nodeIDs, err)
-			return code.DeleteDataErr.WithMsg(err.Error())
-		}
-
-		// 删除 edge
-		if err := m.DBWithContext(txCtx).Where("id in ?", edgeIDs).Delete(&model.MaterialEdge{}).Error; err != nil {
-			logger.Errorf(txCtx, "DelNodes fail ids: %+v, err: %+v", nodeIDs, err)
-			return code.DeleteDataErr.WithMsg(err.Error())
-		}
-		res.NodeUUIDs = queryNodeUUIDs
-		res.EdgeUUIDs = edgeUUIDs
+		res.EdgeUUIDs = utils.FilterSlice(delNodeEdges, func(edge *model.MaterialEdge) (uuid.UUID, bool) {
+			return edge.UUID, true
+		})
 
 		return nil
 	}); err != nil {

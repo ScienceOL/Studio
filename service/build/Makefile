@@ -211,7 +211,7 @@ generate: stringer-install
 
 # 运行 migrate 
 migrate:
-	go run /main.go migrate
+	go run main.go migrate
 
 # 运行服务
 apiserver: generate
