@@ -11,8 +11,8 @@ import (
 
 type WorkflowNodeInfo struct {
 	Node    *model.WorkflowNode
-	Action  *model.DeviceAction
-	Handles []*model.ActionHandleTemplate
+	Action  *model.WorkflowNodeTemplate
+	Handles []*model.WorkflowHandleTemplate
 }
 
 type WorkflowGrpah struct {
@@ -26,12 +26,13 @@ type DeleteWorkflow struct {
 }
 
 type WorkflowRepo interface {
+	FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error
 	Create(ctx context.Context, data *model.Workflow) error
 	CreateNode(ctx context.Context, data *model.WorkflowNode) error
 	GetWorkflowByUUID(ctx context.Context, uuid uuid.UUID) (*model.Workflow, error)
 	GetWorkflowGraph(ctx context.Context, userID string, uuid uuid.UUID) (*WorkflowGrpah, error)
-	GetDeviceAction(ctx context.Context, condition map[string]any) ([]*model.DeviceAction, error)
-	GetDeviceActionHandles(ctx context.Context, actionIDs []int64) ([]*model.ActionHandleTemplate, error)
+	GetWorkflowNodeTemplate(ctx context.Context, condition map[string]any) ([]*model.WorkflowNodeTemplate, error)
+	GetWorkflowHandleTemaplates(ctx context.Context, actionIDs []int64) ([]*model.WorkflowHandleTemplate, error)
 	GetWorkflowNode(ctx context.Context, condition map[string]any) ([]*model.WorkflowNode, error)
 	UpdateWorkflowNode(ctx context.Context, nodeUUID uuid.UUID, data *model.WorkflowNode, updateColumns []string) error
 	UpdateWorkflowNodes(ctx context.Context, nodeUUIDs []uuid.UUID, data *model.WorkflowNode, updateColumns []string) error
@@ -43,4 +44,6 @@ type WorkflowRepo interface {
 	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID
 	GetWorkflowList(ctx context.Context, userID string, labID int64, page *common.PageReq) ([]*model.Workflow, int64, error)
 	ExecTx(ctx context.Context, fn func(ctx context.Context) error) error
+	UpsertNodes(ctx context.Context, data []*model.WorkflowNode) error
+	UpsertEdge(ctx context.Context, data []*model.WorkflowEdge) error
 }

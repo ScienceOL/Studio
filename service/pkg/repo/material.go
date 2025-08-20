@@ -26,6 +26,7 @@ type UpdateNode struct {
 type MaterialRepo interface {
 	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids ...uuid.UUID) map[uuid.UUID]int64
 	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID
+	FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error
 	// 更新或者插入物料
 	UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode) error
 	// 更新或插入 edge

@@ -12,6 +12,7 @@ import (
 
 	_ "github.com/scienceol/studio/service/docs" // 导入自动生成的 docs 包
 	"github.com/scienceol/studio/service/internal/configs/webapp"
+	"github.com/scienceol/studio/service/pkg/core/notify/events"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/nacos"
@@ -157,12 +158,10 @@ func newRouter(cmd *cobra.Command, _ []string) error {
 
 	httpServer := http.Server{
 		Addr:              ":" + strconv.Itoa(webapp.Config().Server.Port),
-		Handler:           router.Handler(),
+		Handler:           router,
 		ReadHeaderTimeout: 30 * time.Second,
 		WriteTimeout:      30 * time.Second,
-		TLSNextProto: func() map[string]func(*http.Server, *tls.Conn, http.Handler) {
-			return make(map[string]func(*http.Server, *tls.Conn, http.Handler))
-		}(),
+		TLSNextProto:      make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
 	// 添加启动成功的日志输出
@@ -201,6 +200,7 @@ func newRouter(cmd *cobra.Command, _ []string) error {
 func cleanWebResource(cmd *cobra.Command, _ []string) error {
 	// FIXME: 关系消息通知中心
 	// FIXME: 关闭 websocket
+	events.NewEvents().Close(cmd.Context())
 	redis.CloseRedis(cmd.Context())
 	db.ClosePostgres(cmd.Context())
 	trace.CloseTrace()

@@ -26,6 +26,7 @@ var (
 
 type Events struct {
 	actions sync.Map
+	subs    sync.Map
 	client  *r.Client
 }
 
@@ -47,6 +48,7 @@ func (events *Events) Registry(ctx context.Context, msgName notify.Action, handl
 
 	// 订阅消息
 	sub := events.client.Subscribe(ctx, string(msgName))
+	events.subs.Store(msgName, sub)
 	utils.SafelyGo(func() {
 		ch := sub.Channel()
 		for {
@@ -95,6 +97,15 @@ func (events *Events) Broadcast(ctx context.Context, msg *notify.SendMsg) error 
 }
 
 func (events *Events) Close(ctx context.Context) error {
-	// FIXME: 修复关闭时关闭订阅
+	events.subs.Range(func(key, value any) bool {
+		msgName := key.(notify.Action)
+		sub := value.(*r.PubSub)
+		if err := sub.Unsubscribe(ctx, string(msgName)); err != nil {
+			logger.Errorf(ctx, "unsubscribe redis channel %s err: %+v", msgName, err)
+		}
+		events.subs.Delete(key)
+		events.actions.Delete(key)
+		return true
+	})
 	return nil
 }

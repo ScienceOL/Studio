@@ -149,7 +149,7 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 			return data, true
 		})
 
-		if err := l.envStore.UpsertResTemplate(txCtx, resDatas); err != nil {
+		if err := l.envStore.UpsertResourceNodeTemplate(txCtx, resDatas); err != nil {
 			return err
 		}
 
@@ -170,36 +170,25 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 	})
 }
 
-func (l *lab) createAction(ctx context.Context, res []*environment.Resource) ([]*model.DeviceAction, error) {
-	resDeviceAction, err := utils.FilterSliceWithErr(res, func(item *environment.Resource) ([]*model.DeviceAction, bool, error) {
-		actions := make([]*model.DeviceAction, 0, len(item.Class.ActionValueMappings))
+func (l *lab) createAction(ctx context.Context, res []*environment.Resource) ([]*model.WorkflowNodeTemplate, error) {
+	resDeviceAction, err := utils.FilterSliceWithErr(res, func(item *environment.Resource) ([]*model.WorkflowNodeTemplate, bool, error) {
+		actions := make([]*model.WorkflowNodeTemplate, 0, len(item.Class.ActionValueMappings))
 		for actionName, action := range item.Class.ActionValueMappings {
 			if actionName == "" {
 				return nil, false, code.RegActionNameEmptyErr
 			}
 
-			actions = append(actions, &model.DeviceAction{
-				LabID:       item.SelfDB.LabID,
-				ResNodeID:   item.SelfDB.ID,
-				Name:        actionName,
-				Goal:        action.Goal,
-				GoalDefault: action.GoalDefault,
-				Feedback:    action.Feedback,
-				Result:      action.Result,
-				Schema:      action.Schema,
-				Type:        action.Type,
-				Handles:     action.Handles,
-				GoalSchema: utils.SafeValue(func() datatypes.JSON {
-					data := struct {
-						Properties struct {
-							Goal datatypes.JSON `json:"goal"`
-						} `json:"properties"`
-					}{}
-					if err := json.Unmarshal(action.Schema, &data); err != nil {
-						return datatypes.JSON{}
-					}
-					return data.Properties.Goal
-				}, datatypes.JSON{}),
+			actions = append(actions, &model.WorkflowNodeTemplate{
+				LabID:          item.SelfDB.LabID,
+				ResourceNodeID: item.SelfDB.ID,
+				Name:           actionName,
+				Goal:           action.Goal,
+				GoalDefault:    action.GoalDefault,
+				Feedback:       action.Feedback,
+				Result:         action.Result,
+				Schema:         action.Schema,
+				Type:           action.Type,
+				Handles:        action.Handles,
 			})
 		}
 		return actions, true, nil
@@ -208,7 +197,7 @@ func (l *lab) createAction(ctx context.Context, res []*environment.Resource) ([]
 	if err != nil {
 		return nil, err
 	}
-	return resDeviceAction, l.envStore.UpsertDeviceAction(ctx, resDeviceAction)
+	return resDeviceAction, l.envStore.UpsertWorkflowNodeTemplate(ctx, resDeviceAction)
 }
 
 func (l *lab) createHandle(ctx context.Context, res []*environment.Resource) error {
@@ -216,14 +205,14 @@ func (l *lab) createHandle(ctx context.Context, res []*environment.Resource) err
 		handles := make([]*model.ResourceHandleTemplate, 0, len(item.Handles))
 		for _, handle := range item.Handles {
 			handles = append(handles, &model.ResourceHandleTemplate{
-				NodeID:      item.SelfDB.ID,
-				Name:        handle.HandlerKey,
-				DisplayName: handle.Label,
-				Type:        handle.DataType,
-				IOType:      handle.IoType,
-				Source:      handle.DataSource,
-				Key:         handle.DataKey,
-				Side:        handle.Side,
+				ResourceNodeID: item.SelfDB.ID,
+				Name:           handle.HandlerKey,
+				DisplayName:    handle.Label,
+				Type:           handle.DataType,
+				IOType:         handle.IoType,
+				Source:         handle.DataSource,
+				Key:            handle.DataKey,
+				Side:           handle.Side,
 			})
 		}
 		return handles, true, nil
@@ -232,7 +221,7 @@ func (l *lab) createHandle(ctx context.Context, res []*environment.Resource) err
 		return err
 	}
 
-	return l.envStore.UpsertDeviceHandleTemplate(ctx, resDeviceHandles)
+	return l.envStore.UpsertResourceHandleTemplate(ctx, resDeviceHandles)
 
 }
 func (l *lab) createConfigInfo(ctx context.Context, res []*environment.Resource) error {
@@ -314,7 +303,7 @@ func (l *lab) createConfigInfo(ctx context.Context, res []*environment.Resource)
 				}
 			}
 
-			if err := l.envStore.UpsertResTemplate(ctx, datas); err != nil {
+			if err := l.envStore.UpsertResourceNodeTemplate(ctx, datas); err != nil {
 				return nil, false, err
 			}
 
@@ -329,42 +318,42 @@ func (l *lab) createConfigInfo(ctx context.Context, res []*environment.Resource)
 	return err
 }
 
-func (l *lab) createActionHandles(ctx context.Context, actions []*model.DeviceAction) error {
-	resHandles, _ := utils.FilterSliceWithErr(actions, func(item *model.DeviceAction) ([]*model.ActionHandleTemplate, bool, error) {
-		resHi, _ := utils.FilterSliceWithErr(item.Handles.Data().Input, func(h *model.Handle) ([]*model.ActionHandleTemplate, bool, error) {
-			return []*model.ActionHandleTemplate{&model.ActionHandleTemplate{
-				ActionID:    item.ID,
-				HandleKey:   h.HandlerKey,
-				IoType:      "source",
-				DisplayName: h.Label,
-				Type:        h.DataType,
-				DataSource:  h.DataSource,
-				DataKey:     h.DataKey,
+func (l *lab) createActionHandles(ctx context.Context, actions []*model.WorkflowNodeTemplate) error {
+	resHandles, _ := utils.FilterSliceWithErr(actions, func(item *model.WorkflowNodeTemplate) ([]*model.WorkflowHandleTemplate, bool, error) {
+		resHi, _ := utils.FilterSliceWithErr(item.Handles.Data().Input, func(h *model.Handle) ([]*model.WorkflowHandleTemplate, bool, error) {
+			return []*model.WorkflowHandleTemplate{&model.WorkflowHandleTemplate{
+				WorkflowNodeID: item.ID,
+				HandleKey:      h.HandlerKey,
+				IoType:         "source",
+				DisplayName:    h.Label,
+				Type:           h.DataType,
+				DataSource:     h.DataSource,
+				DataKey:        h.DataKey,
 			}}, true, nil
 		})
-		resHo, _ := utils.FilterSliceWithErr(item.Handles.Data().Output, func(h *model.Handle) ([]*model.ActionHandleTemplate, bool, error) {
-			return []*model.ActionHandleTemplate{&model.ActionHandleTemplate{
-				ActionID:    item.ID,
-				HandleKey:   h.HandlerKey,
-				IoType:      "source",
-				DisplayName: h.Label,
-				Type:        h.DataType,
-				DataSource:  h.DataSource,
-				DataKey:     h.DataKey,
+		resHo, _ := utils.FilterSliceWithErr(item.Handles.Data().Output, func(h *model.Handle) ([]*model.WorkflowHandleTemplate, bool, error) {
+			return []*model.WorkflowHandleTemplate{&model.WorkflowHandleTemplate{
+				WorkflowNodeID: item.ID,
+				HandleKey:      h.HandlerKey,
+				IoType:         "source",
+				DisplayName:    h.Label,
+				Type:           h.DataType,
+				DataSource:     h.DataSource,
+				DataKey:        h.DataKey,
 			}}, true, nil
 		})
 
-		resH := make([]*model.ActionHandleTemplate, 0, len(resHi)+len(resHo)+2)
+		resH := make([]*model.WorkflowHandleTemplate, 0, len(resHi)+len(resHo)+2)
 
-		resH = append(resH, &model.ActionHandleTemplate{
-			ActionID:  item.ID,
-			HandleKey: "ready",
-			IoType:    "target",
+		resH = append(resH, &model.WorkflowHandleTemplate{
+			WorkflowNodeID: item.ID,
+			HandleKey:      "ready",
+			IoType:         "target",
 		})
-		resH = append(resH, &model.ActionHandleTemplate{
-			ActionID:  item.ID,
-			HandleKey: "ready",
-			IoType:    "source",
+		resH = append(resH, &model.WorkflowHandleTemplate{
+			WorkflowNodeID: item.ID,
+			HandleKey:      "ready",
+			IoType:         "source",
 		})
 		resH = append(resH, resHi...)
 		resH = append(resH, resHo...)

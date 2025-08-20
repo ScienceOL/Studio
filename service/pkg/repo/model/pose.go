@@ -139,11 +139,9 @@ func (u *Rotation) UnmarshalJSON(data []byte) error {
 }
 
 type Pose struct {
-	Layout    string   `json:"layout"`
-	Position  Position `json:"position"`
-	Size      Size     `json:"size"`
-	Scale     Scale    `json:"scale"`
-	Rotation  Rotation `json:"rotation"`
-	Disabled  bool     `json:"disabled"`
-	Minimized bool     `json:"minimized"`
+	Layout   string   `json:"layout"`
+	Position Position `json:"position"`
+	Size     Size     `json:"size"`
+	Scale    Scale    `json:"scale"`
+	Rotation Rotation `json:"rotation"`
 }

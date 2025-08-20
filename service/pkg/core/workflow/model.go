@@ -48,12 +48,14 @@ type ActionType string
 const (
 	FetchGraph        ActionType = "fetch_graph"
 	FetchTemplate     ActionType = "fetch_template"
+	FetchDevice       ActionType = "fetch_device"
 	CreateNode        ActionType = "create_node"
 	CreateGroup       ActionType = "create_group"
 	UpdateNode        ActionType = "update_node"
 	BatchDelGroupNode ActionType = "batch_del_group_nodes"
 	BatchCreateEdge   ActionType = "batch_create_edges"
 	BatchDelEdge      ActionType = "batch_del_edges"
+	SaveWorkflow      ActionType = "save_workflow"
 )
 
 type WSNodeHandle struct {
@@ -67,6 +69,7 @@ type WSNodeHandle struct {
 }
 
 type WSGroup struct {
+	UUID     uuid.UUID                      `json:"uuid"`
 	Children []uuid.UUID                    `json:"children"`
 	Pose     datatypes.JSONType[model.Pose] `json:"pose"`
 }
@@ -91,6 +94,9 @@ type WSNode struct {
 	Schema       datatypes.JSON                 `json:"schema"`
 	Handles      []*WSNodeHandle                `json:"handles"`
 	Footer       string                         `json:"footer"`
+	DeviceName   *string                        `json:"device_name,omitempty"`
+	Disabled     bool                           `json:"disabled"`
+	Minimized    bool                           `json:"minimized"`
 }
 
 type WSWorkflowEdge struct {
@@ -154,6 +160,9 @@ type WSUpdateNode struct {
 	Param      *datatypes.JSON                 `json:"param"`
 	Footer     *string                         `json:"footer"`
 	Name       *string                         `json:"name"`
+	Disabled   *bool                           `json:"disabled"`
+	Minimized  *bool                           `json:"minimized"`
+	DeviceName *string                         `json:"device_name"`
 }
 
 type WSDelNodes struct {
@@ -188,3 +197,5 @@ type WorkflowDetailResp struct {
 	Description *string   `json:"description,omitempty"`
 	UserID      string    `json:"user_id"`
 }
+
+// 全局保存节点

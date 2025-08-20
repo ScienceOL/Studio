@@ -31,6 +31,10 @@ func (e ErrCode) WithMsg(msgs ...string) error {
 	return ErrCodeWithMsg{ErrCode: e, msgs: msgs}
 }
 
+func (e ErrCode) WithMsgf(format string, msgs ...any) error {
+	return ErrCodeWithMsg{ErrCode: e, msgs: []string{fmt.Sprintf(format, msgs...)}}
+}
+
 func (e ErrCode) WithErr(errs ...error) error {
 	msgs := make([]string, 0, len(errs))
 	for _, e := range errs {
@@ -54,8 +58,9 @@ const (
 
 // view layer errors
 const (
-	ParamErr      ErrCode = iota + 1000 // parse parameter error
-	NotPointerErr                       // not pointer err
+	ParamErr           ErrCode = iota + 1000 // parse parameter error
+	NotPointerErr                            // not pointer err
+	NotSlicePointerErr                       // must be a pointer to a slice
 )
 
 // login module errors
@@ -76,12 +81,13 @@ const (
 
 // database layer errors
 const (
-	CreateDataErr    ErrCode = iota + 10000 // database create data error
-	UpdateDataErr                           // database update data error
-	RecordNotFound                          // database record not found
-	QueryRecordErr                          // database query error
-	DeleteDataErr                           // database delete error
-	NotBaseDBTypeErr                        // not base db type error
+	CreateDataErr              ErrCode = iota + 10000 // database create data error
+	UpdateDataErr                                     // database update data error
+	RecordNotFound                                    // database record not found
+	QueryRecordErr                                    // database query error
+	DeleteDataErr                                     // database delete error
+	NotBaseDBTypeErr                                  // not base db type error
+	ModelNotImplementTablerErr                        // model not implement schema.Tabler
 )
 
 // environment business layer errors
@@ -125,4 +131,6 @@ const (
 	WorkflowNotExistErr                             // workflow not exist
 	UpsertWorkflowEdgeErr                           // upsert workflow edge error
 	PermissionDenied                                // permission denied
+	SaveWorkflowNodeErr                             // batch save nodes error
+	SaveWorkflowEdgeErr                             // batch save workflow edge error
 )

@@ -3,6 +3,8 @@ package workflow
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common"
@@ -129,6 +131,8 @@ func (w *workflowImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 		return w.fetchGraph(ctx, s, msgType.MsgUUID)
 	case workflow.FetchTemplate: // 首次获取模板
 		return w.fetchNodeTemplate(ctx, s, msgType.MsgUUID)
+	case workflow.FetchDevice:
+		return w.fetchDevices(ctx, s, b)
 	case workflow.CreateGroup:
 		return w.createGroup(ctx, s, b)
 	case workflow.CreateNode:
@@ -141,6 +145,8 @@ func (w *workflowImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 		return w.batchCreateEdge(ctx, s, b)
 	case workflow.BatchDelEdge: // 批量删除边
 		return w.batchDelEdge(ctx, s, b)
+	case workflow.SaveWorkflow:
+		return w.batchSave(ctx, s, b)
 	default:
 		return common.ReplyWSErr(s, msgType.Action, msgType.MsgUUID, code.UnknownWSActionErr)
 	}
@@ -163,21 +169,19 @@ func (w *workflowImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 
 	nodes := utils.FilterSlice(resp.Nodes, func(node *repo.WorkflowNodeInfo) (*workflow.WSNode, bool) {
 		data := &workflow.WSNode{
-			UUID: node.Node.UUID,
-			Name: node.Action.Name,
-			TemplateUUID: utils.SafeValue(func() uuid.UUID {
-				return node.Action.UUID
-			}, uuid.UUID{}),
+			UUID:       node.Node.UUID,
 			ParentUUID: nodeIDUUIDMap[node.Node.ParentID],
 			UserID:     node.Node.UserID,
 			Status:     node.Node.Status,
 			Type:       node.Node.Type,
 			Icon:       node.Node.Icon,
 			Pose:       node.Node.Pose,
-			Footer:     utils.Or(node.Node.Footer, node.Action.Class),
+			Footer:     utils.Or(node.Node.Footer, ""),
 			Param:      node.Node.Param,
-			Schema:     node.Action.GoalSchema,
-			Handles: utils.FilterSlice(node.Handles, func(h *model.ActionHandleTemplate) (*workflow.WSNodeHandle, bool) {
+			DeviceName: node.Node.DeviceName,
+			Disabled:   node.Node.Disabled,
+			Minimized:  node.Node.Minimized,
+			Handles: utils.FilterSlice(node.Handles, func(h *model.WorkflowHandleTemplate) (*workflow.WSNodeHandle, bool) {
 				return &workflow.WSNodeHandle{
 					UUID:        h.UUID,
 					HandleKey:   h.HandleKey,
@@ -189,6 +193,13 @@ func (w *workflowImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 				}, true
 			}),
 		}
+
+		if node.Action != nil {
+			data.Name = utils.Or(node.Node.Name, node.Action.Name)
+			data.Schema = node.Action.Schema
+			data.TemplateUUID = node.Action.UUID
+		}
+
 		return data, true
 	})
 
@@ -218,7 +229,7 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session,
 		return err
 	}
 
-	resp, err := w.workflowStore.GetDeviceAction(ctx, map[string]any{
+	resp, err := w.workflowStore.GetWorkflowNodeTemplate(ctx, map[string]any{
 		"lab_id": data.LabID,
 	})
 
@@ -227,8 +238,8 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session,
 		return err
 	}
 
-	respResNodeIDs := utils.FilterUniqSlice(resp, func(item *model.DeviceAction) (int64, bool) {
-		return item.ResNodeID, true
+	respResNodeIDs := utils.FilterUniqSlice(resp, func(item *model.WorkflowNodeTemplate) (int64, bool) {
+		return item.ResourceNodeID, true
 	})
 
 	resNodes, err := w.labStore.GetResourceNodeTemplates(ctx, respResNodeIDs)
@@ -242,22 +253,22 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session,
 		return item.ID, item
 	})
 
-	actionIDs := utils.FilterSlice(resp, func(item *model.DeviceAction) (int64, bool) {
+	actionIDs := utils.FilterSlice(resp, func(item *model.WorkflowNodeTemplate) (int64, bool) {
 		return item.ID, true
 	})
 
-	respHandles, err := w.workflowStore.GetDeviceActionHandles(ctx, actionIDs)
+	respHandles, err := w.workflowStore.GetWorkflowHandleTemaplates(ctx, actionIDs)
 	if err != nil {
 		common.ReplyWSErr(s, string(workflow.FetchTemplate), msgUUID, err)
 		return err
 	}
 
-	respActionMap := utils.SliceToMapSlice(resp, func(item *model.DeviceAction) (int64, *model.DeviceAction, bool) {
-		return item.ResNodeID, item, true
+	respActionMap := utils.SliceToMapSlice(resp, func(item *model.WorkflowNodeTemplate) (int64, *model.WorkflowNodeTemplate, bool) {
+		return item.ResourceNodeID, item, true
 	})
 
-	respHandleMap := utils.SliceToMapSlice(respHandles, func(item *model.ActionHandleTemplate) (int64, *model.ActionHandleTemplate, bool) {
-		return item.ActionID, item, true
+	respHandleMap := utils.SliceToMapSlice(respHandles, func(item *model.WorkflowHandleTemplate) (int64, *model.WorkflowHandleTemplate, bool) {
+		return item.WorkflowNodeID, item, true
 	})
 
 	templates := make([]*workflow.WSNodeTpl, 0, len(resMap))
@@ -265,7 +276,7 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session,
 		templates = append(templates, &workflow.WSNodeTpl{
 			Name: resNode.Name,
 			UUID: resNode.UUID,
-			HandleTemplates: utils.FilterSlice(respActionMap[id], func(item *model.DeviceAction) (*workflow.WSTemplateHandles, bool) {
+			HandleTemplates: utils.FilterSlice(respActionMap[id], func(item *model.WorkflowNodeTemplate) (*workflow.WSTemplateHandles, bool) {
 				return &workflow.WSTemplateHandles{
 
 					Template: &workflow.WSTemplate{
@@ -279,7 +290,7 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session,
 						NodeType:      "DeviceTemplate",
 						Icon:          item.Icon,
 					},
-					Handles: utils.FilterSlice(respHandleMap[item.ID], func(h *model.ActionHandleTemplate) (*workflow.WSNodeHandle, bool) {
+					Handles: utils.FilterSlice(respHandleMap[item.ID], func(h *model.WorkflowHandleTemplate) (*workflow.WSNodeHandle, bool) {
 						return &workflow.WSNodeHandle{
 							UUID:        h.UUID,
 							HandleKey:   h.HandleKey,
@@ -298,6 +309,50 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session,
 	return common.ReplyWSOk(s, string(workflow.FetchTemplate), msgUUID, &workflow.WSTemplates{
 		Templates: templates,
 	})
+}
+
+func (w *workflowImpl) fetchDevices(ctx context.Context, s *melody.Session, b []byte) error {
+	// 根据 工作流模板节点 uuid 获取到所有的设备名称, 返回一个 list
+	req := &common.WSData[uuid.UUID]{}
+	err := json.Unmarshal(b, req)
+	if err != nil || req.Data.IsNil() {
+		common.ReplyWSErr(s, string(workflow.FetchDevice), req.MsgUUID, code.ParamErr.WithMsg("workflow template uuid is empty"))
+		return err
+	}
+
+	wk, err := w.getWorkflow(ctx, s)
+	if err != nil {
+		common.ReplyWSErr(s, string(workflow.FetchDevice), req.MsgUUID, err)
+		return err
+	}
+
+	workflowNodes := make([]*model.WorkflowNodeTemplate, 0, 1)
+	if err := w.materialStore.FindDatas(ctx, &workflowNodes, map[string]any{
+		"uuid": req.Data,
+	}, "resource_node_id"); err != nil {
+		common.ReplyWSErr(s, string(workflow.FetchDevice), req.MsgUUID, err)
+		return err
+	}
+
+	if len(workflowNodes) != 1 {
+		common.ReplyWSErr(s, string(workflow.FetchDevice), req.MsgUUID, fmt.Errorf("can not found resource node uuid: %s", req.Data))
+		return err
+	}
+
+	materialNodes := make([]*model.MaterialNode, 0, 1)
+	if err := w.materialStore.FindDatas(ctx, &materialNodes, map[string]any{
+		"lab_id":           wk.LabID,
+		"resource_node_id": workflowNodes[0].ResourceNodeID,
+	}, "name"); err != nil {
+		common.ReplyWSErr(s, string(workflow.FetchDevice), req.MsgUUID, err)
+		return err
+	}
+
+	deviceNames := utils.FilterSlice(materialNodes, func(node *model.MaterialNode) (string, bool) {
+		return node.Name, true
+	})
+
+	return common.ReplyWSOk(s, string(workflow.FetchDevice), req.MsgUUID, deviceNames)
 }
 
 func (w *workflowImpl) createGroup(ctx context.Context, s *melody.Session, b []byte) error {
@@ -329,18 +384,19 @@ func (w *workflowImpl) createGroup(ctx context.Context, s *melody.Session, b []b
 	}
 
 	groupData := &model.WorkflowNode{
-		WorkflowID: wk.ID,
-		ActionID:   0,
-		ParentID:   0,
-		Name:       "group",
-		UserID:     userInfo.ID,
-		Status:     "draft",
-		Type:       "Group",
-		Icon:       "",
-		Pose:       reqData.Pose,
-		Param:      datatypes.JSON{},
-		Footer:     "",
+		WorkflowID:     wk.ID,
+		WorkflowNodeID: 0,
+		ParentID:       0,
+		Name:           "group",
+		UserID:         userInfo.ID,
+		Status:         "draft",
+		Type:           "Group",
+		Icon:           "",
+		Pose:           reqData.Pose,
+		Param:          datatypes.JSON{},
+		Footer:         "",
 	}
+	groupData.UUID = reqData.UUID
 
 	w.workflowStore.ExecTx(ctx, func(txCtx context.Context) error {
 		if err := w.workflowStore.CreateNode(txCtx, groupData); err != nil {
@@ -357,7 +413,7 @@ func (w *workflowImpl) createGroup(ctx context.Context, s *melody.Session, b []b
 		return nil
 	})
 
-	return nil
+	return common.ReplyWSOk(s, string(workflow.CreateGroup), req.MsgUUID)
 }
 
 // 创建工作流节点
@@ -386,7 +442,7 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		return err
 	}
 
-	deviceAction, err := w.workflowStore.GetDeviceAction(ctx, map[string]any{
+	deviceAction, err := w.workflowStore.GetWorkflowNodeTemplate(ctx, map[string]any{
 		"uuid": reqData.TemplateUUID,
 	})
 
@@ -395,7 +451,7 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		return err
 	}
 
-	actionHandles, err := w.workflowStore.GetDeviceActionHandles(ctx, []int64{deviceAction[0].ID})
+	actionHandles, err := w.workflowStore.GetWorkflowHandleTemaplates(ctx, []int64{deviceAction[0].ID})
 	if err != nil {
 		common.ReplyWSErr(s, string(workflow.CreateNode), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
 		return err
@@ -410,15 +466,15 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 	}
 
 	nodeData := &model.WorkflowNode{
-		WorkflowID: wk.ID,
-		ActionID:   deviceAction[0].ID,
-		ParentID:   parentID,
-		UserID:     userInfo.ID,
-		Name:       utils.Or(reqData.Name, deviceAction[0].Name),
-		Status:     "draft",
-		Type:       utils.Or(reqData.Type, "ILab"),
-		Icon:       utils.Or(deviceAction[0].Icon, reqData.Icon),
-		Pose:       reqData.Pose,
+		WorkflowID:     wk.ID,
+		WorkflowNodeID: deviceAction[0].ID,
+		ParentID:       parentID,
+		UserID:         userInfo.ID,
+		Name:           utils.Or(reqData.Name, deviceAction[0].Name),
+		Status:         "draft",
+		Type:           utils.Or(reqData.Type, "ILab"),
+		Icon:           utils.Or(deviceAction[0].Icon, reqData.Icon),
+		Pose:           reqData.Pose,
 		Param: utils.SafeValue(func() datatypes.JSON {
 			if deviceAction[0].GoalDefault.String() == "" {
 				return deviceAction[0].GoalDefault
@@ -444,9 +500,9 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		Icon:         nodeData.Icon,
 		Pose:         nodeData.Pose,
 		Param:        nodeData.Param,
-		Schema:       deviceAction[0].GoalSchema,
+		Schema:       deviceAction[0].Schema,
 		Footer:       nodeData.Footer,
-		Handles: utils.FilterSlice(actionHandles, func(h *model.ActionHandleTemplate) (*workflow.WSNodeHandle, bool) {
+		Handles: utils.FilterSlice(actionHandles, func(h *model.WorkflowHandleTemplate) (*workflow.WSNodeHandle, bool) {
 			return &workflow.WSNodeHandle{
 				UUID:        h.UUID,
 				HandleKey:   h.HandleKey,
@@ -520,6 +576,21 @@ func (w *workflowImpl) upateNode(ctx context.Context, s *melody.Session, b []byt
 	if reqData.Footer != nil {
 		d.Footer = *reqData.Footer
 		keys = append(keys, "footer")
+	}
+
+	if reqData.Minimized != nil {
+		d.Minimized = *reqData.Minimized
+		keys = append(keys, "minimized")
+	}
+
+	if reqData.Disabled != nil {
+		d.Disabled = *reqData.Disabled
+		keys = append(keys, "disabled")
+	}
+
+	if reqData.DeviceName != nil {
+		d.DeviceName = reqData.DeviceName
+		keys = append(keys, "device_name")
 	}
 
 	if len(keys) == 0 {
@@ -643,6 +714,110 @@ func (w *workflowImpl) batchDelEdge(ctx context.Context, s *melody.Session, b []
 	} else {
 		return common.ReplyWSOk(s, string(workflow.BatchDelEdge), req.MsgUUID, resp)
 	}
+}
+
+// 批量保存工作流节点
+func (w *workflowImpl) batchSave(ctx context.Context, s *melody.Session, b []byte) error {
+	req := &common.WSData[*workflow.WSGraph]{}
+	if err := json.Unmarshal(b, req); err != nil {
+		common.ReplyWSErr(s, string(workflow.SaveWorkflow), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
+		return code.ParamErr.WithMsg(err.Error())
+	}
+
+	err := w.workflowStore.ExecTx(ctx, func(txCtx context.Context) error {
+		// 保存节点
+		if err := w.batchSaveNodes(txCtx, req.Data.Nodes); err != nil {
+			common.ReplyWSErr(s, string(workflow.SaveWorkflow), req.MsgUUID, code.SaveWorkflowNodeErr.WithMsg(err.Error()))
+			return code.SaveWorkflowNodeErr.WithMsg(err.Error())
+		}
+
+		// 保存边
+		if err := w.batchSaveEdge(txCtx, req.Data.Edges); err != nil {
+			common.ReplyWSErr(s, string(workflow.SaveWorkflow), req.MsgUUID, code.SaveWorkflowEdgeErr.WithMsg(err.Error()))
+			return code.SaveWorkflowEdgeErr.WithMsg(err.Error())
+		}
+		return nil
+	})
+
+	if err != nil {
+		common.ReplyWSErr(s, string(workflow.SaveWorkflow), req.MsgUUID, err)
+		return err
+	}
+
+	return common.ReplyWSOk(s, string(workflow.SaveWorkflow), req.MsgUUID)
+}
+
+func (w *workflowImpl) batchSaveNodes(ctx context.Context, nodes []*workflow.WSNode) error {
+	dbNodes, err := utils.FilterSliceWithErr(nodes, func(node *workflow.WSNode) ([]*model.WorkflowNode, bool, error) {
+		if node.UUID.IsNil() {
+			return nil, false, code.ParamErr.WithMsg("uuid is empty")
+		}
+		data := &model.WorkflowNode{
+			Icon:       node.Icon,
+			Pose:       node.Pose,
+			Param:      node.Param,
+			Footer:     node.Footer,
+			DeviceName: node.DeviceName,
+			Disabled:   node.Disabled,
+			Minimized:  node.Minimized,
+		}
+		data.UUID = node.UUID
+		data.UpdatedAt = time.Now()
+		return []*model.WorkflowNode{data}, true, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return w.workflowStore.UpsertNodes(ctx, dbNodes)
+}
+
+func (w *workflowImpl) batchSaveEdge(ctx context.Context, edges []*workflow.WSWorkflowEdge) error {
+	nodeUUIDs := make([]uuid.UUID, 0, 2*len(edges))
+	handleUUIDs := make([]uuid.UUID, 0, 2*len(edges))
+	for _, edge := range edges {
+		if edge.UUID.IsNil() ||
+			edge.SourceNodeUUID.IsNil() ||
+			edge.TargetNodeUUID.IsNil() ||
+			edge.SourceHandleUUID.IsNil() ||
+			edge.TargetHandleUUID.IsNil() {
+			return code.ParamErr.WithMsg("edge uuid is empty")
+		}
+
+		nodeUUIDs = utils.AppendUniqSlice(nodeUUIDs, edge.SourceNodeUUID)
+		nodeUUIDs = utils.AppendUniqSlice(nodeUUIDs, edge.TargetNodeUUID)
+
+		handleUUIDs = utils.AppendUniqSlice(handleUUIDs, edge.SourceHandleUUID)
+		handleUUIDs = utils.AppendUniqSlice(handleUUIDs, edge.TargetHandleUUID)
+	}
+
+	nodeCount, err := w.workflowStore.Count(ctx, &model.WorkflowNode{}, map[string]any{
+		"uuid": nodeUUIDs,
+	})
+
+	if err != nil {
+		return err
+	}
+	if int(nodeCount) != len(nodeUUIDs) {
+		return code.ParamErr.WithMsg("node not exist")
+	}
+
+	handleCount, err := w.workflowStore.Count(ctx, &model.WorkflowHandleTemplate{}, map[string]any{
+		"uuid": handleUUIDs,
+	})
+	if err != nil {
+		return err
+	}
+	if int(handleCount) != len(handleUUIDs) {
+		return code.ParamErr.WithMsg("node not exist")
+	}
+
+	workflowEdges := utils.FilterSlice(edges, func(edge *workflow.WSWorkflowEdge) (*model.WorkflowEdge, bool) {
+		return &model.WorkflowEdge{}, true
+	})
+
+	return w.workflowStore.UpsertEdge(ctx, workflowEdges)
 }
 
 func (w *workflowImpl) getWorkflow(ctx context.Context, s *melody.Session) (*model.Workflow, error) {

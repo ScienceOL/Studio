@@ -19,17 +19,20 @@ func (*Workflow) TableName() string {
 
 type WorkflowNode struct {
 	BaseModel
-	WorkflowID int64                    `gorm:"type:bigint;not null;index:idx_workflow_id" json:"workflow_id"`
-	ActionID   int64                    `gorm:"type:bigint;not null" json:"action_id"`
-	ParentID   int64                    `gorm:"type:bigint;not null" json:"parent_id"`
-	Name       string                   `gorm:"type:varchar(200);not null;default:'unknow'" json:"name"`
-	UserID     string                   `gorm:"type:varchar(120);not null" json:"user_id"`
-	Status     string                   `gorm:"type:varchar(20);not null;default:'draft'" json:"status"`
-	Type       string                   `gorm:"type:varchar(20);not null" json:"type"`
-	Icon       string                   `gorm:"type:text" json:"icon"`
-	Pose       datatypes.JSONType[Pose] `gorm:"type:jsonb" json:"pose"`
-	Param      datatypes.JSON           `gorm:"type:jsonb" json:"param"`
-	Footer     string                   `gorm:"type:text" json:"footer"`
+	WorkflowID     int64                    `gorm:"type:bigint;not null;index:idx_workflow_id" json:"workflow_id"`
+	WorkflowNodeID int64                    `gorm:"type:bigint;not null" json:"workflow_node_id"`
+	ParentID       int64                    `gorm:"type:bigint;not null" json:"parent_id"`
+	Name           string                   `gorm:"type:varchar(200);not null;default:'unknow'" json:"name"`
+	UserID         string                   `gorm:"type:varchar(120);not null" json:"user_id"`
+	Status         string                   `gorm:"type:varchar(20);not null;default:'draft'" json:"status"`
+	Type           string                   `gorm:"type:varchar(20);not null" json:"type"`
+	Icon           string                   `gorm:"type:text" json:"icon"`
+	Pose           datatypes.JSONType[Pose] `gorm:"type:jsonb" json:"pose"`
+	Param          datatypes.JSON           `gorm:"type:jsonb" json:"param"`
+	Footer         string                   `gorm:"type:text" json:"footer"`
+	DeviceName     *string                  `gorm:"type:varchar(255)" json:"device_name"`
+	Disabled       bool                     `gorm:"type:bool;not null;default:false" json:"disabled"`
+	Minimized      bool                     `gorm:"type:bool;not null;default:false" json:"minimized"`
 }
 
 func (*WorkflowNode) TableName() string {

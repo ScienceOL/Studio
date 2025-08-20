@@ -14,7 +14,7 @@ func Table(_ context.Context) error {
 			&model.Laboratory{},             // 实验室
 			&model.ResourceNodeTemplate{},   // 资源模板
 			&model.ResourceHandleTemplate{}, // 资源 handle 模板
-			&model.DeviceAction{},           // 实验室动作
+			&model.WorkflowNodeTemplate{},   // 实验室动作
 			&model.MaterialNode{},           // 物料节点
 			&model.MaterialEdge{},           // 物料边
 			// &model.WorkflowNodeTemplate{},   // 动作节点模板
@@ -23,7 +23,7 @@ func Table(_ context.Context) error {
 			&model.WorkflowNode{},
 			&model.WorkflowEdge{},
 			&model.WorkflowConsole{},
-			&model.ActionHandleTemplate{},
+			&model.WorkflowHandleTemplate{},
 		) // 动作节点handle 模板
 	})
 }

@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
@@ -14,12 +15,17 @@ import (
 )
 
 type IDOrUUIDTranslate interface {
-	// TranslateIDOrUUID(ctx context.Context, data any) error
 	DBWithContext(ctx context.Context) *gorm.DB
+	// 开启事务
 	ExecTx(ctx context.Context, fn func(ctx context.Context) error) error
+	// 计数
 	Count(ctx context.Context, tableModel schema.Tabler, condition map[string]any) (int64, error)
+	// 批量 uuid 转 id
 	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids ...uuid.UUID) map[uuid.UUID]int64
+	// 批量 id 转 uuid
 	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID
+	// 获取数据
+	FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error
 }
 
 type Base struct {
@@ -76,51 +82,6 @@ func (b *Base) ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int
 	})
 }
 
-// func (b *Base) TranslateIDOrUUID(ctx context.Context, data any) error {
-// 	// 使用反射获取数据的类型和值
-// 	v := reflect.ValueOf(data)
-// 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-// 		return code.NotPointerErr
-// 	}
-//
-// 	id := int64(0)
-// 	uuid := uuid.UUID{}
-// 	switch m := data.(type) {
-// 	case model.BaseDBModel:
-// 		if m.GetID() == 0 || m.GetUUID().IsNil() {
-// 			return code.ParamErr
-// 		}
-// 		id = m.GetID()
-// 		uuid = m.GetUUID()
-// 	default:
-// 		return code.NotBaseDBTypeErr
-// 	}
-//
-// 	// 判断转换方向
-// 	if id <= 0 && !uuid.IsNil() {
-// 		// UUID 转 ID
-// 		err := b.DBWithContext(ctx).Model(data).
-// 			Select("id").
-// 			Where("uuid = ?", uuid).
-// 			First(data).Error
-// 		if err != nil {
-// 			return code.QueryRecordErr
-// 		}
-// 	} else if id > 0 && uuid.IsNil() {
-// 		err := b.DBWithContext(ctx).Model(data).
-// 			Select("uuid").
-// 			Where("id = ?", id).
-// 			First(data).Error
-// 		if err != nil {
-// 			return code.QueryRecordErr
-// 		}
-// 	} else {
-// 		return nil
-// 	}
-//
-// 	return nil
-// }
-
 func (b *Base) Count(ctx context.Context, tableModel schema.Tabler, condition map[string]any) (int64, error) {
 	var count int64
 	if err := b.DBWithContext(ctx).Model(tableModel).Where(condition).Count(&count).Error; err != nil {
@@ -129,4 +90,51 @@ func (b *Base) Count(ctx context.Context, tableModel schema.Tabler, condition ma
 	}
 
 	return count, nil
+}
+
+func (b *Base) FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error {
+	if datas == nil {
+		return code.NotSlicePointerErr.WithMsg("datas cannot be nil")
+	}
+
+	// 1. 判断 datas 是否是一个指向 slice 的指针
+	datasVal := reflect.ValueOf(datas)
+	if datasVal.Kind() != reflect.Ptr || datasVal.Elem().Kind() != reflect.Slice {
+		return code.NotSlicePointerErr
+	}
+
+	// 2. 判断 slice 的元素类型是否实现了 schema.Tabler
+	sliceType := datasVal.Type().Elem()
+	elemType := sliceType.Elem()
+	tablerType := reflect.TypeOf((*schema.Tabler)(nil)).Elem()
+
+	// 检查元素类型或其指针类型是否实现了 Tabler 接口
+	// GORM 通常在指针接收器上定义 TableName() 方法
+	var tableModel schema.Tabler
+	if elemType.Kind() == reflect.Ptr {
+		// 元素是 *User
+		if !elemType.Implements(tablerType) {
+			return code.ModelNotImplementTablerErr.WithMsgf("model %s not implement schema.Tabler", elemType.String())
+		}
+		tableModel = reflect.New(elemType.Elem()).Interface().(schema.Tabler)
+	} else {
+		// 元素是 User
+		if !reflect.PointerTo(elemType).Implements(tablerType) {
+			return code.ModelNotImplementTablerErr.WithMsgf("model *%s not implement schema.Tabler", elemType.String())
+		}
+		tableModel = reflect.New(elemType).Interface().(schema.Tabler)
+	}
+
+	// 3. 执行查询
+	db := b.DBWithContext(ctx).Model(tableModel)
+	if len(keys) > 0 {
+		db = db.Select(keys)
+	}
+
+	if err := db.Where(condition).Find(datas).Error; err != nil {
+		logger.Errorf(ctx, "FindDatas fail table name: %s, condition: %+v, err: %+v", tableModel.TableName(), condition, err)
+		return code.QueryRecordErr.WithErr(err)
+	}
+
+	return nil
 }

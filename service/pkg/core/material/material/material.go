@@ -110,15 +110,23 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 		}
 	}
 
-	resMap, err := m.envStore.GetResourceTemplate(ctx, labData.ID, resTplNames)
+	resourceNodes := make([]*model.ResourceNodeTemplate, 0, len(resTplNames))
+	err := m.envStore.FindDatas(ctx, &resourceNodes, map[string]any{
+		"lab_id": labData.ID,
+		"name":   resTplNames,
+	}, "id", "name", "icon", "model")
 	if err != nil {
 		return err
 	}
 
 	// 强制校验资源模板是否存在
-	if len(resMap) != len(resTplNames) {
+	if len(resourceNodes) != len(resTplNames) {
 		return code.ResNotExistErr
 	}
+
+	resMap := utils.SliceToMap(resourceNodes, func(item *model.ResourceNodeTemplate) (string, *model.ResourceNodeTemplate) {
+		return item.Name, item
+	})
 
 	nodeNames := utils.FilterSlice(req.Nodes, func(item *material.Node) (*utils.Node[string, *material.Node], bool) {
 		if item.Name == "" {
@@ -144,19 +152,19 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 			datas := make([]*model.MaterialNode, 0, len(nodes))
 			for _, n := range nodes {
 				data := &model.MaterialNode{
-					ParentID:               0,
-					LabID:                  labData.ID,
-					Name:                   n.DeviceID,
-					DisplayName:            n.Name,
-					Description:            n.Description,
-					Class:                  n.Class,
-					Type:                   n.Type,
-					ResourceNodeTemplateID: 0,
-					InitParamData:          n.Config,
-					Data:                   n.Data,
-					Pose:                   n.Pose,
-					Icon:                   "",
-					Schema:                 n.Schema,
+					ParentID:       0,
+					LabID:          labData.ID,
+					Name:           n.DeviceID,
+					DisplayName:    n.Name,
+					Description:    n.Description,
+					Class:          n.Class,
+					Type:           n.Type,
+					ResourceNodeID: 0,
+					InitParamData:  n.Config,
+					Data:           n.Data,
+					Pose:           n.Pose,
+					Icon:           "",
+					Schema:         n.Schema,
 				}
 				if data.Pose.Data().Layout == "" {
 					poseData := data.Pose.Data()
@@ -168,9 +176,9 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 				}
 
 				if resInfo := resMap[n.Class]; resInfo != nil {
-					data.ResourceNodeTemplateID = resInfo.Node.ID
-					data.Icon = resInfo.Node.Icon
-					data.Model = resInfo.Node.Model
+					data.ResourceNodeID = resInfo.ID
+					data.Icon = resInfo.Icon
+					data.Model = resInfo.Model
 				}
 
 				datas = append(datas, data)
@@ -187,111 +195,6 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 		return err
 	}
 
-	return nil
-}
-
-func (m *materialImpl) createActionTemplate(_ context.Context, _ []*model.MaterialNode, _ map[string]*repo.ResNodeTpl) error {
-	// type wnTpl struct {
-	// 	Node    *model.WorkflowNodeTemplate
-	// 	Handles []*model.WorkflowHandleTemplate
-	// }
-	//
-	// wnTpls := make([]*wnTpl, 0, 10)
-	// for _, mNode := range nodes {
-	// 	if mNode.ResourceNodeTemplateID == 0 {
-	// 		continue
-	// 	}
-	//
-	// 	resTpl, ok := resMap[mNode.Class]
-	// 	if !ok {
-	// 		continue
-	// 	}
-	//
-	// 	for _, action := range resTpl.Actions {
-	// 		tl := &wnTpl{}
-	// 		tl.Node = &model.WorkflowNodeTemplate{
-	// 			Name:                   action.Name,
-	// 			LabID:                  mNode.LabID,
-	// 			ResourceNodeTemplateID: resTpl.Node.ID,
-	// 			DeviceActionID:         action.ID,
-	// 			DisplayName:            action.Name,
-	// 			Header:                 action.Name,
-	// 			Footer:                 &mNode.Class,
-	// 			ParamType:              "DEFAULT",
-	// 			Schema: utils.SafeValue(func() datatypes.JSON {
-	// 				data := struct {
-	// 					Properties struct {
-	// 						Goal datatypes.JSON `json:"goal"`
-	// 					} `json:"properties"`
-	// 				}{}
-	// 				if err := json.Unmarshal(action.Schema, &data); err != nil {
-	// 					return datatypes.JSON{}
-	// 				}
-	// 				return data.Properties.Goal
-	// 			}, datatypes.JSON{}),
-	// 			ExecuteScript: "",
-	// 			NodeType:      "",
-	// 		}
-	// 		tl.Handles = append(tl.Handles, &model.WorkflowHandleTemplate{
-	// 			HandleKey: "ready",
-	// 			IoType:    "target",
-	// 		})
-	// 		tl.Handles = append(tl.Handles, &model.WorkflowHandleTemplate{
-	// 			HandleKey: "ready",
-	// 			IoType:    "source",
-	// 		})
-	//
-	// 		hs := material.ActionHandle{}
-	// 		if err := json.Unmarshal(action.Handles, &hs); err != nil {
-	// 			logger.Errorf(ctx, "unmarshal action handles id: %d, err: %+v", action.ID, err)
-	// 			continue
-	// 		}
-	// 		inHandles := utils.FilterSlice(hs.Input, func(h *material.Handle) (*model.WorkflowHandleTemplate, bool) {
-	// 			return &model.WorkflowHandleTemplate{
-	// 				HandleKey:   h.HandlerKey,
-	// 				IoType:      "target",
-	// 				DisplayName: h.Label,
-	// 				Type:        h.DataType,
-	// 				DataSource:  h.DataSource,
-	// 				DataKey:     h.DataKey,
-	// 			}, true
-	// 		})
-	// 		tl.Handles = append(tl.Handles, inHandles...)
-	// 		outHandles := utils.FilterSlice(hs.Input, func(h *material.Handle) (*model.WorkflowHandleTemplate, bool) {
-	// 			return &model.WorkflowHandleTemplate{
-	// 				HandleKey:   h.HandlerKey,
-	// 				IoType:      "source",
-	// 				DisplayName: h.Label,
-	// 				Type:        h.DataType,
-	// 				DataSource:  h.DataSource,
-	// 				DataKey:     h.DataKey,
-	// 			}, true
-	// 		})
-	// 		tl.Handles = append(tl.Handles, outHandles...)
-	// 		wnTpls = append(wnTpls, tl)
-	// 	}
-	// }
-	//
-	// tls := utils.FilterSlice(wnTpls, func(item *wnTpl) (*model.WorkflowNodeTemplate, bool) {
-	// 	return item.Node, true
-	// })
-	//
-	// if err := m.materialStore.UpsertWorkflowNodeTemplate(ctx, tls); err != nil {
-	// 	return err
-	// }
-	//
-	// tlHandles, _ := utils.FilterSliceWithErr(wnTpls, func(item *wnTpl) ([]*model.WorkflowHandleTemplate, bool, error) {
-	// 	hs := utils.FilterSlice(item.Handles, func(h *model.WorkflowHandleTemplate) (*model.WorkflowHandleTemplate, bool) {
-	// 		h.NodeTemplateID = item.Node.ID
-	// 		return h, true
-	// 	})
-	// 	return hs, true, nil
-	// })
-	//
-	// if err := m.materialStore.UpsertWorkflowHandleTemplate(ctx, tlHandles); err != nil {
-	// 	return err
-	// }
-	//
 	return nil
 }
 
@@ -423,10 +326,10 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 	}
 
 	resTplIDS := utils.FilterSlice(nodes, func(nodeItem *model.MaterialNode) (int64, bool) {
-		if nodeItem.ResourceNodeTemplateID == 0 {
+		if nodeItem.ResourceNodeID == 0 {
 			return 0, false
 		}
-		return nodeItem.ResourceNodeTemplateID, true
+		return nodeItem.ResourceNodeID, true
 	})
 	resTplIDS = utils.RemoveDuplicates(resTplIDS)
 
@@ -467,11 +370,11 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 
 		var tplUUID uuid.UUID
 		var tplName string
-		if resNodeTpl, ok := resNodeTplMap[nodeItem.ResourceNodeTemplateID]; ok {
+		if resNodeTpl, ok := resNodeTplMap[nodeItem.ResourceNodeID]; ok {
 			tplUUID = resNodeTpl.UUID
 			tplName = resNodeTpl.Name
 		}
-		handles := resHandlesMap[nodeItem.ResourceNodeTemplateID]
+		handles := resHandlesMap[nodeItem.ResourceNodeID]
 		return &material.WSNode{
 			UUID:            nodeItem.UUID,
 			ParentUUID:      parentUUID,
@@ -602,7 +505,7 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 		return item.ID, true
 	})
 
-	tplHandles, err := m.envStore.GetAllDeviceTemplateHandlesByID(ctx, tplIDs)
+	tplHandles, err := m.envStore.GetResourceHandleTemplates(ctx, tplIDs)
 	if err != nil {
 		common.ReplyWSErr(s, string(material.FetchTemplate), msgUUID, err)
 		return err
@@ -621,9 +524,9 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 		}
 
 		return []*material.DeviceTemplate{&material.DeviceTemplate{
-			Handles: utils.FilterSlice(tplHandles, func(handleItem *model.ResourceHandleTemplate) (*material.DeviceHandleTemplate, bool) {
+			Handles: utils.FilterSlice(tplHandles[nodeItem.ID], func(handleItem *model.ResourceHandleTemplate) (*material.DeviceHandleTemplate, bool) {
 				// FIXME: 此处效率可以优化
-				if handleItem.NodeID != nodeItem.ID {
+				if handleItem.ResourceNodeID != nodeItem.ID {
 					return nil, false
 				}
 				return &material.DeviceHandleTemplate{
@@ -742,19 +645,19 @@ func (m *materialImpl) saveGraph(ctx context.Context, s *melody.Session, b []byt
 			return nil, false, code.ParamErr.WithMsg("saveGraph node uuid is empty")
 		}
 		data := &model.MaterialNode{
-			ParentID:               mUUID2IDMap[item.ParentUUID],
-			LabID:                  labData.ID,
-			Name:                   item.Name,
-			DisplayName:            item.DisplayName,
-			Description:            item.Description,
-			Type:                   item.Type,
-			ResourceNodeTemplateID: resUUID2IDMap[item.ResTemplateUUID],
-			InitParamData:          item.InitParamData,
-			Data:                   item.Data,
-			Pose:                   item.Pose,
-			Model:                  item.Model,
-			Icon:                   item.Icon,
-			Schema:                 item.Schema,
+			ParentID:       mUUID2IDMap[item.ParentUUID],
+			LabID:          labData.ID,
+			Name:           item.Name,
+			DisplayName:    item.DisplayName,
+			Description:    item.Description,
+			Type:           item.Type,
+			ResourceNodeID: resUUID2IDMap[item.ResTemplateUUID],
+			InitParamData:  item.InitParamData,
+			Data:           item.Data,
+			Pose:           item.Pose,
+			Model:          item.Model,
+			Icon:           item.Icon,
+			Schema:         item.Schema,
 			// Class:                  item.Class,
 		}
 		return []*model.MaterialNode{data}, true, nil
@@ -799,12 +702,14 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, code.TemplateNodeNotFoundErr)
 		return code.TemplateNodeNotFoundErr
 	} else {
-		mData.ResourceNodeTemplateID = tplNodeID.ID
+		mData.ResourceNodeID = tplNodeID.ID
 		mData.Icon = tplNodeID.Icon
 	}
 
 	if !reqData.ParentUUID.IsNil() {
-		if nodeID, err := m.materialStore.GetNodeIDByUUID(ctx, reqData.ParentUUID); err != nil {
+		if nodeID, ok := m.materialStore.UUID2ID(ctx,
+			&model.MaterialNode{},
+			reqData.ParentUUID)[reqData.ParentUUID]; !ok {
 			common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, err)
 			return err
 		} else {

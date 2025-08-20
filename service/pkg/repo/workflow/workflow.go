@@ -48,7 +48,7 @@ func (w *workflowImpl) GetWorkflowByUUID(ctx context.Context, uuid uuid.UUID) (*
 	data := &model.Workflow{}
 	if err := w.DBWithContext(ctx).Where("uuid = ?", uuid).Take(data).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, code.RecordNotFound
+			return nil, code.RecordNotFound.WithMsgf("uuid: %s", uuid)
 		}
 		logger.Errorf(ctx, "GetWorkflowByUUID fail uuid: %+v, error: %+v", uuid, err)
 		return nil, code.QueryRecordErr.WithMsg(err.Error())
@@ -87,35 +87,35 @@ func (w *workflowImpl) GetWorkflowGraph(ctx context.Context, userID string, work
 		return nil, code.QueryRecordErr.WithMsg("get node fail")
 	}
 
-	actionIDs := utils.FilterUniqSlice(nodes, func(node *model.WorkflowNode) (int64, bool) {
-		if node.ActionID == 0 {
+	workflowIDs := utils.FilterUniqSlice(nodes, func(node *model.WorkflowNode) (int64, bool) {
+		if node.WorkflowNodeID == 0 {
 			return 0, false
 		}
 
-		return node.ActionID, true
+		return node.WorkflowNodeID, true
 	})
 
-	actions := make([]*model.DeviceAction, 0, 1)
+	actions := make([]*model.WorkflowNodeTemplate, 0, 1)
 	if err := w.DBWithContext(ctx).
-		Where("id in  ?", actionIDs).
+		Where("id in  ?", workflowIDs).
 		Find(&actions).Error; err != nil {
 		logger.Errorf(ctx, "GetWorkflowGraph get node fail err: %+v", err)
 		return nil, code.QueryRecordErr.WithMsg("get node fail")
 	}
-	actionMap := utils.SliceToMap(actions, func(action *model.DeviceAction) (int64, *model.DeviceAction) {
+	actionMap := utils.SliceToMap(actions, func(action *model.WorkflowNodeTemplate) (int64, *model.WorkflowNodeTemplate) {
 		return action.ID, action
 	})
 
-	actionHandles := make([]*model.ActionHandleTemplate, 0, 1)
+	actionHandles := make([]*model.WorkflowHandleTemplate, 0, 1)
 	if err := w.DBWithContext(ctx).
-		Where("action_id in  ?", actionIDs).
+		Where("workflow_node_id in  ?", workflowIDs).
 		Find(&actionHandles).Error; err != nil {
 		logger.Errorf(ctx, "GetWorkflowGraph get action handles fail err: %+v", err)
 		return nil, code.QueryRecordErr.WithMsg("get action handles")
 	}
 
-	actionHandleMap := utils.SliceToMapSlice(actionHandles, func(item *model.ActionHandleTemplate) (int64, *model.ActionHandleTemplate, bool) {
-		return item.ActionID, item, true
+	actionHandleMap := utils.SliceToMapSlice(actionHandles, func(item *model.WorkflowHandleTemplate) (int64, *model.WorkflowHandleTemplate, bool) {
+		return item.WorkflowNodeID, item, true
 	})
 
 	nodeUUIDs := utils.FilterSlice(nodes, func(node *model.WorkflowNode) (uuid.UUID, bool) {
@@ -126,8 +126,8 @@ func (w *workflowImpl) GetWorkflowGraph(ctx context.Context, userID string, work
 	for _, node := range nodes {
 		nodesInfo = append(nodesInfo, &repo.WorkflowNodeInfo{
 			Node:    node,
-			Action:  actionMap[node.ActionID],
-			Handles: actionHandleMap[node.ActionID],
+			Action:  actionMap[node.WorkflowNodeID],
+			Handles: actionHandleMap[node.WorkflowNodeID],
 		})
 	}
 
@@ -176,27 +176,27 @@ func (w *workflowImpl) GetWorkflowGraph(ctx context.Context, userID string, work
 // 	// }, nil
 // }
 
-func (w *workflowImpl) GetDeviceAction(ctx context.Context, condition map[string]any) ([]*model.DeviceAction, error) {
-	deviceActions := make([]*model.DeviceAction, 0, 1)
+func (w *workflowImpl) GetWorkflowNodeTemplate(ctx context.Context, condition map[string]any) ([]*model.WorkflowNodeTemplate, error) {
+	workflowNodeTpls := make([]*model.WorkflowNodeTemplate, 0, 1)
 
 	query := w.DBWithContext(ctx).Where(condition)
-	if err := query.Order("id desc").Find(&deviceActions).Error; err != nil {
-		logger.Errorf(ctx, "GetDeviceAction fail lab id: %v, err: %+v", condition, err)
+	if err := query.Order("id desc").Find(&workflowNodeTpls).Error; err != nil {
+		logger.Errorf(ctx, "GetWorkflowNodeTemplate fail lab id: %v, err: %+v", condition, err)
 		return nil, code.QueryRecordErr.WithMsg(err.Error())
 	}
 
-	return deviceActions, nil
+	return workflowNodeTpls, nil
 }
 
-func (w *workflowImpl) GetDeviceActionHandles(ctx context.Context, actionIDs []int64) ([]*model.ActionHandleTemplate, error) {
-	actionHandles := make([]*model.ActionHandleTemplate, 0, 1)
-	query := w.DBWithContext(ctx).Where("action_id in ?", actionIDs)
-	if err := query.Order("id desc").Find(&actionHandles).Error; err != nil {
-		logger.Errorf(ctx, "GetDeviceActionHandles fail action ids: %v, err: %+v", actionIDs, err)
+func (w *workflowImpl) GetWorkflowHandleTemaplates(ctx context.Context, workflowIDs []int64) ([]*model.WorkflowHandleTemplate, error) {
+	handles := make([]*model.WorkflowHandleTemplate, 0, 1)
+	query := w.DBWithContext(ctx).Where("workflow_node_id in ?", workflowIDs)
+	if err := query.Order("id desc").Find(&handles).Error; err != nil {
+		logger.Errorf(ctx, "GetWorkflowHandleTemaplates fail action ids: %v, err: %+v", workflowIDs, err)
 		return nil, code.QueryRecordErr.WithMsg(err.Error())
 	}
 
-	return actionHandles, nil
+	return handles, nil
 }
 
 func (w *workflowImpl) GetWorkflowNode(ctx context.Context, condition map[string]any) ([]*model.WorkflowNode, error) {
@@ -353,4 +353,61 @@ func (w *workflowImpl) GetWorkflowList(ctx context.Context, userID string, labID
 	}
 
 	return workflows, total, nil
+}
+
+func (w *workflowImpl) UpsertNodes(ctx context.Context, nodes []*model.WorkflowNode) error {
+	if len(nodes) == 0 {
+		return nil
+	}
+
+	if err := w.DBWithContext(ctx).Clauses(
+		clause.OnConflict{
+			Columns: []clause.Column{
+				{
+					Name: "uuid",
+				},
+			},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"icon",
+				"pose",
+				"param",
+				"footer",
+				"device_name",
+				"disabled",
+				"minimized",
+				"updated_at",
+			}),
+		}).
+		Create(&nodes).Error; err != nil {
+
+		logger.Errorf(ctx, "UpsertNodes fail, err: %+v", err)
+		return code.UpdateDataErr.WithErr(err)
+	}
+
+	return nil
+}
+
+func (w *workflowImpl) UpsertEdge(ctx context.Context, edges []*model.WorkflowEdge) error {
+	if len(edges) == 0 {
+		return nil
+	}
+
+	if err := w.DBWithContext(ctx).Clauses(
+		clause.OnConflict{
+			Columns: []clause.Column{
+				{
+					Name: "uuid",
+				},
+			},
+
+			DoUpdates: clause.AssignmentColumns([]string{
+				"updated_at",
+			}),
+		}).Create(edges).Error; err != nil {
+
+		logger.Errorf(ctx, "UpsertEdge fail err: %+v", err)
+		return code.UpdateDataErr.WithErr(err)
+	}
+
+	return nil
 }

@@ -40,13 +40,15 @@ func (m *materialImpl) UpsertMaterialNode(ctx context.Context, datas []*model.Ma
 		Columns: []clause.Column{
 			{Name: "lab_id"},
 			{Name: "name"},
+			{Name: "parent_id"},
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
-			"parent_id",
 			"display_name",
 			"description",
+			"status",
 			"type",
-			"resource_node_template_id",
+			"resource_node_id",
+			"class",
 			"init_param_data",
 			"schema",
 			"data",
@@ -77,9 +79,7 @@ func (m *materialImpl) UpsertMaterialEdge(ctx context.Context, datas []*model.Ma
 			{Name: "source_handle_uuid"},
 			{Name: "target_handle_uuid"},
 		},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"updated_at",
-		}),
+		DoNothing: true,
 	}).Create(datas)
 
 	if statement.Error != nil {
@@ -99,7 +99,7 @@ func (m *materialImpl) GetNodeHandles(
 	res := make([]*NodeHandleInfo, 0, len(handleNames))
 	if err := m.DBWithContext(ctx).Table("material_node as n").
 		Select("n.uuid as node_uuid, n.name as node_name, h.uuid as handle_uuid, h.name as handle_name").
-		Joins("inner join resource_handle_template as h on n.resource_node_template_id = h.node_id").
+		Joins("inner join resource_handle_template as h on n.resource_node_id = h.resource_node_id").
 		Where("n.lab_id = ? and n.name in ? and h.name in ?", labID, nodeNames, handleNames).
 		Find(&res).Error; err != nil {
 		logger.Errorf(ctx, "GetNodeHandles fail lab id: %d, node names: %+v, handle names: %+v, err: %+v", labID, nodeNames, handleNames, err)
@@ -130,7 +130,7 @@ func (m *materialImpl) GetNodeHandlesByUUID(ctx context.Context, nodeUUIDs []uui
 	res := make([]*NodeHandleInfo, 0, len(nodeUUIDs))
 	if err := m.DBWithContext(ctx).Table("material_node as n").
 		Select("n.uuid as node_uuid, h.uuid as handle_uuid").
-		Joins("inner join resource_handle_template as h on n.resource_node_template_id = h.node_id").
+		Joins("inner join resource_handle_template as h on n.resource_node_id = h.resource_node_id").
 		Where("n.uuid in ?", nodeUUIDs).
 		Find(&res).Error; err != nil {
 		logger.Errorf(ctx, "GetNodeHandlesByUUID fail node uuids: %+v, err: %+v", nodeUUIDs, err)
@@ -298,37 +298,3 @@ func (m *materialImpl) GetNodeIDByUUID(ctx context.Context, nodeUUID uuid.UUID) 
 
 	return data.ID, nil
 }
-
-// 批量插入 workflowTpl
-// func (m *materialImpl) UpsertWorkflowNodeTemplate(ctx context.Context, datas []*model.WorkflowNodeTemplate) error {
-// 	if len(datas) == 0 {
-// 		return nil
-// 	}
-//
-// 	statement := m.DBWithContext(ctx).Clauses(clause.OnConflict{
-// 		Columns: []clause.Column{
-// 			{Name: "lab_id"},
-// 			{Name: "name"},
-// 			{Name: "device_action_id"},
-// 			{Name: "material_node_id"},
-// 		},
-// 		DoUpdates: clause.AssignmentColumns([]string{
-// 			"resource_node_template_id",
-// 			"display_name",
-// 			"header",
-// 			"footer",
-// 			"param_type",
-// 			"schema",
-// 			"execute_script",
-// 			"node_type",
-// 			"updated_at",
-// 		}),
-// 	}).Create(datas)
-//
-// 	if statement.Error != nil {
-// 		logger.Errorf(ctx, "UpsertWorkflowHandleTemplate err: %+v", statement.Error)
-// 		return code.CreateDataErr.WithMsg(statement.Error.Error())
-// 	}
-//
-// 	return nil
-// }
