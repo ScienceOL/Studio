@@ -25,9 +25,7 @@ func InstallScheduleURL(ctx context.Context, g *gin.Engine) {
 
 	{
 		v1 := api.Group("/v1")
-
-
-
+		_ = v1
 	}
 
 }
