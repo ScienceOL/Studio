@@ -26,8 +26,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// 核心功能，下发 edge 侧命令，接口 edge 反馈，运行工作流，推送运行消息
-
 func New() *cobra.Command {
 	return &cobra.Command{
 		Use:                "schedule",
@@ -35,11 +33,9 @@ func New() *cobra.Command {
 		SilenceUsage:       true,
 		PersistentPreRunE:  initGlobalResource,
 		PersistentPostRunE: cleanGlobalResource,
-		PreRunE:            initMigrate,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return nil
-		},
-		PostRunE: cleanWebResource,
+		PreRunE:            initSchedule,
+		RunE:               newRouter,
+		PostRunE:           cleanSchedule,
 	}
 }
 
@@ -88,7 +84,7 @@ func initMigrate(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func initWeb(cmd *cobra.Command, _ []string) error {
+func initSchedule(cmd *cobra.Command, _ []string) error {
 	config := webapp.Config()
 	// 初始化 nacos , 注意初始化时序，请勿在动态配置未初始化时候使用配置
 	nacos.MustInit(cmd.Context(), &nacos.Conf{
@@ -150,7 +146,7 @@ func initWeb(cmd *cobra.Command, _ []string) error {
 func newRouter(cmd *cobra.Command, _ []string) error {
 	router := gin.Default()
 
-	web.NewRouter(cmd.Root().Context(), router)
+	web.NewSchedule(cmd.Root().Context(), router)
 	port := webapp.Config().Server.Port
 	addr := ":" + strconv.Itoa(port)
 
@@ -195,7 +191,7 @@ func newRouter(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func cleanWebResource(cmd *cobra.Command, _ []string) error {
+func cleanSchedule(cmd *cobra.Command, _ []string) error {
 	// FIXME: 关系消息通知中心
 	// FIXME: 关闭 websocket
 	events.NewEvents().Close(cmd.Context())
