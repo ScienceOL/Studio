@@ -62,6 +62,7 @@ func NewDagTask(ctx context.Context, param *engine.TaskParam) engine.Task {
 }
 
 func (d *dagEngine) loadData(ctx context.Context) error {
+
 	wk, err := d.workflowStore.GetWorkflowByUUID(ctx, d.job.WorkflowUUID)
 	if err != nil {
 		return err
@@ -137,12 +138,13 @@ func (d *dagEngine) buildTask(ctx context.Context) error {
 	}
 
 	for _, node := range d.nodes {
-		d.boardMsg(ctx, &engine.BoardMsg{
-			Header: node.ActionName,
-			Status: "pending",
-			Type:   "info",
-			Msg:    []string{"prepare to run node"},
-		})
+		// d.boardMsg(ctx, &engine.BoardMsg{
+		// 	Header:         node.ActionName,
+		// 	WorkflowStatus: "running",
+		// 	Status:         "pending",
+		// 	Type:           "info",
+		// 	Msg:            []string{"prepare to run node"},
+		// })
 
 		parentNodeMap := make(map[*model.WorkflowNode]struct{})
 		d.findAllParents(nodeMap, targetSourcesMap, node, parentNodeMap)
@@ -217,6 +219,13 @@ func (d *dagEngine) findAllParents(nodeMap map[uuid.UUID]*model.WorkflowNode,
 
 func (d *dagEngine) Run(ctx context.Context, job *engine.WorkflowInfo) error {
 	d.job = job
+	d.boardMsg(ctx, &engine.BoardMsg{
+		Header:         "",
+		WorkflowStatus: "starting",
+		Status:         "pending",
+		Type:           "info",
+		Msg:            []string{"prepare to run node"},
+	})
 
 	if err := d.loadData(ctx); err != nil {
 		return err
@@ -229,9 +238,11 @@ func (d *dagEngine) Run(ctx context.Context, job *engine.WorkflowInfo) error {
 	err := d.runAllNodes(ctx)
 
 	data := &engine.BoardMsg{
-		Type:   "info",
-		Status: "success",
-		Msg:    []string{"running node"},
+		Header:         "end",
+		WorkflowStatus: "finished",
+		Type:           "info",
+		Status:         "success",
+		Msg:            []string{"running node"},
 	}
 	if err != nil {
 		data.Status = "fail"
@@ -308,7 +319,6 @@ func (d *dagEngine) runAllNodes(ctx context.Context) error {
 
 		for _, runnedNode := range canRunNodes {
 			delete(d.dependencies, runnedNode)
-
 			for _, nodeDependences := range d.dependencies {
 				delete(nodeDependences, runnedNode)
 			}
@@ -318,10 +328,12 @@ func (d *dagEngine) runAllNodes(ctx context.Context) error {
 
 func (d *dagEngine) runNode(ctx context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
 	d.boardMsg(ctx, &engine.BoardMsg{
-		Header: node.ActionName,
-		Status: "running",
-		Type:   "info",
-		Msg:    []string{"running node"},
+		Header:         node.ActionName,
+		NodeUUID:       node.UUID,
+		WorkflowStatus: "running",
+		Status:         "running",
+		Type:           "info",
+		Msg:            []string{"running node"},
 	})
 	if err := d.sendAction(ctx, node, job); err != nil {
 		return err

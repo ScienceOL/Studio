@@ -251,7 +251,7 @@ func (w *workflowImpl) UpdateWorkflowNodes(ctx context.Context, nodeUUIDs []uuid
 	return nil
 }
 
-func (w *workflowImpl) DeleteWorkflowGroupNodes(ctx context.Context, workflowUUIDs []uuid.UUID) (*repo.DeleteWorkflow, error) {
+func (w *workflowImpl) DeleteWorkflowNodes(ctx context.Context, workflowUUIDs []uuid.UUID) (*repo.DeleteWorkflow, error) {
 	if len(workflowUUIDs) == 0 {
 		return &repo.DeleteWorkflow{}, nil
 	}
@@ -263,6 +263,8 @@ func (w *workflowImpl) DeleteWorkflowGroupNodes(ctx context.Context, workflowUUI
 			clause.Returning{
 				Columns: []clause.Column{
 					{Name: "id"},
+					{Name: "uuid"},
+					{Name: "type"},
 				},
 			}).
 			Where("uuid in ?", workflowUUIDs).
@@ -272,18 +274,44 @@ func (w *workflowImpl) DeleteWorkflowGroupNodes(ctx context.Context, workflowUUI
 			return code.DeleteDataErr.WithErr(err)
 		}
 
+		normalUUIDs := make([]uuid.UUID, 0, len(nodes))
 		parentIDs := utils.FilterSlice(nodes, func(item *model.WorkflowNode) (int64, bool) {
-			return item.ID, true
+			if item.Type == model.WorkflowNodeGroup {
+				return item.ID, true
+			}
+			normalUUIDs = append(normalUUIDs, item.UUID)
+			return item.ID, false
 		})
 
-		updateData := &model.WorkflowNode{}
-		updateData.UpdatedAt = time.Now()
-		if err := w.DBWithContext(txCtx).
-			Where("parent_id in ?", parentIDs).
-			Select("parent_id", "updated_at").
-			Updates(updateData).Error; err != nil {
-			logger.Errorf(ctx, "DeleteWorkflowGroupNodes set parent node fail parent ids: %+v, err: %+v", parentIDs, err)
-			return code.DeleteDataErr.WithErr(err)
+		if len(parentIDs) > 0 {
+			updateData := &model.WorkflowNode{}
+			updateData.UpdatedAt = time.Now()
+			if err := w.DBWithContext(txCtx).
+				Where("parent_id in ?", parentIDs).
+				Select("parent_id", "updated_at").
+				Updates(updateData).Error; err != nil {
+				logger.Errorf(ctx, "DeleteWorkflowGroupNodes set parent node fail parent ids: %+v, err: %+v", parentIDs, err)
+				return code.DeleteDataErr.WithErr(err)
+			}
+		}
+
+		if len(normalUUIDs) > 0 {
+			edges := make([]*model.WorkflowEdge, 0, len(workflowUUIDs))
+			if err := w.DBWithContext(txCtx).Clauses(
+				clause.Returning{
+					Columns: []clause.Column{
+						{Name: "uuid"},
+					},
+				}).
+				Where("source_node_uuid in ? or target_node_uuid in ?", normalUUIDs, normalUUIDs).
+				Delete(&edges).Error; err != nil {
+
+				logger.Errorf(ctx, "DeleteWorkflowGroupNodes fail uuids: %+v, err: %+v", workflowUUIDs, err)
+				return code.DeleteDataErr.WithErr(err)
+			}
+			resp.EdgesUUIDs = utils.FilterSlice(edges, func(edge *model.WorkflowEdge) (uuid.UUID, bool) {
+				return edge.UUID, true
+			})
 		}
 
 		resp.NodeUUIDs = workflowUUIDs

@@ -89,7 +89,7 @@ const (
 	CreateNode        ActionType = "create_node"
 	CreateGroup       ActionType = "create_group"
 	UpdateNode        ActionType = "update_node"
-	BatchDelGroupNode ActionType = "batch_del_group_nodes"
+	BatchDelNode ActionType = "batch_del_nodes"
 	BatchCreateEdge   ActionType = "batch_create_edges"
 	BatchDelEdge      ActionType = "batch_del_edges"
 	SaveWorkflow      ActionType = "save_workflow"

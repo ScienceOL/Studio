@@ -250,9 +250,8 @@ func (w *workflowImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 		return w.createNode(ctx, s, b)
 	case workflow.UpdateNode: // 批量更新节点
 		return w.upateNode(ctx, s, b)
-	case workflow.BatchDelGroupNode: // 批量删除节点
-		return w.batchDelGroupNode(ctx, s, b)
-	// FIXME: 批量删除节点
+	case workflow.BatchDelNode: // 批量删除节点
+		return w.batchDelNodes(ctx, s, b)
 	case workflow.BatchCreateEdge: // 批量创建边
 		return w.batchCreateEdge(ctx, s, b)
 	case workflow.BatchDelEdge: // 批量删除边
@@ -726,26 +725,26 @@ func (w *workflowImpl) upateNode(ctx context.Context, s *melody.Session, b []byt
 }
 
 // 批量删除工作流节点
-func (w *workflowImpl) batchDelGroupNode(ctx context.Context, s *melody.Session, b []byte) error {
+func (w *workflowImpl) batchDelNodes(ctx context.Context, s *melody.Session, b []byte) error {
 	req := &common.WSData[[]uuid.UUID]{}
 	if err := json.Unmarshal(b, &req); err != nil {
 
-		common.ReplyWSErr(s, string(workflow.BatchDelGroupNode), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
+		common.ReplyWSErr(s, string(workflow.BatchDelNode), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
 		return err
 	}
 
 	if len(req.Data) == 0 {
-		common.ReplyWSOk(s, string(workflow.BatchDelGroupNode), req.MsgUUID, &workflow.WSDelNodes{})
+		common.ReplyWSOk(s, string(workflow.BatchDelNode), req.MsgUUID, &workflow.WSDelNodes{})
 		return nil
 	}
 
-	resp, err := w.workflowStore.DeleteWorkflowGroupNodes(ctx, req.Data)
+	resp, err := w.workflowStore.DeleteWorkflowNodes(ctx, req.Data)
 	if err != nil {
-		common.ReplyWSErr(s, string(workflow.BatchDelGroupNode), req.MsgUUID, err)
+		common.ReplyWSErr(s, string(workflow.BatchDelNode), req.MsgUUID, err)
 		return err
 	}
 
-	return common.ReplyWSOk(s, string(workflow.BatchDelGroupNode), req.MsgUUID, &workflow.WSDelNodes{
+	return common.ReplyWSOk(s, string(workflow.BatchDelNode), req.MsgUUID, &workflow.WSDelNodes{
 		NodeUUIDs: resp.NodeUUIDs,
 	})
 }

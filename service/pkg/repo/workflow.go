@@ -22,7 +22,8 @@ type WorkflowGrpah struct {
 }
 
 type DeleteWorkflow struct {
-	NodeUUIDs []uuid.UUID
+	NodeUUIDs  []uuid.UUID
+	EdgesUUIDs []uuid.UUID
 }
 
 type WorkflowRepo interface {
@@ -37,7 +38,7 @@ type WorkflowRepo interface {
 	GetWorkflowEdges(ctx context.Context, nodeUUIDs []uuid.UUID) ([]*model.WorkflowEdge, error)
 	UpdateWorkflowNode(ctx context.Context, nodeUUID uuid.UUID, data *model.WorkflowNode, updateColumns []string) error
 	UpdateWorkflowNodes(ctx context.Context, nodeUUIDs []uuid.UUID, data *model.WorkflowNode, updateColumns []string) error
-	DeleteWorkflowGroupNodes(ctx context.Context, workflowUUIDs []uuid.UUID) (*DeleteWorkflow, error)
+	DeleteWorkflowNodes(ctx context.Context, workflowUUIDs []uuid.UUID) (*DeleteWorkflow, error)
 	DeleteWorkflowEdges(ctx context.Context, edgeUUIDs []uuid.UUID) ([]uuid.UUID, error)
 	Count(ctx context.Context, tableModel schema.Tabler, condition map[string]any) (int64, error)
 	UpsertWorkflowEdge(ctx context.Context, datas []*model.WorkflowEdge) error

@@ -53,10 +53,12 @@ type SendActionData struct {
 }
 
 type BoardMsg struct {
-	Header      string   `json:"header"`
-	Status      string   `json:"status"`
-	Type        string   `json:"type"`
-	Msg         []string `json:"msg"`
-	StackTrace  []string `json:"stack_trace"`
-	ReturnInfos []string `json:"return_infos"`
+	Header         string    `json:"header"`
+	NodeUUID       uuid.UUID `json:"node_uuid"`
+	WorkflowStatus string    `json:"workflow_status"`
+	Status         string    `json:"status"`
+	Type           string    `json:"type"`
+	Msg            []string  `json:"msg"`
+	StackTrace     []string  `json:"stack_trace"`
+	ReturnInfos    []string  `json:"return_infos"`
 }
