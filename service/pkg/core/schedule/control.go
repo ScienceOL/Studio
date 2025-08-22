@@ -310,7 +310,7 @@ func (i *control) initWebSocket(_ context.Context) {
 		}
 
 		if ctx, ok := s.Get("ctx"); ok {
-			logger.Errorf(ctx.(context.Context), "websocket find keys: %+v, err: %+v", s.Keys, err)
+			logger.Infof(ctx.(context.Context), "websocket find keys: %+v, err: %+v", s.Keys, err)
 		}
 	})
 
