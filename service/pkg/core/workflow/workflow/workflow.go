@@ -12,9 +12,12 @@ import (
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
+	"github.com/scienceol/studio/service/pkg/core/notify"
+	"github.com/scienceol/studio/service/pkg/core/notify/events"
 	"github.com/scienceol/studio/service/pkg/core/schedule/engine"
 	"github.com/scienceol/studio/service/pkg/core/workflow"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
+	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
 	"github.com/scienceol/studio/service/pkg/repo"
 	el "github.com/scienceol/studio/service/pkg/repo/environment"
@@ -30,15 +33,20 @@ type workflowImpl struct {
 	labStore      repo.LaboratoryRepo
 	materialStore repo.MaterialRepo
 	rClient       *r.Client
+	wsClient      *melody.Melody
 }
 
-func New() workflow.Service {
-	return &workflowImpl{
+func New(ctx context.Context, wsClient *melody.Melody) workflow.Service {
+
+	w := &workflowImpl{
 		workflowStore: wfl.New(),
 		labStore:      el.New(),
+		wsClient:      wsClient,
 		materialStore: mStore.NewMaterialImpl(),
 		rClient:       redis.GetClient(),
 	}
+	events.NewEvents().Registry(ctx, notify.WorkflowRun, w.HandleNotify)
+	return w
 }
 
 func (w *workflowImpl) Create(ctx context.Context, data *workflow.WorkflowReq) (*workflow.WorkflowResp, error) {
@@ -971,4 +979,38 @@ func (w *workflowImpl) GetWorkflowDetail(ctx context.Context, workflowUUID uuid.
 		Description: wf.Description,
 		UserID:      wf.UserID,
 	}, nil
+}
+
+func (w *workflowImpl) HandleNotify(ctx context.Context, msg string) error {
+	notifyData := &notify.SendMsg{}
+	if err := json.Unmarshal([]byte(msg), notifyData); err != nil {
+		logger.Errorf(ctx, "HandleNotify unmarshal data err: %+v", err)
+		return err
+	}
+
+	d := &common.Resp{
+		Code: code.Success,
+		Data: &common.WSData[any]{
+			WsMsgType: common.WsMsgType{
+				Action:  string(workflow.WorkflowUpdate),
+				MsgUUID: notifyData.UUID,
+			},
+			Data: notifyData.Data,
+		},
+		Timestamp: time.Now().Unix(),
+	}
+
+	data, _ := json.Marshal(d)
+	return w.wsClient.BroadcastFilter(data, func(s *melody.Session) bool {
+		sessionValue, ok := s.Get("uuid")
+		if !ok {
+			return false
+		}
+
+		if sessionValue.(uuid.UUID) == notifyData.WorkflowUUID {
+			return true
+		}
+
+		return false
+	})
 }

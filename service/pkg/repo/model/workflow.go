@@ -88,3 +88,7 @@ type WorkflowNodeJob struct {
 	Status WorkflowJobStatus `gorm:"type:varchar(50);not null" json:"status"`
 	Data   datatypes.JSON    `gorm:"type:jsonb" json:"data"`
 }
+
+func (*WorkflowNodeJob) TableName() string {
+	return "workflow_node_job"
+}

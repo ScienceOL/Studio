@@ -57,6 +57,7 @@ const (
 	BatchDelEdge      ActionType = "batch_del_edges"
 	SaveWorkflow      ActionType = "save_workflow"
 	RunWorkflow       ActionType = "run_workflow"
+	WorkflowUpdate    ActionType = "workflow_update"
 )
 
 type WSNodeHandle struct {

@@ -20,7 +20,7 @@ type workflowHandle struct {
 	wService workflow.Service
 }
 
-func NewWorkflowHandle() *workflowHandle {
+func NewWorkflowHandle(ctx context.Context) *workflowHandle {
 	wsClient := melody.New()
 	wsClient.Config.MaxMessageSize = constant.MaxMessageSize
 	// mService := impl.NewMaterial(wsClient)
@@ -28,7 +28,7 @@ func NewWorkflowHandle() *workflowHandle {
 
 	h := &workflowHandle{
 		wsClient: wsClient,
-		wService: impl.New(),
+		wService: impl.New(ctx, wsClient),
 	}
 
 	h.initMaterialWebSocket()

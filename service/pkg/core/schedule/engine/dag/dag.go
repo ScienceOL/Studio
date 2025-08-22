@@ -68,7 +68,7 @@ func (d *dagEngine) loadData(ctx context.Context) error {
 	}
 
 	// 加载所有工作流节点数据
-	nodes, err := d.workflowStore.GetWorkflowNodes(ctx, map[string]any{
+	allNodes, err := d.workflowStore.GetWorkflowNodes(ctx, map[string]any{
 		"workflow_id": wk.ID,
 	})
 
@@ -76,15 +76,16 @@ func (d *dagEngine) loadData(ctx context.Context) error {
 		return err
 	}
 
+	// 过滤可执行节点
+	nodes := utils.FilterSlice(allNodes, func(node *model.WorkflowNode) (*model.WorkflowNode, bool) {
+		if node.Type == model.WorkflowNodeGroup || node.Disabled {
+			return nil, false
+		}
+		return node, true
+	})
+
+	// 获取节点UUID用于查询边
 	nodeUUIDs := utils.FilterSlice(nodes, func(node *model.WorkflowNode) (uuid.UUID, bool) {
-		if node.Type == model.WorkflowNodeGroup {
-			return node.UUID, false
-		}
-
-		if node.Disabled {
-			return node.UUID, false
-		}
-
 		return node.UUID, true
 	})
 
@@ -119,9 +120,21 @@ func (d *dagEngine) buildTask(ctx context.Context) error {
 		return node.UUID, node
 	})
 
-	targetSourceMap := utils.SliceToMap(d.edges, func(edge *model.WorkflowEdge) (uuid.UUID, uuid.UUID) {
-		return edge.TargetNodeUUID, edge.SourceNodeUUID
-	})
+	// 修复：构建正确的边关系映射，支持一对多关系
+	targetSourcesMap := make(map[uuid.UUID][]uuid.UUID)
+	sourceTargetsMap := make(map[uuid.UUID][]uuid.UUID)
+
+	for _, edge := range d.edges {
+		// 目标节点的所有源节点
+		targetSourcesMap[edge.TargetNodeUUID] = append(targetSourcesMap[edge.TargetNodeUUID], edge.SourceNodeUUID)
+		// 源节点的所有目标节点
+		sourceTargetsMap[edge.SourceNodeUUID] = append(sourceTargetsMap[edge.SourceNodeUUID], edge.TargetNodeUUID)
+	}
+
+	// 先检测循环
+	if err := d.detectCycle(nodeMap, sourceTargetsMap); err != nil {
+		return err
+	}
 
 	for _, node := range d.nodes {
 		d.boardMsg(ctx, &engine.BoardMsg{
@@ -132,43 +145,74 @@ func (d *dagEngine) buildTask(ctx context.Context) error {
 		})
 
 		parentNodeMap := make(map[*model.WorkflowNode]struct{})
-		if err := d.findParent(ctx,
-			nodeMap,
-			targetSourceMap,
-			node,
-			parentNodeMap); err != nil {
-
-			return err
-		}
+		d.findAllParents(nodeMap, targetSourcesMap, node, parentNodeMap)
 		d.dependencies[node] = parentNodeMap
 	}
 	return nil
 }
 
-func (d *dagEngine) findParent(ctx context.Context,
-	nodeMap map[uuid.UUID]*model.WorkflowNode,
-	edgeMap map[uuid.UUID]uuid.UUID,
-	node *model.WorkflowNode, parentMap map[*model.WorkflowNode]struct{}) error {
+// 使用DFS检测循环
+func (d *dagEngine) detectCycle(nodeMap map[uuid.UUID]*model.WorkflowNode, edgeMap map[uuid.UUID][]uuid.UUID) error {
+	visited := make(map[uuid.UUID]bool)
+	recStack := make(map[uuid.UUID]bool)
+
+	for _, node := range d.nodes {
+		if !visited[node.UUID] {
+			if d.dfsDetectCycle(node.UUID, nodeMap, edgeMap, visited, recStack) {
+				return code.WorkflowHasCircularErr
+			}
+		}
+	}
+	return nil
+}
+
+func (d *dagEngine) dfsDetectCycle(nodeUUID uuid.UUID, nodeMap map[uuid.UUID]*model.WorkflowNode,
+	edgeMap map[uuid.UUID][]uuid.UUID, visited, recStack map[uuid.UUID]bool) bool {
+
+	visited[nodeUUID] = true
+	recStack[nodeUUID] = true
+
+	// 查找所有子节点
+	if targets, exists := edgeMap[nodeUUID]; exists {
+		for _, targetUUID := range targets {
+			if !visited[targetUUID] {
+				if d.dfsDetectCycle(targetUUID, nodeMap, edgeMap, visited, recStack) {
+					return true
+				}
+			} else if recStack[targetUUID] {
+				return true // 发现循环
+			}
+		}
+	}
+
+	recStack[nodeUUID] = false
+	return false
+}
+
+// 修复后的findAllParents方法，支持多个父节点
+func (d *dagEngine) findAllParents(nodeMap map[uuid.UUID]*model.WorkflowNode,
+	targetSourcesMap map[uuid.UUID][]uuid.UUID, node *model.WorkflowNode, parentMap map[*model.WorkflowNode]struct{}) {
+
 	if node == nil {
-		return nil
+		return
 	}
 
-	sourceNodeUUID, ok := edgeMap[node.UUID]
-	if !ok {
-		return nil
-	}
+	// 查找所有指向当前节点的父节点
+	if sources, exists := targetSourcesMap[node.UUID]; exists {
+		for _, sourceUUID := range sources {
+			parentNode, ok := nodeMap[sourceUUID]
+			if !ok {
+				continue // 父节点不存在
+			}
 
-	parentNode, ok := nodeMap[sourceNodeUUID]
-	if !ok {
-		return nil
+			// 避免重复访问
+			if _, exists := parentMap[parentNode]; !exists {
+				parentMap[parentNode] = struct{}{}
+				// 递归查找父节点的父节点
+				d.findAllParents(nodeMap, targetSourcesMap, parentNode, parentMap)
+			}
+		}
 	}
-
-	if _, ok := parentMap[parentNode]; ok {
-		return code.WorkflowHasCircularErr
-	}
-
-	parentMap[parentNode] = struct{}{}
-	return d.findParent(ctx, nodeMap, edgeMap, parentNode, parentMap)
 }
 
 func (d *dagEngine) Run(ctx context.Context, job *engine.WorkflowInfo) error {
@@ -188,8 +232,8 @@ func (d *dagEngine) Run(ctx context.Context, job *engine.WorkflowInfo) error {
 func (d *dagEngine) runAllNodes(ctx context.Context) error {
 	var hasError atomic.Bool
 	var firstError atomic.Value
-	closeCtx, cancle := context.WithCancel(ctx)
-	defer cancle()
+	closeCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	for {
 		if len(d.dependencies) == 0 {
@@ -200,7 +244,6 @@ func (d *dagEngine) runAllNodes(ctx context.Context) error {
 		case <-closeCtx.Done():
 			return nil
 		default:
-			time.Sleep(100 * time.Millisecond)
 		}
 
 		canRunNodes := make([]*model.WorkflowNode, 0, 10)
@@ -223,21 +266,25 @@ func (d *dagEngine) runAllNodes(ctx context.Context) error {
 
 		for index, node := range canRunNodes {
 			newNode := node
+			newInde := index
+			d.wg.Add(1) // Add应该在Submit之前调用
 			d.pools.Submit(func() {
 				defer d.wg.Done()
-				d.wg.Add(1)
-
 				utils.SafelyRun(func() {
-					if err := d.runNode(closeCtx, newNode, nodeJobs[index]); err != nil {
+					select {
+					case <-closeCtx.Done():
+						return
+					default:
+					}
+					if err := d.runNode(closeCtx, newNode, nodeJobs[newInde]); err != nil {
 						logger.Errorf(closeCtx, "node run fail node id: %d, errr: %+v", newNode.ID, err)
-						if hasError.Load() {
+						if !hasError.Load() {
 							firstError.Store(err)
 							hasError.Store(true)
-							cancle()
+							cancel()
 						}
 					}
 				})
-
 			})
 		}
 		d.wg.Wait()
@@ -270,7 +317,7 @@ func (d *dagEngine) runNode(ctx context.Context, node *model.WorkflowNode, job *
 	return d.callbackAction(ctx, job)
 }
 
-func (d *dagEngine) sendAction(_ context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
+func (d *dagEngine) sendAction(ctx context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
 	param := node.Param
 
 	if d.session.IsClosed() {
@@ -279,7 +326,9 @@ func (d *dagEngine) sendAction(_ context.Context, node *model.WorkflowNode, job 
 	// 数据库插入数据
 
 	data := engine.SendActionData{
-		DeviceID:   *node.DeviceName,
+		DeviceID: utils.SafeValue(func() string {
+			return *node.DeviceName
+		}, ""),
 		Action:     node.ActionName,
 		ActionType: node.ActionType,
 		ActionArgs: param,
@@ -299,6 +348,7 @@ func (d *dagEngine) sendAction(_ context.Context, node *model.WorkflowNode, job 
 }
 
 func (d *dagEngine) callbackAction(ctx context.Context, job *model.WorkflowNodeJob) error {
+	return nil
 	// 查询任务状态是否回调成功
 	dagConf := schedule.Config().DynamicConfig.DagTask
 	retry := dagConf.RetryCount

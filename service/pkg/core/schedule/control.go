@@ -47,7 +47,7 @@ var (
 )
 
 const (
-	registryPeriod = 10 * time.Second
+	registryPeriod = 1 * time.Second
 	poolSize       = 200
 )
 
@@ -352,7 +352,7 @@ func (i *control) startConsumeJob(ctx context.Context) {
 	conf := schedule.Config().Job
 	utils.SafelyGo(func() {
 		// 登录 edge 重连接
-		time.Sleep(30 * time.Second)
+		time.Sleep(5 * time.Second)
 		for {
 			select {
 			case <-ctx.Done():
