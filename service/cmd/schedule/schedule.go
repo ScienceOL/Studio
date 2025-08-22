@@ -129,7 +129,7 @@ func initSchedule(cmd *cobra.Command, _ []string) error {
 func newRouter(cmd *cobra.Command, _ []string) error {
 	router := gin.Default()
 
-	web.NewSchedule(cmd.Root().Context(), router)
+	cancel := web.NewSchedule(cmd.Root().Context(), router)
 	port := s.Config().Server.Port
 	addr := ":" + strconv.Itoa(port)
 
@@ -165,6 +165,7 @@ func newRouter(cmd *cobra.Command, _ []string) error {
 	// 阻塞等待收到中断信号
 	<-cmd.Context().Done()
 
+	cancel()
 	// 平滑超时退出
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()

@@ -20,3 +20,7 @@ func New(ctx context.Context) *handle {
 func (m *handle) Connect(ctx *gin.Context) {
 	m.ctrl.Connect(ctx)
 }
+
+func (m *handle) Close(ctx context.Context) {
+	m.ctrl.Close(ctx)
+}

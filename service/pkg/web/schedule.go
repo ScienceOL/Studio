@@ -14,22 +14,23 @@ import (
 	"github.com/scienceol/studio/service/pkg/web/views"
 )
 
-func NewSchedule(ctx context.Context, g *gin.Engine) {
+func NewSchedule(ctx context.Context, g *gin.Engine) context.CancelFunc {
 	installMiddleware(g)
-	InstallScheduleURL(ctx, g)
+	return InstallScheduleURL(ctx, g)
 }
 
-func InstallScheduleURL(ctx context.Context, g *gin.Engine) {
+func InstallScheduleURL(ctx context.Context, g *gin.Engine) context.CancelFunc {
 	api := g.Group("/api")
 	api.GET("/health", views.Health)
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	// websocket 启动
+	handle := schedule.New(ctx)
 
 	{
 		v1 := api.Group("/v1")
-		handle := schedule.New(ctx)
 		v1.GET("/lab", auth.Auth(), handle.Connect)
-
 	}
 
+	return func() {
+		handle.Close(ctx)
+	}
 }

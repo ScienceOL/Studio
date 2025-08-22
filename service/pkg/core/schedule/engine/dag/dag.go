@@ -226,7 +226,20 @@ func (d *dagEngine) Run(ctx context.Context, job *engine.WorkflowInfo) error {
 		return err
 	}
 
-	return d.runAllNodes(ctx)
+	err := d.runAllNodes(ctx)
+
+	data := &engine.BoardMsg{
+		Type:   "info",
+		Status: "success",
+		Msg:    []string{"running node"},
+	}
+	if err != nil {
+		data.Status = "fail"
+		data.Msg = append(data.Msg, err.Error())
+	}
+
+	d.boardMsg(ctx, data)
+	return err
 }
 
 func (d *dagEngine) runAllNodes(ctx context.Context) error {
@@ -317,7 +330,7 @@ func (d *dagEngine) runNode(ctx context.Context, node *model.WorkflowNode, job *
 	return d.callbackAction(ctx, job)
 }
 
-func (d *dagEngine) sendAction(ctx context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
+func (d *dagEngine) sendAction(_ context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
 	param := node.Param
 
 	if d.session.IsClosed() {
@@ -348,6 +361,7 @@ func (d *dagEngine) sendAction(ctx context.Context, node *model.WorkflowNode, jo
 }
 
 func (d *dagEngine) callbackAction(ctx context.Context, job *model.WorkflowNodeJob) error {
+	// FIXME: 测试结束后放开这段代码。
 	return nil
 	// 查询任务状态是否回调成功
 	dagConf := schedule.Config().DynamicConfig.DagTask
