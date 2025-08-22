@@ -351,14 +351,11 @@ func (i *control) initControl(ctx context.Context) {
 func (i *control) startConsumeJob(ctx context.Context) {
 	conf := schedule.Config().Job
 	utils.SafelyGo(func() {
-		// 登录 edge 重连接
 		time.Sleep(5 * time.Second)
 		for {
 			select {
 			case <-ctx.Done():
-				if err := i.consumer.Cleanup(ctx); err != nil {
-					logger.Errorf(ctx, "schedule Cleanup set fail")
-				}
+				return
 			case <-time.Tick(registryPeriod):
 				i.consumer.Message(ctx, conf.JobQueueName, func(msg []byte) {
 					i.OnJobMessage(ctx, msg)
@@ -368,5 +365,18 @@ func (i *control) startConsumeJob(ctx context.Context) {
 	}, func(err error) {
 		logger.Errorf(ctx, "consumer redis message fail err:%+v", err)
 	})
+}
 
+func (i *control) Close(ctx context.Context) {
+	if i.wsClient != nil {
+		i.wsClient.CloseWithMsg([]byte("reboot"))
+	}
+
+	if i.consumer != nil {
+		i.consumer.Cleanup(ctx)
+	}
+
+	if i.pools != nil {
+		i.pools.Release()
+	}
 }
