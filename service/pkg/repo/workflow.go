@@ -49,4 +49,6 @@ type WorkflowRepo interface {
 	UpsertEdge(ctx context.Context, edges []*model.WorkflowEdge) error
 	CreateJobs(ctx context.Context, datas []*model.WorkflowNodeJob) error
 	UpsertJobs(ctx context.Context, datas []*model.WorkflowNodeJob) error
+	GetTemplateList(ctx context.Context, labID int64, page *common.PageReq) ([]*model.WorkflowNodeTemplate, int64, error)
+	GetNodeTemplateByUUID(ctx context.Context, templateUUID uuid.UUID) (*model.WorkflowNodeTemplate, error)
 }

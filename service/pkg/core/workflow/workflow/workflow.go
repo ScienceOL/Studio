@@ -117,16 +117,113 @@ func (w *workflowImpl) ForkTemplate(ctx context.Context) {
 	// TODO: 未实现
 }
 
-func (w *workflowImpl) NodeTemplateDetail(ctx context.Context) {
-	// TODO: 未实现
+func (w *workflowImpl) NodeTemplateDetail(ctx context.Context, templateUUID uuid.UUID) (*workflow.NodeTemplateDetailResp, error) {
+	if templateUUID.IsNil() {
+		return nil, code.ParamErr.WithMsg("template uuid is empty")
+	}
+
+	// 获取节点模板详情
+	template, err := w.workflowStore.GetNodeTemplateByUUID(ctx, templateUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取实验室信息 - 根据template的lab_id获取实验室
+	lab, err := w.labStore.GetLabByID(ctx, template.LabID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取模板的handle列表
+	handles, err := w.workflowStore.GetWorkflowHandleTemaplates(ctx, []int64{template.ID})
+	if err != nil {
+		return nil, err
+	}
+
+	// 转换为响应格式
+	handleList := utils.FilterSlice(handles, func(h *model.WorkflowHandleTemplate) (*workflow.NodeHandle, bool) {
+		return &workflow.NodeHandle{
+			UUID:        h.UUID,
+			HandleKey:   h.HandleKey,
+			IoType:      h.IoType,
+			DisplayName: h.DisplayName,
+			Type:        h.Type,
+			DataSource:  h.DataSource,
+			DataKey:     h.DataKey,
+		}, true
+	})
+
+	return &workflow.NodeTemplateDetailResp{
+		UUID:        template.UUID,
+		Name:        template.Name,
+		Class:       template.Class,
+		Type:        template.Type,
+		Icon:        template.Icon,
+		Schema:      template.Schema,
+		Goal:        template.Goal,
+		GoalDefault: template.GoalDefault,
+		Feedback:    template.Feedback,
+		Result:      template.Result,
+		LabName:     lab.Name,
+		CreatedAt:   template.CreatedAt.Format("2006-01-02 15:04:05"),
+		Handles:     handleList,
+	}, nil
 }
 
 func (w *workflowImpl) TemplateDetail(ctx context.Context) {
 	// TODO: 未实现
 }
 
-func (w *workflowImpl) TemplateList(ctx context.Context) {
-	// TODO: 未实现
+func (w *workflowImpl) TemplateList(ctx context.Context, req *workflow.TplPageReq) (*common.PageResp[[]*workflow.TemplateListResp], error) {
+	if req.LabUUID.IsNil() {
+		return nil, code.ParamErr.WithMsg("lab uuid is empty")
+	}
+
+	// 获取实验室信息
+	lab, err := w.labStore.GetLabByUUID(ctx, req.LabUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取模板列表
+	templates, total, err := w.workflowStore.GetTemplateList(ctx, lab.ID, &req.PageReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取所有模板的handle数量
+	templateIDs := utils.FilterSlice(templates, func(t *model.WorkflowNodeTemplate) (int64, bool) {
+		return t.ID, true
+	})
+
+	handles, err := w.workflowStore.GetWorkflowHandleTemaplates(ctx, templateIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 统计每个模板的handle数量
+	handleCountMap := make(map[int64]int)
+	for _, handle := range handles {
+		handleCountMap[handle.WorkflowNodeID]++
+	}
+
+	// 转换为响应格式
+	respList := utils.FilterSlice(templates, func(t *model.WorkflowNodeTemplate) (*workflow.TemplateListResp, bool) {
+		return &workflow.TemplateListResp{
+			UUID:        t.UUID,
+			Name:        t.Name,               // 模板名称（从device_action name字段取）
+			LabName:     lab.Name,             // 实验室名字
+			HandleCount: handleCountMap[t.ID], // handle数量
+			CreatedAt:   t.CreatedAt.Format("2006-01-02 15:04:05"),
+		}, true
+	})
+
+	return &common.PageResp[[]*workflow.TemplateListResp]{
+		Data:     respList,
+		Total:    total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+	}, nil
 }
 
 func (w *workflowImpl) UpdateNodeTemplate(ctx context.Context) {

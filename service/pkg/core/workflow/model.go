@@ -42,6 +42,43 @@ type TplPageReq struct {
 	common.PageReq
 }
 
+// 模板列表响应
+type TemplateListResp struct {
+	UUID        uuid.UUID `json:"uuid"`
+	Name        string    `json:"name"`         // 模板名称（从device_action name字段取）
+	LabName     string    `json:"lab_name"`     // 实验室名字
+	HandleCount int       `json:"handle_count"` // handle数量
+	CreatedAt   string    `json:"created_at"`   // 创建时间
+}
+
+// 节点详情响应
+type NodeTemplateDetailResp struct {
+	UUID        uuid.UUID      `json:"uuid"`
+	Name        string         `json:"name"`         // 模板名称
+	Class       string         `json:"class"`        // 类名
+	Type        string         `json:"type"`         // 类型
+	Icon        string         `json:"icon"`         // 图标
+	Schema      datatypes.JSON `json:"schema"`       // 数据模式
+	Goal        datatypes.JSON `json:"goal"`         // 目标参数
+	GoalDefault datatypes.JSON `json:"goal_default"` // 默认目标参数
+	Feedback    datatypes.JSON `json:"feedback"`     // 反馈参数
+	Result      datatypes.JSON `json:"result"`       // 结果参数
+	LabName     string         `json:"lab_name"`     // 实验室名称
+	CreatedAt   string         `json:"created_at"`   // 创建时间
+	Handles     []*NodeHandle  `json:"handles"`      // handle列表
+}
+
+// 节点Handle信息
+type NodeHandle struct {
+	UUID        uuid.UUID `json:"uuid"`
+	HandleKey   string    `json:"handle_key"`   // handle键
+	IoType      string    `json:"io_type"`      // 输入输出类型
+	DisplayName string    `json:"display_name"` // 显示名称
+	Type        string    `json:"type"`         // 数据类型
+	DataSource  string    `json:"data_source"`  // 数据源
+	DataKey     string    `json:"data_key"`     // 数据键
+}
+
 // ======================================websocket============================
 type ActionType string
 

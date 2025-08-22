@@ -42,7 +42,7 @@ func (w *workflowHandle) TemplateList(ctx *gin.Context) {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
 		return
 	}
-	if res, err := w.wService.NodeTemplateList(ctx, &req); err != nil {
+	if res, err := w.wService.TemplateList(ctx, &req); err != nil {
 		common.ReplyErr(ctx, err)
 	} else {
 		common.ReplyOk(ctx, res)
@@ -59,7 +59,24 @@ func (w *workflowHandle) ForkTemplate(ctx *gin.Context) {}
 func (w *workflowHandle) NodeTemplateList(ctx *gin.Context) {}
 
 // 节点模板详情
-func (w *workflowHandle) NodeTemplateDetail(ctx *gin.Context) {}
+func (w *workflowHandle) NodeTemplateDetail(ctx *gin.Context) {
+	req := &workflow.LabWorkflow{}
+	if err := ctx.ShouldBindUri(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
+	if req.UUID.IsNil() {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg("template uuid is empty"))
+		return
+	}
+
+	if res, err := w.wService.NodeTemplateDetail(ctx, req.UUID); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx, res)
+	}
+}
 
 // 节点模板编辑
 func (w *workflowHandle) UpdateNodeTemplate(ctx *gin.Context) {}

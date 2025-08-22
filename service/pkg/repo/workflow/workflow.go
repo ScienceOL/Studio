@@ -368,6 +368,53 @@ func (w *workflowImpl) GetWorkflowList(ctx context.Context, userID string, labID
 	return workflows, total, nil
 }
 
+// GetTemplateList 获取模板列表（分页）
+func (w *workflowImpl) GetTemplateList(ctx context.Context, labID int64, page *common.PageReq) ([]*model.WorkflowNodeTemplate, int64, error) {
+	templates := make([]*model.WorkflowNodeTemplate, 0, 1)
+	total := int64(0)
+
+	// 构建查询条件
+	query := w.DBWithContext(ctx).Model(&model.WorkflowNodeTemplate{})
+
+	// 按实验室ID过滤
+	query = query.Where("lab_id = ?", labID)
+
+	// 获取总数
+	if err := query.Count(&total).Error; err != nil {
+		logger.Errorf(ctx, "GetTemplateList count fail lab_id: %d, err: %+v", labID, err)
+		return nil, 0, code.QueryRecordErr.WithMsg(err.Error())
+	}
+
+	// 分页查询
+	if err := query.Offset(page.Offest()).
+		Limit(page.PageSize).
+		Order("created_at desc").
+		Find(&templates).Error; err != nil {
+		logger.Errorf(ctx, "GetTemplateList query fail lab_id: %d, err: %+v", labID, err)
+		return nil, 0, code.QueryRecordErr.WithMsg(err.Error())
+	}
+
+	return templates, total, nil
+}
+
+// GetNodeTemplateByUUID 根据UUID获取节点模板详情
+func (w *workflowImpl) GetNodeTemplateByUUID(ctx context.Context, templateUUID uuid.UUID) (*model.WorkflowNodeTemplate, error) {
+	template := &model.WorkflowNodeTemplate{}
+
+	if err := w.DBWithContext(ctx).
+		Where("uuid = ?", templateUUID).
+		First(template).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Errorf(ctx, "GetNodeTemplateByUUID record not found uuid: %+v", templateUUID)
+			return nil, code.RecordNotFound.WithMsgf("template not found: %s", templateUUID)
+		}
+		logger.Errorf(ctx, "GetNodeTemplateByUUID fail uuid: %+v, err: %+v", templateUUID, err)
+		return nil, code.QueryRecordErr.WithMsg(err.Error())
+	}
+
+	return template, nil
+}
+
 func (w *workflowImpl) UpsertNodes(ctx context.Context, nodes []*model.WorkflowNode) error {
 	if len(nodes) == 0 {
 		return nil

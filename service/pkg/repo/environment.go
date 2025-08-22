@@ -23,6 +23,8 @@ type LaboratoryRepo interface {
 	CreateLaboratoryEnv(ctx context.Context, data *model.Laboratory) error
 	// 根据 uuid 获取实验室
 	GetLabByUUID(ctx context.Context, UUID uuid.UUID, selectKeys ...string) (*model.Laboratory, error)
+	// 根据实验室ID获取实验室
+	GetLabByID(ctx context.Context, labID int64, selectKeys ...string) (*model.Laboratory, error)
 	// 根据实验室用户 AK、SK 获取
 	GetLabByAkSk(ctx context.Context, accessKey string, accessSecret string) (*model.Laboratory, error)
 	// 更新实验室环境

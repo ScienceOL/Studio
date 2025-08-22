@@ -67,6 +67,30 @@ func (e *envImpl) GetLabByUUID(ctx context.Context, UUID uuid.UUID, selectKeys .
 	return data, nil
 }
 
+func (e *envImpl) GetLabByID(ctx context.Context, labID int64, selectKeys ...string) (*model.Laboratory, error) {
+	data := &model.Laboratory{}
+	query := e.DBWithContext(ctx).Where("id = ?", labID)
+	if len(selectKeys) != 0 {
+		query = query.Select(selectKeys)
+	}
+
+	statement := query.First(data)
+	if statement.Error != nil {
+		if errors.Is(statement.Error, gorm.ErrRecordNotFound) {
+			logger.Errorf(ctx, "GetLabByID record not found lab_id: %+v", labID)
+			return nil, code.RecordNotFound
+		}
+
+		logger.Errorf(ctx, "GetLabByID fail lab_id: %+v, sql: %+s, err: %+v",
+			labID,
+			statement.Statement.SQL.String(),
+			statement.Error)
+		return nil, code.QueryRecordErr.WithErr(statement.Error)
+	}
+
+	return data, nil
+}
+
 func (e *envImpl) UpsertWorkflowNodeTemplate(ctx context.Context, datas []*model.WorkflowNodeTemplate) error {
 	if len(datas) == 0 {
 		return nil
