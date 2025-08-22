@@ -44,7 +44,7 @@ func NewMaterial(ctx context.Context, wsClient *melody.Melody) material.Service 
 }
 
 func (m *materialImpl) CreateMaterial(ctx context.Context, req *material.GraphNodeReq) error {
-	labUser := auth.GetCurrentUser(ctx)
+	labUser := auth.GetLabUser(ctx)
 	if labUser == nil {
 		return code.UnLogin
 	}
@@ -61,7 +61,6 @@ func (m *materialImpl) CreateMaterial(ctx context.Context, req *material.GraphNo
 		return err
 	}
 
-	// FIXME: 这个可能会报错，刚插入数据，迅速索引数据
 	_ = m.addEdges(ctx, labData.ID, req.Edges, false)
 	return nil
 }
@@ -199,7 +198,7 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 }
 
 func (m *materialImpl) CreateEdge(ctx context.Context, req *material.GraphEdge) error {
-	labUser := auth.GetCurrentUser(ctx)
+	labUser := auth.GetLabUser(ctx)
 	if labUser == nil {
 		return code.UnLogin
 	}
@@ -297,7 +296,7 @@ func (m *materialImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 		return m.fetchDeviceTemplate(ctx, s, msgType.MsgUUID)
 	case material.SaveGraph:
 		return m.saveGraph(ctx, s, b)
-	case material.CreateNode: // TODO: 这个不实现，一次修改数量太多，没必要，通知也复杂
+	case material.CreateNode:
 		return m.createNode(ctx, s, b)
 	case material.UpdateNode: // 批量更新节点
 		return m.upateNode(ctx, s, b)

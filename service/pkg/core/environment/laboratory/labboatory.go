@@ -38,38 +38,48 @@ func (l *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Laborato
 	if userInfo == nil {
 		return nil, code.UnLogin
 	}
+	var data *model.Laboratory
 
-	ak := uuid.NewV4().String()
-	sk := uuid.NewV4().String()
-	err := l.accountClient.CreateLabUser(ctx, &model.LabInfo{
-		AccessKey:         ak,
-		AccessSecret:      sk,
-		Name:              fmt.Sprintf("%s-%s", req.Name, ak),
-		DisplayName:       req.Name,
-		Avatar:            "https://cdn.casbin.org/img/casbin.svg",
-		Owner:             "scienceol",
-		Type:              model.LABTYPE,
-		Password:          "lab-user",
-		SignupApplication: "scienceol",
+	err := l.envStore.ExecTx(ctx, func(txCtx context.Context) error {
+		data = &model.Laboratory{
+			Name:         req.Name,
+			UserID:       userInfo.ID,
+			Status:       model.INIT,
+			AccessKey:    "tmp",
+			AccessSecret: "tmp",
+			Description:  req.Description,
+			BaseModel: model.BaseModel{
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+		}
+		if err := l.envStore.CreateLaboratoryEnv(ctx, data); err != nil {
+			return err
+		}
+
+		ak := uuid.NewV4().String()
+		sk := uuid.NewV4().String()
+		err := l.accountClient.CreateLabUser(txCtx, &model.LabInfo{
+			AccessKey:         ak,
+			AccessSecret:      sk,
+			Name:              fmt.Sprintf("%s-%s", req.Name, ak),
+			DisplayName:       req.Name,
+			Avatar:            "https://cdn.casbin.org/img/casbin.svg",
+			Owner:             "scienceol",
+			Type:              model.LABTYPE,
+			Password:          "lab-user",
+			SignupApplication: "scienceol",
+		})
+		if err != nil {
+			return err
+		}
+		data.AccessKey = ak
+		data.AccessSecret = sk
+
+		return l.envStore.UpdateLaboratoryEnv(txCtx, data)
 	})
-	if err != nil {
-		return nil, err
-	}
 
-	data := &model.Laboratory{
-		Name:         req.Name,
-		UserID:       userInfo.ID,
-		Status:       model.INIT,
-		AccessKey:    ak,
-		AccessSecret: sk,
-		Description:  req.Description,
-		BaseModel: model.BaseModel{
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
-	}
-	if err := l.envStore.CreateLaboratoryEnv(ctx, data); err != nil {
-		// FIXME: 如果创建实验室失败，则删除对应的实验室用户
+	if err != nil {
 		return nil, err
 	}
 
@@ -111,7 +121,7 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 		return code.ResourceIsEmptyErr
 	}
 
-	labInfo := auth.GetCurrentUser(ctx)
+	labInfo := auth.GetLabUser(ctx)
 	if labInfo == nil {
 		return code.UnLogin
 	}

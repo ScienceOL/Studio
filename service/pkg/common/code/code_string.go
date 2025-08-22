@@ -32,6 +32,10 @@ func _() {
 	_ = x[DeleteDataErr-10004]
 	_ = x[NotBaseDBTypeErr-10005]
 	_ = x[ModelNotImplementTablerErr-10006]
+	_ = x[RedisLuaScriptErr-10007]
+	_ = x[RedisLuaRetErr-10008]
+	_ = x[RedisAddSetErr-10009]
+	_ = x[RedisRemoveSetErr-10010]
 	_ = x[RegActionNameEmptyErr-20000]
 	_ = x[ResourceIsEmptyErr-20001]
 	_ = x[ResourceNotExistErr-20002]
@@ -57,30 +61,39 @@ func _() {
 	_ = x[PermissionDenied-28003]
 	_ = x[SaveWorkflowNodeErr-28004]
 	_ = x[SaveWorkflowEdgeErr-28005]
+	_ = x[WorkflowTaskAlreadyExistErr-30000]
+	_ = x[CanNotFoundEdgeSession-30001]
+	_ = x[WorkflowHasCircularErr-30002]
+	_ = x[EdgeConnectClosedErr-30003]
+	_ = x[NodeDataMarshalErr-30004]
+	_ = x[JobRetryTimeout-30005]
+	_ = x[JobRunFailErr-30006]
 }
 
 const (
 	_ErrCode_name_0 = "successundefined"
 	_ErrCode_name_1 = "parse parameter errornot pointer errmust be a pointer to a slice"
 	_ErrCode_name_2 = "login configuration errorset login state errorrefresh token failedstate verification failedexchange token failedcallback parameter errorget user info failedlogin process user info failednot logged inlogin verification format errorinvalid tokenrefresh token parameter error"
-	_ErrCode_name_3 = "database create data errordatabase update data errordatabase record not founddatabase query errordatabase delete errornot base db type errormodel not implement schema.Tabler"
+	_ErrCode_name_3 = "database create data errordatabase update data errordatabase record not founddatabase query errordatabase delete errornot base db type errormodel not implement schema.Tablerredis lua script errorredis lua return type errorredis add user set errorredis remove user set error"
 	_ErrCode_name_4 = "reg action name emptyresource is emptyresource not exist"
 	_ErrCode_name_5 = "resource not existedge node not existnode handle not existunknown material websocket actionunmarshal material websocket data errorcannot get lab id errorupdate material node errorparent node not found errortemplate node not found errorinvalid dag errormax template node deep error"
 	_ErrCode_name_6 = "notify action already registrynotify subscribe channel failnotify send message error"
 	_ErrCode_name_7 = "create lab user errorquery lab user error"
 	_ErrCode_name_8 = "can not get workflow uuidworkflow not existupsert workflow edge errorpermission deniedbatch save nodes errorbatch save workflow edge error"
+	_ErrCode_name_9 = "workflow task already exist errorcan not found edge sessionworkflow has circular errorconnect closed when node running errormarshal node data errorjob retry timeout errorjob run fail error"
 )
 
 var (
 	_ErrCode_index_0 = [...]uint8{0, 7, 16}
 	_ErrCode_index_1 = [...]uint8{0, 21, 36, 64}
 	_ErrCode_index_2 = [...]uint16{0, 25, 46, 66, 91, 112, 136, 156, 186, 199, 230, 243, 272}
-	_ErrCode_index_3 = [...]uint8{0, 26, 52, 77, 97, 118, 140, 173}
+	_ErrCode_index_3 = [...]uint16{0, 26, 52, 77, 97, 118, 140, 173, 195, 222, 246, 273}
 	_ErrCode_index_4 = [...]uint8{0, 21, 38, 56}
 	_ErrCode_index_5 = [...]uint16{0, 18, 37, 58, 91, 130, 153, 179, 206, 235, 252, 280}
 	_ErrCode_index_6 = [...]uint8{0, 30, 59, 84}
 	_ErrCode_index_7 = [...]uint8{0, 21, 41}
 	_ErrCode_index_8 = [...]uint8{0, 25, 43, 69, 86, 108, 138}
+	_ErrCode_index_9 = [...]uint8{0, 33, 59, 86, 124, 147, 170, 188}
 )
 
 func (i ErrCode) String() string {
@@ -93,7 +106,7 @@ func (i ErrCode) String() string {
 	case 5000 <= i && i <= 5011:
 		i -= 5000
 		return _ErrCode_name_2[_ErrCode_index_2[i]:_ErrCode_index_2[i+1]]
-	case 10000 <= i && i <= 10006:
+	case 10000 <= i && i <= 10010:
 		i -= 10000
 		return _ErrCode_name_3[_ErrCode_index_3[i]:_ErrCode_index_3[i+1]]
 	case 20000 <= i && i <= 20002:
@@ -111,6 +124,9 @@ func (i ErrCode) String() string {
 	case 28000 <= i && i <= 28005:
 		i -= 28000
 		return _ErrCode_name_8[_ErrCode_index_8[i]:_ErrCode_index_8[i+1]]
+	case 30000 <= i && i <= 30006:
+		i -= 30000
+		return _ErrCode_name_9[_ErrCode_index_9[i]:_ErrCode_index_9[i+1]]
 	default:
 		return "ErrCode(" + strconv.FormatInt(int64(i), 10) + ")"
 	}

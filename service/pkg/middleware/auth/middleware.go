@@ -118,10 +118,14 @@ func (u *userAuth) AuthUser(ctx *gin.Context) {
 	}
 
 	var userInfo *model.UserData
+	var authKey = USERKEY
 	switch tokens[0] {
 	case "Bearer":
 		userInfo = u.getNormalUser(ctx, authHeader)
 	case "lab":
+		userInfo = u.getLabUser(ctx, authHeader)
+		authKey = LABKEY
+	case "api":
 		userInfo = u.getLabUser(ctx, authHeader)
 	}
 
@@ -138,7 +142,7 @@ func (u *userAuth) AuthUser(ctx *gin.Context) {
 	}
 
 	// 将用户信息保存到上下文
-	ctx.Set(USERKEY, userInfo)
+	ctx.Set(authKey, userInfo)
 	ctx.Next()
 }
 
@@ -198,6 +202,19 @@ func GetCurrentUser(ctx context.Context) *model.UserData {
 	}
 
 	user, exists := gCtx.Get(USERKEY)
+	if !exists {
+		return nil
+	}
+	return user.(*model.UserData)
+}
+
+func GetLabUser(ctx context.Context) *model.UserData {
+	gCtx, ok := ctx.(*gin.Context)
+	if !ok {
+		return nil
+	}
+
+	user, exists := gCtx.Get(LABKEY)
 	if !exists {
 		return nil
 	}

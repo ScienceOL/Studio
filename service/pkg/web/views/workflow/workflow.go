@@ -115,6 +115,11 @@ func (w *workflowHandle) GetWorkflowDetail(ctx *gin.Context) {
 }
 
 func (m *workflowHandle) initMaterialWebSocket() {
+	m.wsClient.HandlePong(func(s *melody.Session) {
+		if ctx, ok := s.Get("ctx"); ok {
+			logger.Infof(ctx.(context.Context), "==================== pong=====================")
+		}
+	})
 	m.wsClient.HandleClose(func(s *melody.Session, i int, s2 string) error {
 		if ctx, ok := s.Get("ctx"); ok {
 			logger.Infof(ctx.(context.Context), "client close keys: %+v", s.Keys)

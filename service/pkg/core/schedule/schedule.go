@@ -4,10 +4,8 @@ import (
 	"context"
 )
 
-
-
-type Service interface {
-	StartJob(ctx context.Context, jobID int64)
-	StopJob(ctx context.Context)
-	GetJobStatus(ctx context.Context)
+type Control interface {
+	Connect(ctx context.Context)
+	OnJobMessage(ctx context.Context, msg []byte)
+	OnEdgeMessge(ctx context.Context, msg string)
 }

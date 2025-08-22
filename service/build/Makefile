@@ -217,6 +217,11 @@ migrate:
 apiserver: generate
 	go run main.go apiserver
 
+# 运行调度
+schedule: generate
+	go run main.go schedule
+
+
 fmt-install:
 	go install mvdan.cc/gofumpt@v0.8.0
 

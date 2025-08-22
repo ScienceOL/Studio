@@ -199,13 +199,26 @@ func (w *workflowImpl) GetWorkflowHandleTemaplates(ctx context.Context, workflow
 	return handles, nil
 }
 
-func (w *workflowImpl) GetWorkflowNode(ctx context.Context, condition map[string]any) ([]*model.WorkflowNode, error) {
+func (w *workflowImpl) GetWorkflowNodes(ctx context.Context, condition map[string]any) ([]*model.WorkflowNode, error) {
 	data := make([]*model.WorkflowNode, 0, 1)
 	if err := w.DBWithContext(ctx).
 		Where(condition).
-		Find(data).Error; err != nil {
+		Find(&data).Error; err != nil {
 
 		logger.Errorf(ctx, "GetWorkflowNode fail condition: %v, err: %+v", condition, err)
+		return nil, code.QueryRecordErr.WithMsg(err.Error())
+	}
+
+	return data, nil
+}
+
+func (w *workflowImpl) GetWorkflowEdges(ctx context.Context, nodeUUIDs []uuid.UUID) ([]*model.WorkflowEdge, error) {
+	data := make([]*model.WorkflowEdge, 0, 1)
+	if err := w.DBWithContext(ctx).
+		Where("source_node_uuid in ? or target_node_uuid in ?", nodeUUIDs, nodeUUIDs).
+		Find(&data).Error; err != nil {
+
+		logger.Errorf(ctx, "GetWorkflowNode fail uuids: %v, err: %+v", nodeUUIDs, err)
 		return nil, code.QueryRecordErr.WithMsg(err.Error())
 	}
 
@@ -404,6 +417,42 @@ func (w *workflowImpl) UpsertEdge(ctx context.Context, edges []*model.WorkflowEd
 				"updated_at",
 			}),
 		}).Create(edges).Error; err != nil {
+
+		logger.Errorf(ctx, "UpsertEdge fail err: %+v", err)
+		return code.UpdateDataErr.WithErr(err)
+	}
+
+	return nil
+}
+
+func (w *workflowImpl) CreateJobs(ctx context.Context, datas []*model.WorkflowNodeJob) error {
+	if statement := w.DBWithContext(ctx).Create(datas); statement.Error != nil {
+		logger.Errorf(ctx, "CreateJobs fail err: %+v", statement.Error)
+		return code.CreateDataErr.WithMsg(statement.Error.Error())
+	}
+
+	return nil
+}
+
+func (w *workflowImpl) UpsertJobs(ctx context.Context, datas []*model.WorkflowNodeJob) error {
+	if len(datas) == 0 {
+		return nil
+	}
+
+	if err := w.DBWithContext(ctx).Clauses(
+		clause.OnConflict{
+			Columns: []clause.Column{
+				{
+					Name: "uuid",
+				},
+			},
+
+			DoUpdates: clause.AssignmentColumns([]string{
+				"status",
+				"data",
+				"updated_at",
+			}),
+		}).Create(datas).Error; err != nil {
 
 		logger.Errorf(ctx, "UpsertEdge fail err: %+v", err)
 		return code.UpdateDataErr.WithErr(err)

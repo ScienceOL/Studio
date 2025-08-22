@@ -95,6 +95,16 @@ func FilterSlice[S any, T any](sources []T, f func(i T) (S, bool)) []S {
 	return newSlice
 }
 
+func FindTarget[S any, T any](sources []T, f func(i T) (S, bool)) S {
+	var zero S
+	for _, item := range sources {
+		data, ok := f(item)
+		if ok {
+			return data
+		}
+	}
+	return zero
+}
 func FilterSliceWithErr[S any, T any](sources []T, f func(i T) ([]S, bool, error)) ([]S, error) {
 	newSlice := make([]S, 0, len(sources))
 	for _, item := range sources {

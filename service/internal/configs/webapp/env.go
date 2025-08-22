@@ -74,3 +74,7 @@ type Nacos struct {
 	Group       string `mapstructure:"NACOS_GROUP" default:"DEFAULT_GROUP"`
 	NeedWatch   bool   `mapstructure:"NACOS_NEED_WATCH" default:"true"`
 }
+
+type Job struct {
+	JobQueueName string `mapstructure:"JOB_QUEUE_NAME" default:"studio_workflow_job_queue"`
+}

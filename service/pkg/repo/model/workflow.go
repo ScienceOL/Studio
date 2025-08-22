@@ -17,6 +17,13 @@ func (*Workflow) TableName() string {
 	return "workflow"
 }
 
+type WorkflowNodeType string
+
+const (
+	WorkflowNodeGroup WorkflowNodeType = "Group"
+	WorkflowNodeILab  WorkflowNodeType = "ILab"
+)
+
 type WorkflowNode struct {
 	BaseModel
 	WorkflowID     int64                    `gorm:"type:bigint;not null;index:idx_workflow_id" json:"workflow_id"`
@@ -25,12 +32,15 @@ type WorkflowNode struct {
 	Name           string                   `gorm:"type:varchar(200);not null;default:'unknow'" json:"name"`
 	UserID         string                   `gorm:"type:varchar(120);not null" json:"user_id"`
 	Status         string                   `gorm:"type:varchar(20);not null;default:'draft'" json:"status"`
-	Type           string                   `gorm:"type:varchar(20);not null" json:"type"`
+	Type           WorkflowNodeType         `gorm:"type:varchar(20);not null" json:"type"`
+	LabNodeType    string                   `gorm:"type:varchar(20);not null;default:'Device'" json:"lab_node_type"` // 节点类型，默认DEFAULT
 	Icon           string                   `gorm:"type:text" json:"icon"`
 	Pose           datatypes.JSONType[Pose] `gorm:"type:jsonb" json:"pose"`
 	Param          datatypes.JSON           `gorm:"type:jsonb" json:"param"`
 	Footer         string                   `gorm:"type:text" json:"footer"`
 	DeviceName     *string                  `gorm:"type:varchar(255)" json:"device_name"`
+	ActionName     string                   `gorm:"type:varchar(255)" json:"action_name"`
+	ActionType     string                   `gorm:"type:text" json:"action_type"`
 	Disabled       bool                     `gorm:"type:bool;not null;default:false" json:"disabled"`
 	Minimized      bool                     `gorm:"type:bool;not null;default:false" json:"minimized"`
 }
@@ -57,4 +67,24 @@ type WorkflowEdge struct {
 
 func (*WorkflowEdge) TableName() string {
 	return "workflow_edge"
+}
+
+type WorkflowJobStatus string
+
+const (
+	WorkflowJobDraft   WorkflowJobStatus = "draft"
+	WorkflowJobSkipped WorkflowJobStatus = "skipped"
+	WorkflowJobSuccess WorkflowJobStatus = "success"
+	WorkflowJobFailed  WorkflowJobStatus = "failed"
+	WorkflowJobRunning WorkflowJobStatus = "running"
+	WorkflowJobPending WorkflowJobStatus = "pending"
+)
+
+type WorkflowNodeJob struct {
+	BaseModel
+	LabID  int64             `gorm:"type:bigint;not null;index:idx_lab_node,priority:1" json:"lab_id"`
+	NodeID int64             `gorm:"type:bigint;not null;index:idx_lab_node,priority:2" json:"node_id"`
+	UserID string            `gorm:"type:varchar(120);not null" json:"user_id"`
+	Status WorkflowJobStatus `gorm:"type:varchar(50);not null" json:"status"`
+	Data   datatypes.JSON    `gorm:"type:jsonb" json:"data"`
 }

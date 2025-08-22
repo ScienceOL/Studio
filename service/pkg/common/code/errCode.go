@@ -88,6 +88,10 @@ const (
 	DeleteDataErr                                     // database delete error
 	NotBaseDBTypeErr                                  // not base db type error
 	ModelNotImplementTablerErr                        // model not implement schema.Tabler
+	RedisLuaScriptErr                                 // redis lua script error
+	RedisLuaRetErr                                    // redis lua return type error
+	RedisAddSetErr                                    // redis add user set error
+	RedisRemoveSetErr                                 // redis remove user set error
 )
 
 // environment business layer errors
@@ -133,4 +137,15 @@ const (
 	PermissionDenied                                // permission denied
 	SaveWorkflowNodeErr                             // batch save nodes error
 	SaveWorkflowEdgeErr                             // batch save workflow edge error
+)
+
+// schedule module errors
+const (
+	WorkflowTaskAlreadyExistErr ErrCode = iota + 30000 // workflow task already exist error
+	CanNotFoundEdgeSession                             // can not found edge session
+	WorkflowHasCircularErr                             // workflow has circular error
+	EdgeConnectClosedErr                               // connect closed when node running error
+	NodeDataMarshalErr                                 // marshal node data error
+	JobRetryTimeout                                    // job retry timeout error
+	JobRunFailErr                                      // job run fail error
 )

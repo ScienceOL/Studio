@@ -56,6 +56,7 @@ const (
 	BatchCreateEdge   ActionType = "batch_create_edges"
 	BatchDelEdge      ActionType = "batch_del_edges"
 	SaveWorkflow      ActionType = "save_workflow"
+	RunWorkflow       ActionType = "run_workflow"
 )
 
 type WSNodeHandle struct {
@@ -87,7 +88,7 @@ type WSNode struct {
 	ParentUUID   uuid.UUID                      `json:"parent_uuid"`
 	UserID       string                         `json:"user_id"`
 	Status       string                         `json:"status"`
-	Type         string                         `json:"type"`
+	Type         model.WorkflowNodeType         `json:"type"`
 	Icon         string                         `json:"icon"`
 	Pose         datatypes.JSONType[model.Pose] `json:"pose"`
 	Param        datatypes.JSON                 `json:"param"`
@@ -97,6 +98,7 @@ type WSNode struct {
 	DeviceName   *string                        `json:"device_name,omitempty"`
 	Disabled     bool                           `json:"disabled"`
 	Minimized    bool                           `json:"minimized"`
+	LabNodeType  string                         `json:"lab_node_type"`
 }
 
 type WSWorkflowEdge struct {
@@ -142,7 +144,7 @@ type WSTemplates struct {
 type WSCreateNode struct {
 	TemplateUUID uuid.UUID                      `json:"template_uuid"`
 	ParentUUID   uuid.UUID                      `json:"parent_uuid"`
-	Type         string                         `json:"type"`
+	Type         model.WorkflowNodeType         `json:"type"`
 	Icon         string                         `json:"icon"`
 	Pose         datatypes.JSONType[model.Pose] `json:"pose"`
 	Param        *datatypes.JSON                `json:"param,omitempty"`
@@ -152,17 +154,17 @@ type WSCreateNode struct {
 
 type WSUpdateNode struct {
 	UUID       uuid.UUID                       `json:"uuid"`
-	ParentUUID *uuid.UUID                      `json:"parent_uuid"`
-	Status     *string                         `json:"status"`
-	Type       *string                         `json:"type"`
-	Icon       *string                         `json:"icon"`
-	Pose       *datatypes.JSONType[model.Pose] `json:"pose"`
-	Param      *datatypes.JSON                 `json:"param"`
-	Footer     *string                         `json:"footer"`
-	Name       *string                         `json:"name"`
-	Disabled   *bool                           `json:"disabled"`
-	Minimized  *bool                           `json:"minimized"`
-	DeviceName *string                         `json:"device_name"`
+	ParentUUID *uuid.UUID                      `json:"parent_uuid,omitempty"`
+	Status     *string                         `json:"status,omitempty"`
+	Type       *model.WorkflowNodeType         `json:"type,omitempty"`
+	Icon       *string                         `json:"icon,omitempty"`
+	Pose       *datatypes.JSONType[model.Pose] `json:"pose,omitempty"`
+	Param      *datatypes.JSON                 `json:"param,omitempty"`
+	Footer     *string                         `json:"footer,omitempty"`
+	Name       *string                         `json:"name,omitempty"`
+	Disabled   *bool                           `json:"disabled,omitempty"`
+	Minimized  *bool                           `json:"minimized,omitempty"`
+	DeviceName *string                         `json:"device_name,omitempty"`
 }
 
 type WSDelNodes struct {

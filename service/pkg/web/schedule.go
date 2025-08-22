@@ -4,6 +4,8 @@ import (
 	"context"
 
 	_ "github.com/scienceol/studio/service/docs" // 导入自动生成的 docs 包
+	"github.com/scienceol/studio/service/pkg/middleware/auth"
+	"github.com/scienceol/studio/service/pkg/web/views/schedule"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -25,7 +27,9 @@ func InstallScheduleURL(ctx context.Context, g *gin.Engine) {
 
 	{
 		v1 := api.Group("/v1")
-		_ = v1
+		handle := schedule.New(ctx)
+		v1.GET("/lab", auth.Auth(), handle.Connect)
+
 	}
 
 }

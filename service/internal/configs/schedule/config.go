@@ -7,18 +7,19 @@ import (
 	"github.com/creasty/defaults"
 )
 
-type WebGlobalConfig struct {
-	Database      Database `mapstructure:",squash"`
-	Redis         Redis    `mapstructure:",squash"`
-	Server        Server   `mapstructure:",squash"`
-	OAuth2        OAuth2   `mapstructure:",squash"`
-	Log           Log      `mapstructure:",squash"`
-	Trace         Trace    `mapstructure:",squash"`
-	Nacos         Nacos    `mapstructure:",squash"`
-	DynamicConfig *DynamicConfig
+type ScheduleGlobalConfig struct {
+	Database      Database       `mapstructure:",squash"`
+	Redis         Redis          `mapstructure:",squash"`
+	Server        Server         `mapstructure:",squash"`
+	OAuth2        OAuth2         `mapstructure:",squash"`
+	Log           Log            `mapstructure:",squash"`
+	Trace         Trace          `mapstructure:",squash"`
+	Nacos         Nacos          `mapstructure:",squash"`
+	Job           Job            `mapstructure:",squash"`
+	DynamicConfig *DynamicConfig 
 }
 
-var config = &WebGlobalConfig{}
+var config = &ScheduleGlobalConfig{}
 
 func init() {
 	// 初始化 tag default 值
@@ -28,6 +29,6 @@ func init() {
 	}
 }
 
-func Config() *WebGlobalConfig {
+func Config() *ScheduleGlobalConfig {
 	return config
 }

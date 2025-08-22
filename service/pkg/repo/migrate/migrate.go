@@ -24,6 +24,7 @@ func Table(_ context.Context) error {
 			&model.WorkflowEdge{},
 			&model.WorkflowConsole{},
 			&model.WorkflowHandleTemplate{},
+			&model.WorkflowNodeJob{},
 		) // 动作节点handle 模板
 	})
 }

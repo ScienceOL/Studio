@@ -12,7 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/scienceol/studio/service/internal/configs/webapp"
+	s "github.com/scienceol/studio/service/internal/configs/schedule"
 	"github.com/scienceol/studio/service/pkg/core/notify/events"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
@@ -48,7 +48,7 @@ func initGlobalResource(_ *cobra.Command, _ []string) error {
 	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 	v.AutomaticEnv()
 
-	config := webapp.Config()
+	config := s.Config()
 	if err := v.Unmarshal(config); err != nil {
 		log.Fatal(err)
 	}
@@ -67,25 +67,8 @@ func initGlobalResource(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func initMigrate(cmd *cobra.Command, _ []string) error {
-	config := webapp.Config()
-	// 初始化数据库
-	db.InitPostgres(cmd.Context(), &db.Config{
-		Host:   config.Database.Host,
-		Port:   config.Database.Port,
-		User:   config.Database.User,
-		PW:     config.Database.Password,
-		DBName: config.Database.Name,
-		LogConf: db.LogConf{
-			Level: config.Log.LogLevel,
-		},
-	})
-
-	return nil
-}
-
 func initSchedule(cmd *cobra.Command, _ []string) error {
-	config := webapp.Config()
+	config := s.Config()
 	// 初始化 nacos , 注意初始化时序，请勿在动态配置未初始化时候使用配置
 	nacos.MustInit(cmd.Context(), &nacos.Conf{
 		Endpoint:  config.Nacos.Endpoint,
@@ -97,7 +80,7 @@ func initSchedule(cmd *cobra.Command, _ []string) error {
 		NeedWatch: config.Nacos.NeedWatch,
 	},
 		func(content []byte) error {
-			d := &webapp.DynamicConfig{}
+			d := &s.DynamicConfig{}
 			if err := yaml.Unmarshal(content, d); err != nil {
 				logger.Errorf(cmd.Context(),
 					"Unmarshal nacos config fail dataID: %s, Group: %s, err: %+v",
@@ -147,11 +130,11 @@ func newRouter(cmd *cobra.Command, _ []string) error {
 	router := gin.Default()
 
 	web.NewSchedule(cmd.Root().Context(), router)
-	port := webapp.Config().Server.Port
+	port := s.Config().Server.Port
 	addr := ":" + strconv.Itoa(port)
 
 	httpServer := http.Server{
-		Addr:              ":" + strconv.Itoa(webapp.Config().Server.Port),
+		Addr:              ":" + strconv.Itoa(s.Config().Server.Port),
 		Handler:           router,
 		ReadHeaderTimeout: 30 * time.Second,
 		WriteTimeout:      30 * time.Second,

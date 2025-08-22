@@ -7,11 +7,15 @@ import (
 	"time"
 
 	"github.com/olahol/melody"
+	r "github.com/redis/go-redis/v9"
+	"github.com/scienceol/studio/service/internal/configs/webapp"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
+	"github.com/scienceol/studio/service/pkg/core/schedule/engine"
 	"github.com/scienceol/studio/service/pkg/core/workflow"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
+	"github.com/scienceol/studio/service/pkg/middleware/redis"
 	"github.com/scienceol/studio/service/pkg/repo"
 	el "github.com/scienceol/studio/service/pkg/repo/environment"
 	mStore "github.com/scienceol/studio/service/pkg/repo/material"
@@ -25,6 +29,7 @@ type workflowImpl struct {
 	workflowStore repo.WorkflowRepo
 	labStore      repo.LaboratoryRepo
 	materialStore repo.MaterialRepo
+	rClient       *r.Client
 }
 
 func New() workflow.Service {
@@ -32,6 +37,7 @@ func New() workflow.Service {
 		workflowStore: wfl.New(),
 		labStore:      el.New(),
 		materialStore: mStore.NewMaterialImpl(),
+		rClient:       redis.GetClient(),
 	}
 }
 
@@ -141,12 +147,16 @@ func (w *workflowImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 		return w.upateNode(ctx, s, b)
 	case workflow.BatchDelGroupNode: // 批量删除节点
 		return w.batchDelGroupNode(ctx, s, b)
+	// FIXME: 批量删除节点
 	case workflow.BatchCreateEdge: // 批量创建边
 		return w.batchCreateEdge(ctx, s, b)
 	case workflow.BatchDelEdge: // 批量删除边
 		return w.batchDelEdge(ctx, s, b)
 	case workflow.SaveWorkflow:
 		return w.batchSave(ctx, s, b)
+	case workflow.RunWorkflow:
+		return w.runWorkflow(ctx, s, b)
+
 	default:
 		return common.ReplyWSErr(s, msgType.Action, msgType.MsgUUID, code.UnknownWSActionErr)
 	}
@@ -169,18 +179,19 @@ func (w *workflowImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 
 	nodes := utils.FilterSlice(resp.Nodes, func(node *repo.WorkflowNodeInfo) (*workflow.WSNode, bool) {
 		data := &workflow.WSNode{
-			UUID:       node.Node.UUID,
-			ParentUUID: nodeIDUUIDMap[node.Node.ParentID],
-			UserID:     node.Node.UserID,
-			Status:     node.Node.Status,
-			Type:       node.Node.Type,
-			Icon:       node.Node.Icon,
-			Pose:       node.Node.Pose,
-			Footer:     utils.Or(node.Node.Footer, ""),
-			Param:      node.Node.Param,
-			DeviceName: node.Node.DeviceName,
-			Disabled:   node.Node.Disabled,
-			Minimized:  node.Node.Minimized,
+			UUID:        node.Node.UUID,
+			ParentUUID:  nodeIDUUIDMap[node.Node.ParentID],
+			UserID:      node.Node.UserID,
+			Status:      node.Node.Status,
+			Type:        node.Node.Type,
+			Icon:        node.Node.Icon,
+			Pose:        node.Node.Pose,
+			Footer:      utils.Or(node.Node.Footer, ""),
+			Param:       node.Node.Param,
+			DeviceName:  node.Node.DeviceName,
+			LabNodeType: node.Node.LabNodeType,
+			Disabled:    node.Node.Disabled,
+			Minimized:   node.Node.Minimized,
 			Handles: utils.FilterSlice(node.Handles, func(h *model.WorkflowHandleTemplate) (*workflow.WSNodeHandle, bool) {
 				return &workflow.WSNodeHandle{
 					UUID:        h.UUID,
@@ -470,9 +481,11 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		WorkflowNodeID: deviceAction[0].ID,
 		ParentID:       parentID,
 		UserID:         userInfo.ID,
+		ActionName:     deviceAction[0].Name,
+		ActionType:     deviceAction[0].Type,
 		Name:           utils.Or(reqData.Name, deviceAction[0].Name),
 		Status:         "draft",
-		Type:           utils.Or(reqData.Type, "ILab"),
+		Type:           utils.Or(reqData.Type, model.WorkflowNodeILab),
 		Icon:           utils.Or(deviceAction[0].Icon, reqData.Icon),
 		Pose:           reqData.Pose,
 		Param: utils.SafeValue(func() datatypes.JSON {
@@ -483,6 +496,7 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		}, deviceAction[0].Goal),
 		Footer: utils.Or(reqData.Footer, deviceAction[0].Class),
 	}
+
 	err = w.workflowStore.CreateNode(ctx, nodeData)
 	if err != nil {
 		common.ReplyWSErr(s, string(workflow.CreateNode), req.MsgUUID, err)
@@ -494,7 +508,7 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		TemplateUUID: reqData.TemplateUUID,
 		ParentUUID:   reqData.ParentUUID,
 		UserID:       nodeData.UserID,
-		Status:       nodeData.Type,
+		Status:       nodeData.Status,
 		Name:         utils.Or(reqData.Name, deviceAction[0].Name),
 		Type:         nodeData.Type,
 		Icon:         nodeData.Icon,
@@ -745,6 +759,53 @@ func (w *workflowImpl) batchSave(ctx context.Context, s *melody.Session, b []byt
 	}
 
 	return common.ReplyWSOk(s, string(workflow.SaveWorkflow), req.MsgUUID)
+}
+
+func (w *workflowImpl) runWorkflow(ctx context.Context, s *melody.Session, b []byte) error {
+	req := &common.WSData[any]{}
+	if err := json.Unmarshal(b, req); err != nil {
+		common.ReplyWSErr(s, string(workflow.RunWorkflow), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
+		return code.ParamErr.WithMsg(err.Error())
+	}
+
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		common.ReplyWSErr(s, string(workflow.RunWorkflow), req.MsgUUID, code.UnLogin.WithMsg("can not get user info"))
+		return code.UnLogin.WithMsg("can not get user info")
+	}
+
+	wk, err := w.getWorkflow(ctx, s)
+	if err != nil {
+		common.ReplyWSErr(s, string(workflow.RunWorkflow), req.MsgUUID, err)
+		return err
+	}
+
+	labMap := w.workflowStore.ID2UUID(ctx, &model.Laboratory{}, wk.LabID)
+
+	labUUID, ok := labMap[wk.LabID]
+	if !ok {
+		common.ReplyWSErr(s, string(workflow.RunWorkflow), req.MsgUUID, code.ParamErr.WithMsg("can not get lab info"))
+		return code.ParamErr.WithMsg("can not get lab uuid")
+	}
+
+	conf := webapp.Config().Job
+	data := engine.WorkflowInfo{
+		Action:       engine.StartJob,
+		TaskUUID:     uuid.NewV4(),
+		WorkflowUUID: wk.UUID,
+		LabUUID:      labUUID,
+		UserID:       wk.UserID,
+	}
+
+	dataB, _ := json.Marshal(data)
+
+	ret := w.rClient.LPush(ctx, conf.JobQueueName, dataB)
+	if ret.Err() != nil {
+		common.ReplyWSErr(s, string(workflow.RunWorkflow), req.MsgUUID, code.ParamErr.WithMsgf("push workflow redis msg err: %+v", ret.Err()))
+		return code.ParamErr.WithMsg("can not get lab uuid")
+	}
+
+	return common.ReplyWSOk(s, string(workflow.RunWorkflow), req.MsgUUID, data.TaskUUID)
 }
 
 func (w *workflowImpl) batchSaveNodes(ctx context.Context, nodes []*workflow.WSNode) error {

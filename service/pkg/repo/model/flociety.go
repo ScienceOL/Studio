@@ -62,7 +62,7 @@ type WorkflowNodeTemplate struct {
 	Feedback       datatypes.JSON `gorm:"type:jsonb" json:"feedback"`
 	Result         datatypes.JSON `gorm:"type:jsonb" json:"result"`
 	Schema         datatypes.JSON `gorm:"type:jsonb" json:"schema"`
-	Type           string         `gorm:"type:varchar(120);not null" json:"type"`
+	Type           string         `gorm:"type:text;not null" json:"type"`
 	Icon           string         `gorm:"type:text" json:"icon"`
 
 	Handles datatypes.JSONType[ActionHandle] `gorm:"-"`
