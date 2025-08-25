@@ -107,11 +107,11 @@ const (
 
 type WorkflowTask struct {
 	BaseModel
-	LabID        int64              `gorm:"type:bigint;not null;uniqueIndex:idx_workflowtask_lwu,priority:1" json:"lab_id"`
-	WorkflowID   int64              `gorm:"type:bigint;not null;uniqueIndex:idx_workflowtask_lwu,priority:2" json:"workflow_id"`
-	UserID       string             `gorm:"type:varchar(120);not null;uniqueIndex:idx_workflowtask_lwu,priority:3" json:"user_id"`
+	LabID        int64              `gorm:"type:bigint;not null;index:idx_workflowtask_lwu,priority:1" json:"lab_id"`
+	WorkflowID   int64              `gorm:"type:bigint;not null;index:idx_workflowtask_lwu,priority:2" json:"workflow_id"`
+	UserID       string             `gorm:"type:varchar(120);not null;index:idx_workflowtask_lwu,priority:3" json:"user_id"`
 	Status       WorkflowTaskStatus `gorm:"type:varchar(50);not null;default:'pending'" json:"status"`
-	FinishedTime time.Time          `gorm:"not null;default:CURRENT_TIMESTAMP" json:"finished_at"`
+	FinishedTime time.Time          `gorm:"column:finished_time" json:"finished_at"`
 }
 
 func (*WorkflowTask) TableName() string {

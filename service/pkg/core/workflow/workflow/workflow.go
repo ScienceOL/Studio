@@ -8,6 +8,7 @@ import (
 
 	"github.com/olahol/melody"
 	r "github.com/redis/go-redis/v9"
+	"github.com/scienceol/studio/service/internal/configs/schedule"
 	"github.com/scienceol/studio/service/internal/configs/webapp"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
@@ -237,6 +238,10 @@ func (w *workflowImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 		return err
 	}
 
+	// var data any
+	// var err error
+	// action := msgType.Action
+
 	switch workflow.ActionType(msgType.Action) {
 	case workflow.FetchGraph: // 首次获取组态图
 		return w.fetchGraph(ctx, s, msgType.MsgUUID)
@@ -262,9 +267,18 @@ func (w *workflowImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 		return w.runWorkflow(ctx, s, b)
 	case workflow.StopWorkflow:
 		return w.stopWorkflow(ctx, s, b)
+	case workflow.FetchWorkflowStatus:
+	// return w.
 	default:
 		return common.ReplyWSErr(s, msgType.Action, msgType.MsgUUID, code.UnknownWSActionErr)
 	}
+
+	// if err != nil {
+	// 	common.ReplyWSErr(s, string(workflow.FetchGraph), msgUUID, err)
+	// 	return err
+	// }
+
+	return nil
 }
 
 // 获取工作流 dag 图
@@ -893,24 +907,43 @@ func (w *workflowImpl) runWorkflow(ctx context.Context, s *melody.Session, b []b
 		return code.ParamErr.WithMsg("can not get lab uuid")
 	}
 
-	conf := webapp.Config().Job
-	data := engine.WorkflowInfo{
-		Action:       engine.StartJob,
-		TaskUUID:     uuid.NewV4(),
-		WorkflowUUID: wk.UUID,
-		LabUUID:      labUUID,
-		UserID:       wk.UserID,
+	var taskUUID uuid.UUID
+
+	err = w.workflowStore.ExecTx(ctx, func(txCtx context.Context) error {
+		task := &model.WorkflowTask{
+			LabID:      wk.LabID,
+			WorkflowID: wk.ID,
+			UserID:     userInfo.ID,
+		}
+		if err := w.workflowStore.CreateWorkflowTask(txCtx, task); err != nil {
+			return err
+		}
+		taskUUID = task.UUID
+		conf := webapp.Config().Job
+		data := engine.WorkflowInfo{
+			Action:       engine.StartJob,
+			TaskUUID:     task.UUID,
+			WorkflowUUID: wk.UUID,
+			LabUUID:      labUUID,
+			UserID:       wk.UserID,
+		}
+
+		dataB, _ := json.Marshal(data)
+
+		ret := w.rClient.LPush(ctx, conf.JobQueueName, dataB)
+		if ret.Err() != nil {
+			return code.ParamErr.WithMsgf("push workflow redis msg err: %+v", ret.Err())
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		common.ReplyWSErr(s, string(workflow.RunWorkflow), req.MsgUUID, err)
+		return err
 	}
 
-	dataB, _ := json.Marshal(data)
-
-	ret := w.rClient.LPush(ctx, conf.JobQueueName, dataB)
-	if ret.Err() != nil {
-		common.ReplyWSErr(s, string(workflow.RunWorkflow), req.MsgUUID, code.ParamErr.WithMsgf("push workflow redis msg err: %+v", ret.Err()))
-		return code.ParamErr.WithMsg("can not get lab uuid")
-	}
-
-	return common.ReplyWSOk(s, string(workflow.RunWorkflow), req.MsgUUID, data.TaskUUID)
+	return common.ReplyWSOk(s, string(workflow.RunWorkflow), req.MsgUUID, taskUUID)
 }
 
 func (w *workflowImpl) stopWorkflow(ctx context.Context, s *melody.Session, b []byte) error {
@@ -940,7 +973,26 @@ func (w *workflowImpl) stopWorkflow(ctx context.Context, s *melody.Session, b []
 		return code.ParamErr.WithMsg("can not get lab uuid")
 	}
 
-	conf := webapp.Config().Job
+	tasks := make([]*model.WorkflowTask, 0, 1)
+	if err := w.workflowStore.FindDatas(ctx, &tasks, map[string]any{
+		"uuid": req.Data,
+	}, "status"); err != nil || len(tasks) != 1 {
+		common.ReplyWSErr(s, string(workflow.StopWorkflow), req.MsgUUID, code.WorkflowTaskNotFoundErr)
+		return code.UnLogin.WithMsg("can not get user info")
+	}
+
+	task := tasks[0]
+	switch task.Status {
+	case model.WorkflowTaskStatusPending, model.WorkflowTaskStatusRunnig:
+	case model.WorkflowTaskStatusStoped, model.WorkflowTaskStatusFiled, model.WorkflowTaskStatusSuccessed:
+		common.ReplyWSErr(s, string(workflow.StopWorkflow), req.MsgUUID, code.WorkflowTaskFinished)
+		return code.WorkflowTaskFinished
+	default:
+		common.ReplyWSErr(s, string(workflow.StopWorkflow), req.MsgUUID, code.WorkflowTaskStatusErr)
+		return code.WorkflowTaskStatusErr
+	}
+
+	conf := schedule.Config().Job
 	data := engine.WorkflowInfo{
 		Action:       engine.StopJob,
 		TaskUUID:     req.Data,
@@ -949,16 +1001,33 @@ func (w *workflowImpl) stopWorkflow(ctx context.Context, s *melody.Session, b []
 		UserID:       wk.UserID,
 	}
 
-	dataB, _ := json.Marshal(data)
+	w.workflowStore.ExecTx(ctx, func(txCtx context.Context) error {
+		task := tasks[0]
+		task.Status = model.WorkflowTaskStatusStoped
+		if err := w.workflowStore.UpdateData(ctx, task, map[string]any{
+			"uuid": req.Data,
+		}, "status"); err != nil {
+			common.ReplyWSErr(s, string(workflow.StopWorkflow), req.MsgUUID, err)
+			return err
+		}
 
-	ret := w.rClient.LPush(ctx, conf.JobQueueName, dataB)
-	if ret.Err() != nil {
-		common.ReplyWSErr(s, string(workflow.StopWorkflow), req.MsgUUID, code.ParamErr.WithMsgf("push workflow redis msg err: %+v", ret.Err()))
-		return code.ParamErr.WithMsg("can not get lab uuid")
-	}
+		dataB, _ := json.Marshal(data)
+		ret := w.rClient.LPush(ctx, conf.JobQueueName, dataB)
+		if ret.Err() != nil {
+			common.ReplyWSErr(s, string(workflow.StopWorkflow), req.MsgUUID, code.ParamErr.WithMsgf("push workflow redis msg err: %+v", ret.Err()))
+			return code.ParamErr.WithMsg("can not get lab uuid")
+		}
+
+		return nil
+	})
 
 	return common.ReplyWSOk(s, string(workflow.StopWorkflow), req.MsgUUID, data.TaskUUID)
 }
+
+// func (w *workflowImpl) fetchWorkflowTask(ctx context.Context, s *melody.Session) {
+// 	// userInfo := auth.GetCurrentUser(ctx)
+//
+// }
 
 func (w *workflowImpl) batchSaveNodes(ctx context.Context, nodes []*workflow.WSNode) error {
 	dbNodes, err := utils.FilterSliceWithErr(nodes, func(node *workflow.WSNode) ([]*model.WorkflowNode, bool, error) {

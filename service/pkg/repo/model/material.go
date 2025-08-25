@@ -37,6 +37,8 @@ type MaterialNode struct {
 	Model          datatypes.JSON           `gorm:"type:varchar(1000)" json:"model"`
 	Icon           string                   `gorm:"type:text" json:"icon"`
 	// Tags                   datatypes.JSONSlice[string] `gorm:"type:jsonb" json:"tags"` // label 标签
+
+	ResourceNodeTemplate *ResourceNodeTemplate `gorm:"-"`
 }
 
 func (*MaterialNode) TableName() string {

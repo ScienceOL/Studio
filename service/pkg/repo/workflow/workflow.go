@@ -535,3 +535,16 @@ func (w *workflowImpl) UpsertJobs(ctx context.Context, datas []*model.WorkflowNo
 
 	return nil
 }
+
+func (w *workflowImpl) CreateWorkflowTask(ctx context.Context, data *model.WorkflowTask) error {
+	if data == nil {
+		return code.CreateDataErr.WithMsg("data is nil")
+	}
+
+	if err := w.DBWithContext(ctx).Create(data).Error; err != nil {
+		logger.Errorf(ctx, "CreateWorkflowTask fail err: %+v", err)
+		return code.CreateDataErr.WithErr(err)
+	}
+
+	return nil
+}

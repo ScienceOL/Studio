@@ -148,4 +148,7 @@ const (
 	NodeDataMarshalErr                                 // marshal node data error
 	JobRetryTimeout                                    // job retry timeout error
 	JobRunFailErr                                      // job run fail error
+	WorkflowTaskNotFoundErr                            // can not found workflow task error
+	WorkflowTaskStatusErr                              // workflow task status error
+	WorkflowTaskFinished                               // workflow task finished
 )

@@ -225,8 +225,9 @@ func (i *control) createWrokflowTask(ctx context.Context, info *engine.WorkflowI
 			logger.Errorf(ctx, "task run fail")
 		}
 
+		// 停止任务
 		controlTask.Cancle()
-
+		// 删除记录
 		i.tasks.Delete(key)
 	})
 

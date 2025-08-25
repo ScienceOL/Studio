@@ -688,6 +688,11 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		logger.Errorf(ctx, "createNode can not get lab err: %+v", err)
 		return err
 	}
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, code.UnLogin)
+		return code.UnLogin
+	}
 
 	reqData := req.Data
 	mData := &model.MaterialNode{}
@@ -697,12 +702,13 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		return code.TemplateNodeNotFoundErr
 	}
 
-	if tplNodeID, err := m.envStore.GetResourceTemplateByUUD(ctx, reqData.ResTemplateUUID, []string{"id", "uuid", "icon"}...); err != nil {
+	resNodeTpl, resNodeChildrenTpl := m.getResourceTemplates(ctx, reqData.ResTemplateUUID)
+	if resNodeTpl == nil {
 		common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, code.TemplateNodeNotFoundErr)
 		return code.TemplateNodeNotFoundErr
 	} else {
-		mData.ResourceNodeID = tplNodeID.ID
-		mData.Icon = tplNodeID.Icon
+		mData.ResourceNodeID = resNodeTpl.ID
+		mData.Icon = resNodeTpl.Icon
 	}
 
 	if !reqData.ParentUUID.IsNil() {
@@ -720,7 +726,7 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 	mData.Name = reqData.Name
 	mData.DisplayName = reqData.DisplayName
 	mData.Description = reqData.Description
-	mData.Type = reqData.Type // FIXME: 创建节点时物料类型前端从哪获取
+	mData.Type = utils.Or(reqData.Type, model.DEVICETYPE(resNodeTpl.ResourceType)) // 只有设备类型
 	mData.InitParamData = reqData.InitParamData
 	mData.Schema = reqData.Schema
 	mData.Data = reqData.Data
@@ -733,12 +739,58 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 	}
 	reqData.UUID = mData.UUID
 
-	if err = common.ReplyWSOk(s, string(material.CreateNode), req.MsgUUID, req); err != nil {
+	childrenMaterialNode := utils.FilterSlice(resNodeChildrenTpl, func(tpl *model.ResourceNodeTemplate) (*model.MaterialNode, bool) {
+		data := &model.MaterialNode{
+			ResourceNodeID:       tpl.ID,
+			Icon:                 tpl.Icon,
+			ParentID:             mData.ID,
+			LabID:                labData.ID,
+			Name:                 tpl.Name,
+			DisplayName:          tpl.Name,
+			Type:                 model.DEVICETYPE(tpl.ResourceType),
+			InitParamData:        tpl.DataSchema,
+			Schema:               tpl.ConfigSchema,
+			Data:                 tpl.DataSchema,
+			Pose:                 tpl.Pose,
+			ResourceNodeTemplate: tpl,
+		}
+		return data, true
+	})
+
+	if err := m.materialStore.UpsertMaterialNode(ctx, childrenMaterialNode); err != nil {
+		common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, err)
+		return err
+	}
+
+	resDatas := make([]*material.WSNode, 0, 1+len(childrenMaterialNode))
+	resDatas = append(resDatas, reqData)
+	childrenDatas := utils.FilterSlice(childrenMaterialNode, func(node *model.MaterialNode) (*material.WSNode, bool) {
+		return &material.WSNode{
+			UUID:            node.UUID,
+			ParentUUID:      reqData.UUID,
+			Name:            node.Name,
+			DisplayName:     node.DisplayName,
+			Description:     node.Description,
+			Type:            node.Type,
+			ResTemplateUUID: node.ResourceNodeTemplate.UUID,
+			ResTemplateName: node.ResourceNodeTemplate.Name,
+			InitParamData:   node.InitParamData,
+			Schema:          node.Schema,
+			Data:            node.Data,
+			Status:          node.Status,
+			Header:          node.DisplayName,
+			Pose:            node.Pose,
+			Model:           node.Model,
+			Icon:            node.Icon,
+		}, true
+	})
+
+	resDatas = append(resDatas, childrenDatas...)
+	if err = common.ReplyWSOk(s, string(material.CreateNode), req.MsgUUID, resDatas); err != nil {
 		logger.Errorf(ctx, "updateNode reply ws ok fail err: %+v", err)
 	}
 
 	labUUID, _ := s.Get("lab_uuid")
-	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
 		logger.Warnf(ctx, "batchDelNode broadcast can not get user info")
 		return nil
@@ -755,6 +807,44 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 	}
 
 	return nil
+}
+
+func (m *materialImpl) getResourceTemplates(ctx context.Context, resourceNodeUUID uuid.UUID) (*model.ResourceNodeTemplate, []*model.ResourceNodeTemplate) {
+	res := make([]*model.ResourceNodeTemplate, 0, 2)
+	if err := m.envStore.FindDatas(ctx, &res, map[string]any{
+		"uuid": resourceNodeUUID,
+	}, "id", "uuid", "parent_id", "icon"); err != nil {
+		logger.Errorf(ctx, "getResourceTemplate fail err: %+v", err)
+		return nil, nil
+	}
+
+	if len(res) != 1 {
+		logger.Errorf(ctx, "getResourceTemplate can not found resource node template")
+		return nil, nil
+	}
+
+	// FIXME: 12 孔板父节点套 13 个字节点，是否去掉顶层节点
+	childRes := make([]*model.ResourceNodeTemplate, 0, 1)
+	if err := m.envStore.FindDatas(ctx, &childRes, map[string]any{
+		"parent_id": res[0].ID,
+	}, "id"); err != nil {
+		logger.Warnf(ctx, "getResourceTemplate fail err: %+v", err)
+		return res[0], nil
+	}
+
+	// FIXME: 顶层节点下只有一层套壳节点么？
+	if len(childRes) != 1 {
+		return res[0], nil
+	}
+	childrenRes := make([]*model.ResourceNodeTemplate, 0, 1)
+	if err := m.envStore.FindDatas(ctx, &childrenRes, map[string]any{
+		"parent_id": childRes[0].ID,
+	}, []string{"id", "uuid", "icon"}...); err != nil {
+		logger.Warnf(ctx, "getResourceTemplate fail err: %+v", err)
+		return res[0], nil
+	}
+
+	return res[0], childrenRes
 }
 
 // 批量更新节点

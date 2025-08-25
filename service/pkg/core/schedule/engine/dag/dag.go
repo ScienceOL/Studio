@@ -61,7 +61,36 @@ func NewDagTask(ctx context.Context, param *engine.TaskParam) engine.Task {
 	}
 }
 
+func (d *dagEngine) checkTaskStatus(ctx context.Context) bool {
+	tasks := make([]*model.WorkflowTask, 0, 1)
+	if err := d.workflowStore.FindDatas(ctx, &tasks, map[string]any{
+		"uuid": d.job.TaskUUID,
+	}, "id", "uuid", "status"); err != nil {
+		logger.Errorf(ctx, "can not found workflow task uuid: %s, err: %+v", d.job.TaskUUID, err)
+		return false
+	}
+
+	if len(tasks) != 1 {
+		logger.Errorf(ctx, "can not found workflow task uuid: %s", d.job.TaskUUID)
+		return false
+	}
+
+	if tasks[0].Status == model.WorkflowTaskStatusStoped {
+		return false
+	}
+
+	d.job.TaskID = tasks[0].ID
+	return true
+}
+
 func (d *dagEngine) loadData(ctx context.Context) error {
+	d.boardMsg(ctx, &engine.BoardMsg{
+		Header:         "",
+		WorkflowStatus: "starting",
+		Status:         "pending",
+		Type:           "info",
+		Msg:            []string{"prepare to run node"},
+	})
 
 	wk, err := d.workflowStore.GetWorkflowByUUID(ctx, d.job.WorkflowUUID)
 	if err != nil {
@@ -219,6 +248,13 @@ func (d *dagEngine) findAllParents(nodeMap map[uuid.UUID]*model.WorkflowNode,
 
 func (d *dagEngine) Run(ctx context.Context, job *engine.WorkflowInfo) error {
 	d.job = job
+	if !d.checkTaskStatus(ctx) {
+		return nil
+	}
+	if err := d.loadData(ctx); err != nil {
+		return err
+	}
+
 	d.boardMsg(ctx, &engine.BoardMsg{
 		Header:         "",
 		WorkflowStatus: "starting",
@@ -226,11 +262,6 @@ func (d *dagEngine) Run(ctx context.Context, job *engine.WorkflowInfo) error {
 		Type:           "info",
 		Msg:            []string{"prepare to run node"},
 	})
-
-	if err := d.loadData(ctx); err != nil {
-		return err
-	}
-
 	if err := d.buildTask(ctx); err != nil {
 		return err
 	}
@@ -276,9 +307,10 @@ func (d *dagEngine) runAllNodes(ctx context.Context) error {
 			if len(nodeDependences) == 0 {
 				canRunNodes = append(canRunNodes, node)
 				nodeJobs = append(nodeJobs, &model.WorkflowNodeJob{
-					LabID:  d.job.LabData.ID,
-					NodeID: node.ID,
-					Status: model.WorkflowJobPending,
+					LabID:          d.job.LabData.ID,
+					WorkflowTaskID: d.job.TaskID,
+					NodeID:         node.ID,
+					Status:         model.WorkflowJobPending,
 				})
 			}
 		}
@@ -338,7 +370,23 @@ func (d *dagEngine) runNode(ctx context.Context, node *model.WorkflowNode, job *
 		return err
 	}
 
-	return d.callbackAction(ctx, job)
+	err := d.callbackAction(ctx, job)
+
+	data := &engine.BoardMsg{
+		Header:         node.ActionName,
+		NodeUUID:       node.UUID,
+		WorkflowStatus: "running",
+		Type:           "info",
+		Msg:            []string{"running node"},
+	}
+	data.Status = "successed"
+	if err != nil {
+		data.Status = "failed"
+		data.Msg = append(data.Msg, err.Error())
+	}
+	d.boardMsg(ctx, data)
+
+	return err
 }
 
 func (d *dagEngine) sendAction(_ context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
@@ -373,6 +421,7 @@ func (d *dagEngine) sendAction(_ context.Context, node *model.WorkflowNode, job 
 
 func (d *dagEngine) callbackAction(ctx context.Context, job *model.WorkflowNodeJob) error {
 	// FIXME: 测试结束后放开这段代码。
+	time.Sleep(5 * time.Second)
 	return nil
 	// 查询任务状态是否回调成功
 	dagConf := schedule.Config().DynamicConfig.DagTask

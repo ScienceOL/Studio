@@ -83,19 +83,20 @@ type NodeHandle struct {
 type ActionType string
 
 const (
-	FetchGraph      ActionType = "fetch_graph"
-	FetchTemplate   ActionType = "fetch_template"
-	FetchDevice     ActionType = "fetch_device"
-	CreateNode      ActionType = "create_node"
-	CreateGroup     ActionType = "create_group"
-	UpdateNode      ActionType = "update_node"
-	BatchDelNode    ActionType = "batch_del_nodes"
-	BatchCreateEdge ActionType = "batch_create_edges"
-	BatchDelEdge    ActionType = "batch_del_edges"
-	SaveWorkflow    ActionType = "save_workflow"
-	WorkflowUpdate  ActionType = "workflow_update"
-	RunWorkflow     ActionType = "run_workflow"
-	StopWorkflow    ActionType = "stop_workflow"
+	FetchGraph          ActionType = "fetch_graph"
+	FetchTemplate       ActionType = "fetch_template"
+	FetchDevice         ActionType = "fetch_device"
+	CreateNode          ActionType = "create_node"
+	CreateGroup         ActionType = "create_group"
+	UpdateNode          ActionType = "update_node"
+	BatchDelNode        ActionType = "batch_del_nodes"
+	BatchCreateEdge     ActionType = "batch_create_edges"
+	BatchDelEdge        ActionType = "batch_del_edges"
+	SaveWorkflow        ActionType = "save_workflow"
+	WorkflowUpdate      ActionType = "workflow_update"
+	RunWorkflow         ActionType = "run_workflow"
+	StopWorkflow        ActionType = "stop_workflow"
+	FetchWorkflowStatus ActionType = "fetch_workflow_task"
 )
 
 type WSNodeHandle struct {

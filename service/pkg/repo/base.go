@@ -26,6 +26,8 @@ type IDOrUUIDTranslate interface {
 	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID
 	// 获取数据
 	FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error
+	// 更新数据
+	UpdateData(ctx context.Context, data any, condition map[string]any, keys ...string) error
 }
 
 type Base struct {
@@ -134,6 +136,29 @@ func (b *Base) FindDatas(ctx context.Context, datas any, condition map[string]an
 	if err := db.Where(condition).Find(datas).Error; err != nil {
 		logger.Errorf(ctx, "FindDatas fail table name: %s, condition: %+v, err: %+v", tableModel.TableName(), condition, err)
 		return code.QueryRecordErr.WithErr(err)
+	}
+
+	return nil
+}
+
+func (b *Base) UpdateData(ctx context.Context, data any, condition map[string]any, keys ...string) error {
+	dataType := reflect.TypeOf(data)
+	dataKind := dataType.Kind()
+	if dataKind != reflect.Ptr {
+		return code.NotPointerErr
+	}
+
+	dataValue := reflect.ValueOf(data)
+	if dataValue.IsNil() {
+		return code.NotPointerErr
+	}
+
+	query := b.DBWithContext(ctx).Where(condition)
+	if len(keys) > 0 {
+		query = query.Select(keys)
+	}
+	if err := query.Updates(data).Error; err != nil {
+		return code.UpdateDataErr.WithErr(err)
 	}
 
 	return nil

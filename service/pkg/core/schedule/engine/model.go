@@ -28,6 +28,7 @@ type WorkflowInfo struct {
 	LabUUID      uuid.UUID         `json:"lab_uuid"`
 	UserID       string            `json:"user_id"` // 提交用户 id
 	LabData      *model.Laboratory `json:"-"`
+	TaskID       int64             `json:"-"`
 }
 
 type WorkflowAction string

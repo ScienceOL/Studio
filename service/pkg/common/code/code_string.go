@@ -68,6 +68,9 @@ func _() {
 	_ = x[NodeDataMarshalErr-30004]
 	_ = x[JobRetryTimeout-30005]
 	_ = x[JobRunFailErr-30006]
+	_ = x[WorkflowTaskNotFoundErr-30007]
+	_ = x[WorkflowTaskStatusErr-30008]
+	_ = x[WorkflowTaskFinished-30009]
 }
 
 const (
@@ -80,7 +83,7 @@ const (
 	_ErrCode_name_6 = "notify action already registrynotify subscribe channel failnotify send message error"
 	_ErrCode_name_7 = "create lab user errorquery lab user error"
 	_ErrCode_name_8 = "can not get workflow uuidworkflow not existupsert workflow edge errorpermission deniedbatch save nodes errorbatch save workflow edge error"
-	_ErrCode_name_9 = "workflow task already exist errorcan not found edge sessionworkflow has circular errorconnect closed when node running errormarshal node data errorjob retry timeout errorjob run fail error"
+	_ErrCode_name_9 = "workflow task already exist errorcan not found edge sessionworkflow has circular errorconnect closed when node running errormarshal node data errorjob retry timeout errorjob run fail errorcan not found workflow task errorworkflow task status errorworkflow task finished"
 )
 
 var (
@@ -93,7 +96,7 @@ var (
 	_ErrCode_index_6 = [...]uint8{0, 30, 59, 84}
 	_ErrCode_index_7 = [...]uint8{0, 21, 41}
 	_ErrCode_index_8 = [...]uint8{0, 25, 43, 69, 86, 108, 138}
-	_ErrCode_index_9 = [...]uint8{0, 33, 59, 86, 124, 147, 170, 188}
+	_ErrCode_index_9 = [...]uint16{0, 33, 59, 86, 124, 147, 170, 188, 221, 247, 269}
 )
 
 func (i ErrCode) String() string {
@@ -124,7 +127,7 @@ func (i ErrCode) String() string {
 	case 28000 <= i && i <= 28005:
 		i -= 28000
 		return _ErrCode_name_8[_ErrCode_index_8[i]:_ErrCode_index_8[i+1]]
-	case 30000 <= i && i <= 30006:
+	case 30000 <= i && i <= 30009:
 		i -= 30000
 		return _ErrCode_name_9[_ErrCode_index_9[i]:_ErrCode_index_9[i+1]]
 	default:

@@ -28,6 +28,7 @@ type DeleteWorkflow struct {
 
 type WorkflowRepo interface {
 	FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error
+	UpdateData(ctx context.Context, data any, condition map[string]any, keys ...string) error
 	Create(ctx context.Context, data *model.Workflow) error
 	CreateNode(ctx context.Context, data *model.WorkflowNode) error
 	GetWorkflowByUUID(ctx context.Context, uuid uuid.UUID) (*model.Workflow, error)
@@ -52,4 +53,5 @@ type WorkflowRepo interface {
 	UpsertJobs(ctx context.Context, datas []*model.WorkflowNodeJob) error
 	GetTemplateList(ctx context.Context, labID int64, page *common.PageReq) ([]*model.WorkflowNodeTemplate, int64, error)
 	GetNodeTemplateByUUID(ctx context.Context, templateUUID uuid.UUID) (*model.WorkflowNodeTemplate, error)
+	CreateWorkflowTask(ctx context.Context, data *model.WorkflowTask) error
 }
