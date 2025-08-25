@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -159,6 +160,10 @@ func (m *workflowHandle) initMaterialWebSocket() {
 			if closeErr.Code == websocket.CloseGoingAway {
 				return
 			}
+		}
+
+		if strings.Contains(err.Error(), "use of closed network connection") {
+			return
 		}
 
 		if ctx, ok := s.Get("ctx"); ok {

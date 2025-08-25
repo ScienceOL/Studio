@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"gorm.io/datatypes"
 )
@@ -82,13 +84,36 @@ const (
 
 type WorkflowNodeJob struct {
 	BaseModel
-	LabID  int64             `gorm:"type:bigint;not null;index:idx_lab_node,priority:1" json:"lab_id"`
-	NodeID int64             `gorm:"type:bigint;not null;index:idx_lab_node,priority:2" json:"node_id"`
-	UserID string            `gorm:"type:varchar(120);not null" json:"user_id"`
-	Status WorkflowJobStatus `gorm:"type:varchar(50);not null" json:"status"`
-	Data   datatypes.JSON    `gorm:"type:jsonb" json:"data"`
+	LabID          int64             `gorm:"type:bigint;not null;uniqueIndex:idx_workflownodejob_lwn,priority:1" json:"lab_id"`
+	WorkflowTaskID int64             `gorm:"type:bigint;not null;uniqueIndex:idx_workflownodejob_lwn,priority:2" json:"workflow_task_id"`
+	NodeID         int64             `gorm:"type:bigint;not null;uniqueIndex:idx_workflownodejob_lwn,priority:3" json:"node_id"`
+	Status         WorkflowJobStatus `gorm:"type:varchar(50);not null" json:"status"`
+	Data           datatypes.JSON    `gorm:"type:jsonb" json:"data"`
 }
 
 func (*WorkflowNodeJob) TableName() string {
 	return "workflow_node_job"
+}
+
+type WorkflowTaskStatus string
+
+const (
+	WorkflowTaskStatusPending   WorkflowTaskStatus = "pending"
+	WorkflowTaskStatusRunnig    WorkflowTaskStatus = "running"
+	WorkflowTaskStatusStoped    WorkflowTaskStatus = "stoped"
+	WorkflowTaskStatusFiled     WorkflowTaskStatus = "failed"
+	WorkflowTaskStatusSuccessed WorkflowTaskStatus = "successed"
+)
+
+type WorkflowTask struct {
+	BaseModel
+	LabID        int64  `gorm:"type:bigint;not null;uniqueIndex:idx_workflowtask_lwu,priority:1" json:"lab_id"`
+	WorkflowID   int64  `gorm:"type:bigint;not null;uniqueIndex:idx_workflowtask_lwu,priority:2" json:"workflow_id"`
+	UserID       string `gorm:"type:bigint;not null;uniqueIndex:idx_workflowtask_lwu,priority:3" json:"user_id"`
+	Status       WorkflowTaskStatus
+	FinishedTime time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"finished_at"`
+}
+
+func (*WorkflowTask) TableName() string {
+	return "workflow_task"
 }

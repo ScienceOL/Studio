@@ -64,6 +64,8 @@ type WorkflowNodeTemplate struct {
 	Schema         datatypes.JSON `gorm:"type:jsonb" json:"schema"`
 	Type           string         `gorm:"type:text;not null" json:"type"`
 	Icon           string         `gorm:"type:text" json:"icon"`
+	Header         string         `gorm:"type:text" json:"header"`
+	Footer         string         `gorm:"type:text" json:"footer"`
 
 	Handles datatypes.JSONType[ActionHandle] `gorm:"-"`
 }

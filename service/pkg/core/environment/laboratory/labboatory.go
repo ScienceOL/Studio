@@ -171,7 +171,7 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 			return err
 		}
 
-		actions, err := l.createAction(txCtx, req.Resources)
+		actions, err := l.createWorkflowNodeTemplate(txCtx, req.Resources)
 		if err != nil {
 			return err
 		}
@@ -180,7 +180,7 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 	})
 }
 
-func (l *lab) createAction(ctx context.Context, res []*environment.Resource) ([]*model.WorkflowNodeTemplate, error) {
+func (l *lab) createWorkflowNodeTemplate(ctx context.Context, res []*environment.Resource) ([]*model.WorkflowNodeTemplate, error) {
 	resDeviceAction, err := utils.FilterSliceWithErr(res, func(item *environment.Resource) ([]*model.WorkflowNodeTemplate, bool, error) {
 		actions := make([]*model.WorkflowNodeTemplate, 0, len(item.Class.ActionValueMappings))
 		for actionName, action := range item.Class.ActionValueMappings {
@@ -199,6 +199,8 @@ func (l *lab) createAction(ctx context.Context, res []*environment.Resource) ([]
 				Schema:         action.Schema,
 				Type:           action.Type,
 				Handles:        action.Handles,
+				Header:         actionName,
+				Footer:         item.SelfDB.Name,
 			})
 		}
 		return actions, true, nil

@@ -278,7 +278,6 @@ func (d *dagEngine) runAllNodes(ctx context.Context) error {
 				nodeJobs = append(nodeJobs, &model.WorkflowNodeJob{
 					LabID:  d.job.LabData.ID,
 					NodeID: node.ID,
-					UserID: d.job.UserID,
 					Status: model.WorkflowJobPending,
 				})
 			}

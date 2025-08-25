@@ -20,7 +20,7 @@ type Redis struct {
 type Server struct {
 	Platform string `mapstructure:"PLATFORM" default:"sciol"` // linux、darwin、windows
 	Service  string `mapstructure:"SERVICE" default:"api"`    // api、schedule
-	Port     int    `mapstructure:"SERVER_PORT" default:"48197"`
+	Port     int    `mapstructure:"WEB_PORT" default:"48197"`
 	Env      string `mapstructure:"ENV" default:"dev"`
 }
 

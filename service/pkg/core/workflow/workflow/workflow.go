@@ -260,7 +260,8 @@ func (w *workflowImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 		return w.batchSave(ctx, s, b)
 	case workflow.RunWorkflow:
 		return w.runWorkflow(ctx, s, b)
-
+	case workflow.StopWorkflow:
+		return w.stopWorkflow(ctx, s, b)
 	default:
 		return common.ReplyWSErr(s, msgType.Action, msgType.MsgUUID, code.UnknownWSActionErr)
 	}
@@ -910,6 +911,53 @@ func (w *workflowImpl) runWorkflow(ctx context.Context, s *melody.Session, b []b
 	}
 
 	return common.ReplyWSOk(s, string(workflow.RunWorkflow), req.MsgUUID, data.TaskUUID)
+}
+
+func (w *workflowImpl) stopWorkflow(ctx context.Context, s *melody.Session, b []byte) error {
+	req := &common.WSData[uuid.UUID]{}
+	if err := json.Unmarshal(b, req); err != nil || req.Data.IsNil() {
+		common.ReplyWSErr(s, string(workflow.StopWorkflow), req.MsgUUID, code.ParamErr.WithMsg(err.Error()))
+		return code.ParamErr.WithMsg(err.Error())
+	}
+
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		common.ReplyWSErr(s, string(workflow.StopWorkflow), req.MsgUUID, code.UnLogin.WithMsg("can not get user info"))
+		return code.UnLogin.WithMsg("can not get user info")
+	}
+
+	wk, err := w.getWorkflow(ctx, s)
+	if err != nil {
+		common.ReplyWSErr(s, string(workflow.StopWorkflow), req.MsgUUID, err)
+		return err
+	}
+
+	labMap := w.workflowStore.ID2UUID(ctx, &model.Laboratory{}, wk.LabID)
+
+	labUUID, ok := labMap[wk.LabID]
+	if !ok {
+		common.ReplyWSErr(s, string(workflow.StopWorkflow), req.MsgUUID, code.ParamErr.WithMsg("can not get lab info"))
+		return code.ParamErr.WithMsg("can not get lab uuid")
+	}
+
+	conf := webapp.Config().Job
+	data := engine.WorkflowInfo{
+		Action:       engine.StopJob,
+		TaskUUID:     req.Data,
+		WorkflowUUID: wk.UUID,
+		LabUUID:      labUUID,
+		UserID:       wk.UserID,
+	}
+
+	dataB, _ := json.Marshal(data)
+
+	ret := w.rClient.LPush(ctx, conf.JobQueueName, dataB)
+	if ret.Err() != nil {
+		common.ReplyWSErr(s, string(workflow.StopWorkflow), req.MsgUUID, code.ParamErr.WithMsgf("push workflow redis msg err: %+v", ret.Err()))
+		return code.ParamErr.WithMsg("can not get lab uuid")
+	}
+
+	return common.ReplyWSOk(s, string(workflow.StopWorkflow), req.MsgUUID, data.TaskUUID)
 }
 
 func (w *workflowImpl) batchSaveNodes(ctx context.Context, nodes []*workflow.WSNode) error {

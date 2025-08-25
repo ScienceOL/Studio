@@ -8,15 +8,15 @@ import (
 )
 
 type ScheduleGlobalConfig struct {
-	Database      Database       `mapstructure:",squash"`
-	Redis         Redis          `mapstructure:",squash"`
-	Server        Server         `mapstructure:",squash"`
-	OAuth2        OAuth2         `mapstructure:",squash"`
-	Log           Log            `mapstructure:",squash"`
-	Trace         Trace          `mapstructure:",squash"`
-	Nacos         Nacos          `mapstructure:",squash"`
-	Job           Job            `mapstructure:",squash"`
-	DynamicConfig *DynamicConfig 
+	Database      Database `mapstructure:",squash"`
+	Redis         Redis    `mapstructure:",squash"`
+	Server        Server   `mapstructure:",squash"`
+	OAuth2        OAuth2   `mapstructure:",squash"`
+	Log           Log      `mapstructure:",squash"`
+	Trace         Trace    `mapstructure:",squash"`
+	Nacos         Nacos    `mapstructure:",squash"`
+	Job           Job      `mapstructure:",squash"`
+	DynamicConfig *DynamicConfig
 }
 
 var config = &ScheduleGlobalConfig{}
