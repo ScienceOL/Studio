@@ -379,7 +379,7 @@ func (d *dagEngine) runNode(ctx context.Context, node *model.WorkflowNode, job *
 		Type:           "info",
 		Msg:            []string{"running node"},
 	}
-	data.Status = "successed"
+	data.Status = "success"
 	if err != nil {
 		data.Status = "failed"
 		data.Msg = append(data.Msg, err.Error())

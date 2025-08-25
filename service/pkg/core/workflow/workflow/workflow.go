@@ -239,8 +239,7 @@ func (w *workflowImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 	}
 
 	// var data any
-	// var err error
-	// action := msgType.Action
+	// action := workflow.ActionType(msgType.Action)
 
 	switch workflow.ActionType(msgType.Action) {
 	case workflow.FetchGraph: // 首次获取组态图
@@ -272,13 +271,14 @@ func (w *workflowImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 	default:
 		return common.ReplyWSErr(s, msgType.Action, msgType.MsgUUID, code.UnknownWSActionErr)
 	}
+	return nil
 
 	// if err != nil {
-	// 	common.ReplyWSErr(s, string(workflow.FetchGraph), msgUUID, err)
+	// 	common.ReplyWSErr(s, msgType.Action, msgType.MsgUUID, err)
 	// 	return err
 	// }
-
-	return nil
+	//
+	// return common.ReplyWSOk(s, msgType.Action, msgType.MsgUUID, err)
 }
 
 // 获取工作流 dag 图
