@@ -214,6 +214,8 @@ func (w *workflowImpl) TemplateList(ctx context.Context, req *workflow.TplPageRe
 			Name:        t.Name,               // 模板名称（从device_action name字段取）
 			LabName:     lab.Name,             // 实验室名字
 			HandleNames: handleNamesMap[t.ID], // handle名字列表
+			Header:      t.Header,             // 头部信息
+			Footer:      t.Footer,             // 底部信息
 			CreatedAt:   t.CreatedAt.Format("2006-01-02 15:04:05"),
 		}, true
 	})

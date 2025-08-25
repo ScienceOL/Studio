@@ -87,15 +87,15 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 			{
 				workflowHandle := workflow.NewWorkflowHandle(ctx)
 				workflowRouter := labRouter.Group("/workflow")
-				workflowRouter.POST("", workflowHandle.Create)                              // 创建工作流
-				workflowRouter.GET("/workflows", workflowHandle.GetWorkflowList)            // 获取工作流列表
-				workflowRouter.GET("/workflow/:uuid", workflowHandle.GetWorkflowDetail)     // 获取工作流详情
-				workflowRouter.GET("/list", workflowHandle.NodeTemplateList)                // 节点列表
-				workflowRouter.PUT("/fork", workflowHandle.ForkTemplate)                    // fork 工作流
-				workflowRouter.GET("/node/detail/:uuid", workflowHandle.NodeTemplateDetail) // 节点详情
-				workflowRouter.GET("/template/detail", workflowHandle.TemplateDetail)       // 模板详情
-				workflowRouter.GET("/template/list", workflowHandle.TemplateList)           // 模板列表
-				workflowRouter.PUT("/node", workflowHandle.UpdateNodeTemplate)              // 更新节点
+				workflowRouter.POST("", workflowHandle.Create)                          // 创建工作流
+				workflowRouter.GET("/workflows", workflowHandle.GetWorkflowList)        // 获取工作流列表
+				workflowRouter.GET("/workflow/:uuid", workflowHandle.GetWorkflowDetail) // 获取工作流详情
+				workflowRouter.GET("/list", workflowHandle.NodeTemplateList)            // 节点列表
+				workflowRouter.PUT("/fork", workflowHandle.ForkTemplate)                // fork 工作流
+				workflowRouter.GET("/node/detail", workflowHandle.NodeTemplateDetail)   // 节点详情（query 参数）
+				workflowRouter.GET("/template/detail", workflowHandle.TemplateDetail)   // 模板详情
+				workflowRouter.GET("/template/list", workflowHandle.TemplateList)       // 模板列表
+				workflowRouter.PUT("/node", workflowHandle.UpdateNodeTemplate)          // 更新节点
 
 				workflowRouter.GET("/ws/workflow/:uuid", workflowHandle.LabWorkflow) // TODO: websocket 是否放在统一的路由下
 			}

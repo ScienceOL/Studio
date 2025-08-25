@@ -62,7 +62,7 @@ func (w *workflowHandle) NodeTemplateList(ctx *gin.Context) {}
 // 节点模板详情
 func (w *workflowHandle) NodeTemplateDetail(ctx *gin.Context) {
 	req := &workflow.LabWorkflow{}
-	if err := ctx.ShouldBindUri(req); err != nil {
+	if err := ctx.ShouldBindQuery(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
 		return
 	}

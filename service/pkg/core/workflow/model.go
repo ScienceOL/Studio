@@ -48,6 +48,8 @@ type TemplateListResp struct {
 	Name        string    `json:"name"`         // 模板名称（从device_action name字段取）
 	LabName     string    `json:"lab_name"`     // 实验室名字
 	HandleNames []string  `json:"handle_names"` // handle名字列表
+	Header      string    `json:"header"`       // 头部信息
+	Footer      string    `json:"footer"`       // 底部信息
 	CreatedAt   string    `json:"created_at"`   // 创建时间
 }
 
