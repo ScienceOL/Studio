@@ -47,7 +47,7 @@ type TemplateListResp struct {
 	UUID        uuid.UUID `json:"uuid"`
 	Name        string    `json:"name"`         // 模板名称（从device_action name字段取）
 	LabName     string    `json:"lab_name"`     // 实验室名字
-	HandleCount int       `json:"handle_count"` // handle数量
+	HandleNames []string  `json:"handle_names"` // handle名字列表
 	CreatedAt   string    `json:"created_at"`   // 创建时间
 }
 

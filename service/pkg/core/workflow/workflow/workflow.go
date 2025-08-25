@@ -201,10 +201,10 @@ func (w *workflowImpl) TemplateList(ctx context.Context, req *workflow.TplPageRe
 		return nil, err
 	}
 
-	// 统计每个模板的handle数量
-	handleCountMap := make(map[int64]int)
+	// 统计每个模板的handle名字列表
+	handleNamesMap := make(map[int64][]string)
 	for _, handle := range handles {
-		handleCountMap[handle.WorkflowNodeID]++
+		handleNamesMap[handle.WorkflowNodeID] = append(handleNamesMap[handle.WorkflowNodeID], handle.DisplayName)
 	}
 
 	// 转换为响应格式
@@ -213,7 +213,7 @@ func (w *workflowImpl) TemplateList(ctx context.Context, req *workflow.TplPageRe
 			UUID:        t.UUID,
 			Name:        t.Name,               // 模板名称（从device_action name字段取）
 			LabName:     lab.Name,             // 实验室名字
-			HandleCount: handleCountMap[t.ID], // handle数量
+			HandleNames: handleNamesMap[t.ID], // handle名字列表
 			CreatedAt:   t.CreatedAt.Format("2006-01-02 15:04:05"),
 		}, true
 	})
