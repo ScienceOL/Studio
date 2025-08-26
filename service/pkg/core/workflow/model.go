@@ -9,7 +9,7 @@ import (
 	"gorm.io/datatypes"
 )
 
-type LabWorkflow struct {
+type WorkflowNodeTemplateReq struct {
 	UUID uuid.UUID `json:"uuid" uri:"uuid" form:"uuid" binding:"required"`
 }
 
@@ -41,16 +41,31 @@ type TemplateNodeResp struct {
 
 type TplPageReq struct {
 	LabUUID uuid.UUID `json:"lab_uuid" binding:"required" uri:"lab_uuid" form:"lab_uuid"`
+	Name    string    `uri:"name" json:"name" form:"name"`
+	Tags    []string  `uri:"tags" json:"tags" form:"tags"`
 	common.PageReq
+}
+
+type TemplateTagsReq struct {
+	LabUUID uuid.UUID `json:"lab_uuid" binding:"required" uri:"lab_uuid" form:"lab_uuid"`
 }
 
 // 模板列表响应
 type TemplateListResp struct {
-	UUID        uuid.UUID `json:"uuid"`
-	Name        string    `json:"name"`         // 模板名称（从device_action name字段取）
-	LabName     string    `json:"lab_name"`     // 实验室名字
-	HandleCount int       `json:"handle_count"` // handle数量
-	CreatedAt   string    `json:"created_at"`   // 创建时间
+	UUID      uuid.UUID             `json:"uuid"`
+	Name      string                `json:"name"`       // 模板名称（从device_action name字段取）
+	LabName   string                `json:"lab_name"`   // 实验室名字
+	Handles   []*TemplateHandleResp `json:"handles"`    // handle名字列表
+	Header    string                `json:"header"`     // 头部信息
+	Footer    string                `json:"footer"`     // 底部信息
+	CreatedAt string                `json:"created_at"` // 创建时间
+}
+
+type TemplateHandleResp struct {
+	HandleKey   string `json:"handle_key"`
+	IoType      string `json:"io_type"`
+	DisplayName string `json:"display_name"`
+	Type        string `json:"type"`
 }
 
 // 节点详情响应
@@ -68,6 +83,8 @@ type NodeTemplateDetailResp struct {
 	LabName     string         `json:"lab_name"`     // 实验室名称
 	CreatedAt   string         `json:"created_at"`   // 创建时间
 	Handles     []*NodeHandle  `json:"handles"`      // handle列表
+	Header      string         `json:"header"`
+	Footer      string         `json:"footer"`
 }
 
 // 节点Handle信息
@@ -99,6 +116,7 @@ const (
 	RunWorkflow         ActionType = "run_workflow"
 	StopWorkflow        ActionType = "stop_workflow"
 	FetchWorkflowStatus ActionType = "fetch_workflow_task"
+	Dumplicate          ActionType = "duplicate"
 )
 
 type WSNodeHandle struct {
@@ -258,4 +276,9 @@ type WorkflowTaskResp struct {
 	Status     model.WorkflowTaskStatus `json:"status"`
 	CreatedAt  time.Time                `json:"created_at"`
 	FinishedAt time.Time                `json:"finished_at"`
+}
+
+type DuplicateWorkflow struct {
+	SourceUUID uuid.UUID `json:"source_uuid"`
+	Name       string    `json:"name"`
 }

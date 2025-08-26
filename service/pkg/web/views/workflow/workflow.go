@@ -52,8 +52,25 @@ func (w *workflowHandle) TemplateList(ctx *gin.Context) {
 	}
 }
 
+func (w *workflowHandle) TemplateTags(ctx *gin.Context) {
+	req := workflow.TemplateTagsReq{}
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+	if res, err := w.wService.TemplateTags(ctx, &req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx, res)
+	}
+}
+
 // 工作流模板详情
 func (w *workflowHandle) TemplateDetail(ctx *gin.Context) {}
+
+// 工作流模板 tags 
+func (w *workflowHandle) WorkflowTemplateTags(ctx *gin.Context) {}
+
 
 // 工作流模板 fork
 func (w *workflowHandle) ForkTemplate(ctx *gin.Context) {}
@@ -100,11 +117,11 @@ func (w *workflowHandle) DownloadTask(ctx *gin.Context) {
 }
 
 // 节点模板列表，节点模板分类
-func (w *workflowHandle) NodeTemplateList(ctx *gin.Context) {}
+func (w *workflowHandle) DelWrokflow(ctx *gin.Context) {}
 
 // 节点模板详情
 func (w *workflowHandle) NodeTemplateDetail(ctx *gin.Context) {
-	req := &workflow.LabWorkflow{}
+	req := &workflow.WorkflowNodeTemplateReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
 		return
@@ -123,7 +140,7 @@ func (w *workflowHandle) NodeTemplateDetail(ctx *gin.Context) {
 }
 
 // 节点模板编辑
-func (w *workflowHandle) UpdateNodeTemplate(ctx *gin.Context) {}
+func (w *workflowHandle) UpdateWorkflow(ctx *gin.Context) {}
 
 // 我创建的工作流
 func (w *workflowHandle) Create(ctx *gin.Context) {
@@ -157,7 +174,8 @@ func (w *workflowHandle) GetWorkflowList(ctx *gin.Context) {
 
 // GetWorkflowDetail 获取工作流详情
 func (w *workflowHandle) GetWorkflowDetail(ctx *gin.Context) {
-	req := &workflow.LabWorkflow{}
+	// FIXME: 工作流模板详情
+	req := &workflow.WorkflowNodeTemplateReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
 		return
@@ -241,7 +259,7 @@ func (m *workflowHandle) initMaterialWebSocket() {
 
 // 工作流 websocket
 func (w *workflowHandle) LabWorkflow(ctx *gin.Context) {
-	req := &workflow.LabWorkflow{}
+	req := &workflow.WorkflowNodeTemplateReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
 		logger.Errorf(ctx, "unmarshal uuid err: %+v", err)
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))

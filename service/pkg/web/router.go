@@ -70,10 +70,14 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 
 			{
 				labHandle := laboratory.NewEnvironment()
-				labRouter.POST("", labHandle.CreateLabEnv)
-				labRouter.PATCH("", labHandle.UpdateLabEnv)
-				labRouter.GET("/list", labHandle.LabList)
-				labRouter.POST("/resource", labHandle.CreateLabResource)
+				labRouter.POST("", labHandle.CreateLabEnv)                                 // 创建实验室
+				labRouter.PATCH("", labHandle.UpdateLabEnv)                                // 更新实验室
+				labRouter.GET("/list", labHandle.LabList)                                  // 获取当前用户的所有实验室
+				labRouter.POST("/resource", labHandle.CreateLabResource)                   // 从 edge 侧创建资源
+				labRouter.GET("/member/:lab_uuid", labHandle.GetLabMemeber)                // 根据实验室获取当前实验室成员
+				labRouter.DELETE("/member/:lab_uuid/:member_uuid", labHandle.DelLabMember) // 删除实验室成员
+				labRouter.POST("/invite/:lab_uuid", labHandle.CreateInvite)                // 创建邀请链接
+				labRouter.GET("/invite/:uuid", labHandle.AcceptInvite)                     // 接受邀请链接
 			}
 
 			{
@@ -88,17 +92,41 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 			{
 				workflowHandle := workflow.NewWorkflowHandle(ctx)
 				workflowRouter := labRouter.Group("/workflow")
-				workflowRouter.POST("", workflowHandle.Create)                              // 创建工作流
-				workflowRouter.GET("/workflows", workflowHandle.GetWorkflowList)            // 获取工作流列表
-				workflowRouter.GET("/workflow/:uuid", workflowHandle.GetWorkflowDetail)     // 获取工作流详情
-				workflowRouter.GET("/list", workflowHandle.NodeTemplateList)                // 节点列表
-				workflowRouter.PUT("/fork", workflowHandle.ForkTemplate)                    // fork 工作流
-				workflowRouter.GET("/node/detail/:uuid", workflowHandle.NodeTemplateDetail) // 节点详情
-				workflowRouter.GET("/template/detail", workflowHandle.TemplateDetail)       // 模板详情
-				workflowRouter.GET("/template/list", workflowHandle.TemplateList)           // 模板列表
-				workflowRouter.PUT("/node", workflowHandle.UpdateNodeTemplate)              // 更新节点
-				workflowRouter.GET("/task/:uuid", workflowHandle.TaskList)                  // fork 工作流
-				workflowRouter.GET("/task/download/:uuid", workflowHandle.DownloadTask)     // fork 工作流
+				workflowRouter.GET("/task/:uuid", workflowHandle.TaskList)              // fork 工作流
+				workflowRouter.GET("/task/download/:uuid", workflowHandle.DownloadTask) // fork 工作流
+
+				{
+					// 工作流模板
+					tpl := workflowRouter.Group("/template")
+					tpl.GET("/detail/:uuid", workflowHandle.GetWorkflowDetail) // 获取工作流模板详情
+					tpl.PUT("/fork", workflowHandle.ForkTemplate)              // fork 工作流
+					tpl.GET("/tags", workflowHandle.WorkflowTemplateTags)      // 节点详情
+
+				}
+				{
+					// 工作流节点模板
+					nodeTpl := workflowRouter.Group("/node/template")
+					nodeTpl.GET("/tags/:lab_uuid", workflowHandle.TemplateTags)     // 节点模板 tags
+					nodeTpl.GET("/list", workflowHandle.TemplateList)               // 模板列表
+					nodeTpl.GET("/detail/:uuid", workflowHandle.NodeTemplateDetail) // 节点模板详情
+
+				}
+				{
+					// 我的工作流
+					owner := workflowRouter.Group("owner")
+					owner.PATCH("", workflowHandle.UpdateWorkflow)     // 更新工作流
+					owner.POST("", workflowHandle.Create)              // 创建工作流
+					owner.DELETE("", workflowHandle.DelWrokflow)       //  删除自己创建的工作流
+					owner.GET("/list", workflowHandle.GetWorkflowList) // 获取工作流列表
+				}
+
+				/*
+					1. /template 发布工作流节点。
+					2. /node/template
+					3. /owner/
+
+
+				*/
 
 				workflowRouter.GET("/ws/workflow/:uuid", workflowHandle.LabWorkflow) // TODO: websocket 是否放在统一的路由下
 			}

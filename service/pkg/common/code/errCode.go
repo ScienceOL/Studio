@@ -52,8 +52,9 @@ func (e ErrCode) Error() string {
 }
 
 const (
-	Success     ErrCode = iota // success
-	UnDefineErr                // undefined
+	Success      ErrCode = iota // success
+	UnDefineErr                 // undefined
+	NoPermission                // no permission
 )
 
 // view layer errors
@@ -65,18 +66,19 @@ const (
 
 // login module errors
 const (
-	LoginConfigErr       ErrCode = iota + 5000 // login configuration error
-	LoginSetStateErr                           // set login state error
-	RefreshTokenErr                            // refresh token failed
-	LoginStateErr                              // state verification failed
-	ExchangeTokenErr                           // exchange token failed
-	CallbackParamErr                           // callback parameter error
-	LoginGetUserInfoErr                        // get user info failed
-	LoginCallbackErr                           // login process user info failed
-	UnLogin                                    // not logged in
-	LoginFormatErr                             // login verification format error
-	InvalidToken                               // invalid token
-	RefreshTokenParamErr                       // refresh token parameter error
+	LoginConfigErr           ErrCode = iota + 5000 // login configuration error
+	LoginSetStateErr                               // set login state error
+	RefreshTokenErr                                // refresh token failed
+	LoginStateErr                                  // state verification failed
+	ExchangeTokenErr                               // exchange token failed
+	CallbackParamErr                               // callback parameter error
+	LoginGetUserInfoErr                            // get user info failed
+	LoginCallbackErr                               // login process user info failed
+	UnLogin                                        // not logged in
+	LoginFormatErr                                 // login verification format error
+	InvalidToken                                   // invalid token
+	RefreshTokenParamErr                           // refresh token parameter error
+	ParseLoginRedirectURLErr                       // redirect login url error
 )
 
 // database layer errors
@@ -100,6 +102,12 @@ const (
 	ResourceIsEmptyErr                                 // resource is empty
 	ResourceNotExistErr                                // resource not exist
 	WorkflowTemplateNotFoundErr                        // can not found workflow template error
+	UserIDIsEmptyErr                                   // user id is empty
+	LabIDIsEmptyErr                                    // lab id is empty error
+	LabNotFound                                        // laboratory not found error
+	LabInviteNotFoundErr                               // can not found laboratory invite link error
+	InviteExpiredErr                                   // invite expired error
+	InvalidateThirdID                                  // invalidate third id error
 )
 
 // material module errors

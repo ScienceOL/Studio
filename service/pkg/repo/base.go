@@ -28,6 +28,10 @@ type IDOrUUIDTranslate interface {
 	FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error
 	// 更新数据
 	UpdateData(ctx context.Context, data any, condition map[string]any, keys ...string) error
+	// 删除单条数据
+	DelData(ctx context.Context, tableModel schema.Tabler, condition map[string]any) error
+	// 创建单条
+	CreateData(ctx context.Context, data schema.Tabler) error
 }
 
 type Base struct {
@@ -159,6 +163,22 @@ func (b *Base) UpdateData(ctx context.Context, data any, condition map[string]an
 	}
 	if err := query.Updates(data).Error; err != nil {
 		return code.UpdateDataErr.WithErr(err)
+	}
+
+	return nil
+}
+
+func (b *Base) DelData(ctx context.Context, tableModel schema.Tabler, condition map[string]any) error {
+	if err := b.DBWithContext(ctx).Where(condition).Delete(tableModel).Error; err != nil {
+		return code.DeleteDataErr.WithErr(err)
+	}
+
+	return nil
+}
+
+func (b *Base) CreateData(ctx context.Context, data schema.Tabler) error {
+	if err := b.DBWithContext(ctx).Create(data).Error; err != nil {
+		return code.CreateDataErr.WithErr(err)
 	}
 
 	return nil

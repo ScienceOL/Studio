@@ -28,7 +28,7 @@ type MaterialRepo interface {
 	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID
 	FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error
 	// 更新或者插入物料
-	UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode) error
+	UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode, keys ...string) error
 	// 更新或插入 edge
 	UpsertMaterialEdge(ctx context.Context, datas []*model.MaterialEdge) error
 	// 获取所有的 node handle

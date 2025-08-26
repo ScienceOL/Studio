@@ -30,9 +30,10 @@ type OAuth2 struct {
 	Scopes       []string `mapstructure:"OAUTH2_SCOPES" default:"[\"read\",\"write\",\"offline_access\"]"`
 	Addr         string   `mapstructure:"ADDR" default:"http://localhost:8000"`
 	TokenURL     string   `mapstructure:"OAUTH2_TOKEN_URL" default:"http://localhost:8000/api/login/oauth/access_token"`
-	AuthURL      string   `mapstructure:"OAUTH2_AUTH_URL" default:"http://localhost:8000/login/oauth/authorize"`
-	RedirectURL  string   `mapstructure:"OAUTH2_REDIRECT_URL" default:"http://localhost:48197/api/auth/callback/casdoor"`
-	UserInfoURL  string   `mapstructure:"OAUTH2_USERINFO_URL" default:"http://localhost:8000/api/get-account"`
+	AuthURL      string   `mapstructure:"OAUTH2_AUTH_URL" default:"http://172.21.3.15:8000/login/oauth/authorize"`
+	// RedirectURL  string   `mapstructure:"OAUTH2_REDIRECT_URL" default:"http://localhost:48197/api/auth/callback/casdoor"`
+	FrontendURL string `mapstructure:"OAUTH2_FRONTENT_URL" default:"http://localhost:32234/login/callback"`
+	UserInfoURL string `mapstructure:"OAUTH2_USERINFO_URL" default:"http://localhost:8000/api/get-account"`
 }
 
 type Log struct {

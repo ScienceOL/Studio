@@ -9,9 +9,10 @@ import (
 
 type Workflow struct {
 	BaseModel
-	UserID      string  `gorm:"type:varchar(120);not null" json:"user_id"`
-	LabID       int64   `gorm:"type:bigint;not null" json:"lab_id"`
+	UserID      string  `gorm:"type:varchar(120);not null;index:idx_workflow_lu,priority:2" json:"user_id"`
+	LabID       int64   `gorm:"type:bigint;not null;index:idx_workflow_lu,priority:1" json:"lab_id"`
 	Name        string  `gorm:"type:text;not null;default:'Untitled'" json:"name"`
+	Published   bool    `gorm:"type:bool;not null;default:false" json:"published"`
 	Description *string `gorm:"type:text" json:"description"`
 }
 
@@ -28,8 +29,8 @@ const (
 
 type WorkflowNode struct {
 	BaseModel
-	WorkflowID     int64                    `gorm:"type:bigint;not null;index:idx_workflow_id" json:"workflow_id"`
-	WorkflowNodeID int64                    `gorm:"type:bigint;not null" json:"workflow_node_id"`
+	WorkflowID     int64                    `gorm:"type:bigint;not null;index:idx_workflow_id" json:"workflow_id"` // 工作流 id
+	WorkflowNodeID int64                    `gorm:"type:bigint;not null" json:"workflow_node_id"`                  // 模板 id
 	ParentID       int64                    `gorm:"type:bigint;not null" json:"parent_id"`
 	Name           string                   `gorm:"type:varchar(200);not null;default:'unknow'" json:"name"`
 	UserID         string                   `gorm:"type:varchar(120);not null" json:"user_id"`
@@ -45,6 +46,8 @@ type WorkflowNode struct {
 	ActionType     string                   `gorm:"type:text" json:"action_type"`
 	Disabled       bool                     `gorm:"type:bool;not null;default:false" json:"disabled"`
 	Minimized      bool                     `gorm:"type:bool;not null;default:false" json:"minimized"`
+
+	OldNode *WorkflowNode `gorm:"-"` // 复制的节点
 }
 
 func (*WorkflowNode) TableName() string {

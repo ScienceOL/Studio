@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	"gorm.io/datatypes"
@@ -111,4 +112,33 @@ type Resource struct {
 	ConfigInfo      []*Config                   `json:"config_info"`
 
 	SelfDB *model.ResourceNodeTemplate
+}
+
+type LabMemberReq struct {
+	LabUUID uuid.UUID `json:"lab_uuid" uri:"lab_uuid" form:"lab_uuid"`
+	common.PageReq
+}
+
+type DelLabMemberReq struct {
+	LabUUID    uuid.UUID `json:"lab_uuid" uri:"lab_uuid" form:"lab_uuid"`
+	MemberUUID uuid.UUID `json:"member_uuid" uri:"member_uuid" form:"member_uuid"`
+}
+
+type LabMemberResp struct {
+	UUID   uuid.UUID                  `json:"uuid"`
+	UserID string                     `json:"user_id"`
+	LabID  int64                      `json:"lab_id"`
+	Role   model.LaboratoryMemberRole `json:"role"`
+}
+
+type InviteReq struct {
+	LabUUID uuid.UUID `json:"lab_uuid" uri:"lab_uuid" form:"lab_uuid"`
+}
+
+type InviteResp struct {
+	Path string `json:"url"`
+}
+
+type AcceptInviteReq struct {
+	UUID uuid.UUID `json:"uuid" uri:"uuid" form:"uuid"`
 }

@@ -34,7 +34,6 @@ func main() {
 }
 
 func main1() {
-	fmt.Println("================start ")
 	defer ants.Release()
 
 	var wg sync.WaitGroup

@@ -17,8 +17,6 @@ func Table(_ context.Context) error {
 			&model.WorkflowNodeTemplate{},   // 实验室动作
 			&model.MaterialNode{},           // 物料节点
 			&model.MaterialEdge{},           // 物料边
-			// &model.WorkflowNodeTemplate{},   // 动作节点模板
-			// &model.WorkflowHandleTemplate{},
 			&model.Workflow{},
 			&model.WorkflowNode{},
 			&model.WorkflowEdge{},
@@ -26,6 +24,9 @@ func Table(_ context.Context) error {
 			&model.WorkflowHandleTemplate{},
 			&model.WorkflowNodeJob{},
 			&model.WorkflowTask{},
+			&model.Tags{},
+			&model.LaboratoryMember{},
+			&model.LaboratoryInvitation{},
 		) // 动作节点handle 模板
 	})
 }

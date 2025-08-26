@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	r "github.com/redis/go-redis/v9"
@@ -40,7 +41,25 @@ func (c *casdoorLogin) Login(ctx context.Context) (*login.Resp, error) {
 
 	// 构建授权URL并重定向用户到OAuth2提供商登录页面
 	authURL := c.oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
+
 	return &login.Resp{RedirectURL: authURL}, nil
+}
+
+func (c *casdoorLogin) reCodeRedirectURL(_ context.Context, authURL string) (string, error) {
+	authConf := webapp.Config().OAuth2
+	urlParse, err := url.Parse(authURL)
+	if err != nil {
+		return "", code.ParseLoginRedirectURLErr.WithErr(err)
+	}
+
+	querys := urlParse.Query()
+	redirectValue := querys.Get("redirect_uri")
+	querys.Del("redirect_uri")
+
+	querys.Add("redirect_uri", authConf.FrontendURL)
+	querys.Add("redirect_uri", redirectValue)
+	urlParse.RawQuery = querys.Encode()
+	return urlParse.String(), nil
 }
 
 func (c *casdoorLogin) Refresh(ctx context.Context, req *login.RefreshTokenReq) (*login.RefreshTokenResp, error) {

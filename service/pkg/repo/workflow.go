@@ -32,6 +32,12 @@ type TaskReq struct {
 	WrokflowID int64
 }
 
+type QueryTemplage struct {
+	Name            string
+	ResourceNodeIDs []int64
+	LabID           int64
+}
+
 type WorkflowRepo interface {
 	FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error
 	UpdateData(ctx context.Context, data any, condition map[string]any, keys ...string) error
@@ -55,9 +61,10 @@ type WorkflowRepo interface {
 	ExecTx(ctx context.Context, fn func(ctx context.Context) error) error
 	UpsertNodes(ctx context.Context, nodes []*model.WorkflowNode) error
 	UpsertEdge(ctx context.Context, edges []*model.WorkflowEdge) error
+	DuplicateEdge(ctx context.Context, edges []*model.WorkflowEdge) error
 	CreateJobs(ctx context.Context, datas []*model.WorkflowNodeJob) error
 	UpsertJobs(ctx context.Context, datas []*model.WorkflowNodeJob) error
-	GetTemplateList(ctx context.Context, labID int64, page *common.PageReq) ([]*model.WorkflowNodeTemplate, int64, error)
+	GetTemplateList(ctx context.Context, req *common.PageReqT[*QueryTemplage]) (*common.PageResp[[]*model.WorkflowNodeTemplate], error)
 	GetNodeTemplateByUUID(ctx context.Context, templateUUID uuid.UUID) (*model.WorkflowNodeTemplate, error)
 	CreateWorkflowTask(ctx context.Context, data *model.WorkflowTask) error
 	GetWorkflowTasks(ctx context.Context, req *common.PageReqT[*TaskReq]) (*common.PageMoreResp[[]*model.WorkflowTask], error)

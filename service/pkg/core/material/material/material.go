@@ -665,7 +665,19 @@ func (m *materialImpl) saveGraph(ctx context.Context, s *melody.Session, b []byt
 		return nil, err
 	}
 
-	if err := m.materialStore.UpsertMaterialNode(ctx, nodes); err != nil {
+	keys := []string{
+		"display_name",
+		"description",
+		"init_param_data",
+		"schema",
+		"data",
+		"pose",
+		"model",
+		"icon",
+		"updated_at",
+	}
+
+	if err := m.materialStore.UpsertMaterialNode(ctx, nodes, keys...); err != nil {
 		return nil, err
 	}
 
@@ -701,7 +713,7 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		return nil, code.TemplateNodeNotFoundErr
 	}
 
-	resNodeTpl, resNodeChildrenTpl := m.getResourceTemplates(ctx, reqData.ResTemplateUUID)
+	resNodeTpl, childTpl, resNodeChildrenTpl := m.getResourceTemplates(ctx, reqData.ResTemplateUUID)
 	if resNodeTpl == nil {
 		return nil, code.TemplateNodeNotFoundErr
 	} else {
@@ -724,7 +736,13 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 	mData.Name = reqData.Name
 	mData.DisplayName = reqData.DisplayName
 	mData.Description = reqData.Description
-	mData.Type = utils.Or(reqData.Type, model.DEVICETYPE(resNodeTpl.ResourceType)) // 只有设备类型
+	mData.Type = utils.Or(func() model.DEVICETYPE {
+		if childTpl != nil {
+			return model.DEVICETYPE(childTpl.ResourceType)
+		}
+
+		return model.DEVICETYPE(resNodeTpl.ResourceType)
+	}(), reqData.Type) // 只有设备类型
 	mData.InitParamData = reqData.InitParamData
 	mData.Schema = reqData.Schema
 	mData.Data = reqData.Data
@@ -796,42 +814,42 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 	return resDatas, nil
 }
 
-func (m *materialImpl) getResourceTemplates(ctx context.Context, resourceNodeUUID uuid.UUID) (*model.ResourceNodeTemplate, []*model.ResourceNodeTemplate) {
+func (m *materialImpl) getResourceTemplates(ctx context.Context, resourceNodeUUID uuid.UUID) (*model.ResourceNodeTemplate, *model.ResourceNodeTemplate, []*model.ResourceNodeTemplate) {
 	res := make([]*model.ResourceNodeTemplate, 0, 2)
 	if err := m.envStore.FindDatas(ctx, &res, map[string]any{
 		"uuid": resourceNodeUUID,
 	}, "id", "uuid", "parent_id", "icon", "name", "resource_type", "data_schema", "config_schema", "pose"); err != nil {
 		logger.Errorf(ctx, "getResourceTemplate fail err: %+v", err)
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	if len(res) != 1 {
 		logger.Errorf(ctx, "getResourceTemplate can not found resource node template")
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	// FIXME: 12 孔板父节点套 13 个字节点，是否去掉顶层节点
 	childRes := make([]*model.ResourceNodeTemplate, 0, 1)
 	if err := m.envStore.FindDatas(ctx, &childRes, map[string]any{
 		"parent_id": res[0].ID,
-	}, "id"); err != nil {
+	}, "id", "uuid", "parent_id", "icon", "name", "resource_type", "data_schema", "config_schema", "pose"); err != nil {
 		logger.Warnf(ctx, "getResourceTemplate fail err: %+v", err)
-		return res[0], nil
+		return res[0], nil, nil
 	}
 
 	// FIXME: 顶层节点下只有一层套壳节点么？
 	if len(childRes) != 1 {
-		return res[0], nil
+		return res[0], nil, nil
 	}
 	childrenRes := make([]*model.ResourceNodeTemplate, 0, 1)
 	if err := m.envStore.FindDatas(ctx, &childrenRes, map[string]any{
 		"parent_id": childRes[0].ID,
 	}, "id", "uuid", "parent_id", "icon", "name", "resource_type", "data_schema", "config_schema", "pose"); err != nil {
 		logger.Warnf(ctx, "getResourceTemplate fail err: %+v", err)
-		return res[0], nil
+		return res[0], nil, nil
 	}
 
-	return res[0], childrenRes
+	return res[0], childRes[0], childrenRes
 }
 
 // 批量更新节点

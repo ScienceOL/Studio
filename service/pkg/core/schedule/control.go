@@ -130,6 +130,7 @@ func (i *control) Connect(ctx context.Context) {
 
 // 接受 edge 发送过来的任务通知消息或者设备状态通知消息
 func (i *control) OnEdgeMessge(ctx context.Context, msg string) {
+	// FIXME: 待完善
 	logger.Infof(ctx, "OnEdgeMessge job msg: %s", msg)
 	// 任务状态消息
 

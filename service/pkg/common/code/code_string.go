@@ -10,6 +10,7 @@ func _() {
 	var x [1]struct{}
 	_ = x[Success-0]
 	_ = x[UnDefineErr-1]
+	_ = x[NoPermission-2]
 	_ = x[ParamErr-1000]
 	_ = x[NotPointerErr-1001]
 	_ = x[NotSlicePointerErr-1002]
@@ -25,6 +26,7 @@ func _() {
 	_ = x[LoginFormatErr-5009]
 	_ = x[InvalidToken-5010]
 	_ = x[RefreshTokenParamErr-5011]
+	_ = x[ParseLoginRedirectURLErr-5012]
 	_ = x[CreateDataErr-10000]
 	_ = x[UpdateDataErr-10001]
 	_ = x[RecordNotFound-10002]
@@ -40,6 +42,12 @@ func _() {
 	_ = x[ResourceIsEmptyErr-20001]
 	_ = x[ResourceNotExistErr-20002]
 	_ = x[WorkflowTemplateNotFoundErr-20003]
+	_ = x[UserIDIsEmptyErr-20004]
+	_ = x[LabIDIsEmptyErr-20005]
+	_ = x[LabNotFound-20006]
+	_ = x[LabInviteNotFoundErr-20007]
+	_ = x[InviteExpiredErr-20008]
+	_ = x[InvalidateThirdID-20009]
 	_ = x[ResNotExistErr-22000]
 	_ = x[EdgeNodeNotExistErr-22001]
 	_ = x[EdgeHandleNotExistErr-22002]
@@ -79,11 +87,11 @@ func _() {
 }
 
 const (
-	_ErrCode_name_0 = "successundefined"
+	_ErrCode_name_0 = "successundefinedno permission"
 	_ErrCode_name_1 = "parse parameter errornot pointer errmust be a pointer to a slice"
-	_ErrCode_name_2 = "login configuration errorset login state errorrefresh token failedstate verification failedexchange token failedcallback parameter errorget user info failedlogin process user info failednot logged inlogin verification format errorinvalid tokenrefresh token parameter error"
+	_ErrCode_name_2 = "login configuration errorset login state errorrefresh token failedstate verification failedexchange token failedcallback parameter errorget user info failedlogin process user info failednot logged inlogin verification format errorinvalid tokenrefresh token parameter errorredirect login url error"
 	_ErrCode_name_3 = "database create data errordatabase update data errordatabase record not founddatabase query errordatabase delete errornot base db type errormodel not implement schema.Tablerredis lua script errorredis lua return type errorredis add user set errorredis remove user set error"
-	_ErrCode_name_4 = "reg action name emptyresource is emptyresource not existcan not found workflow template error"
+	_ErrCode_name_4 = "reg action name emptyresource is emptyresource not existcan not found workflow template erroruser id is emptylab id is empty errorlaboratory not found errorcan not found laboratory invite link errorinvite expired errorinvalidate third id error"
 	_ErrCode_name_5 = "resource not existedge node not existnode handle not existunknown material websocket actionunmarshal material websocket data errorcannot get lab id errorupdate material node errorparent node not found errortemplate node not found errorinvalid dag errormax template node deep errorcan not found material node error"
 	_ErrCode_name_6 = "notify action already registrynotify subscribe channel failnotify send message error"
 	_ErrCode_name_7 = "create lab user errorquery lab user error"
@@ -92,11 +100,11 @@ const (
 )
 
 var (
-	_ErrCode_index_0 = [...]uint8{0, 7, 16}
+	_ErrCode_index_0 = [...]uint8{0, 7, 16, 29}
 	_ErrCode_index_1 = [...]uint8{0, 21, 36, 64}
-	_ErrCode_index_2 = [...]uint16{0, 25, 46, 66, 91, 112, 136, 156, 186, 199, 230, 243, 272}
+	_ErrCode_index_2 = [...]uint16{0, 25, 46, 66, 91, 112, 136, 156, 186, 199, 230, 243, 272, 296}
 	_ErrCode_index_3 = [...]uint16{0, 26, 52, 77, 97, 118, 140, 173, 195, 222, 246, 273}
-	_ErrCode_index_4 = [...]uint8{0, 21, 38, 56, 93}
+	_ErrCode_index_4 = [...]uint8{0, 21, 38, 56, 93, 109, 130, 156, 198, 218, 243}
 	_ErrCode_index_5 = [...]uint16{0, 18, 37, 58, 91, 130, 153, 179, 206, 235, 252, 280, 313}
 	_ErrCode_index_6 = [...]uint8{0, 30, 59, 84}
 	_ErrCode_index_7 = [...]uint8{0, 21, 41}
@@ -106,18 +114,18 @@ var (
 
 func (i ErrCode) String() string {
 	switch {
-	case 0 <= i && i <= 1:
+	case 0 <= i && i <= 2:
 		return _ErrCode_name_0[_ErrCode_index_0[i]:_ErrCode_index_0[i+1]]
 	case 1000 <= i && i <= 1002:
 		i -= 1000
 		return _ErrCode_name_1[_ErrCode_index_1[i]:_ErrCode_index_1[i+1]]
-	case 5000 <= i && i <= 5011:
+	case 5000 <= i && i <= 5012:
 		i -= 5000
 		return _ErrCode_name_2[_ErrCode_index_2[i]:_ErrCode_index_2[i+1]]
 	case 10000 <= i && i <= 10010:
 		i -= 10000
 		return _ErrCode_name_3[_ErrCode_index_3[i]:_ErrCode_index_3[i+1]]
-	case 20000 <= i && i <= 20003:
+	case 20000 <= i && i <= 20009:
 		i -= 20000
 		return _ErrCode_name_4[_ErrCode_index_4[i]:_ErrCode_index_4[i+1]]
 	case 22000 <= i && i <= 22011:

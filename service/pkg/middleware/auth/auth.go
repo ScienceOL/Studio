@@ -34,7 +34,7 @@ func GetOAuthConfig() *oauth2.Config {
 				TokenURL: authConf.TokenURL,
 				AuthURL:  authConf.AuthURL,
 			},
-			RedirectURL: authConf.RedirectURL,
+			RedirectURL: authConf.FrontendURL,
 		}
 	}
 

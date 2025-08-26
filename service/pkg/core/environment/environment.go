@@ -11,4 +11,8 @@ type EnvService interface {
 	UpdateLaboratoryEnv(ctx context.Context, req *UpdateEnvReq) (*LaboratoryResp, error)
 	CreateResource(ctx context.Context, req *ResourceReq) error
 	LabList(ctx context.Context, req *common.PageReq) (*common.PageResp[[]*LaboratoryResp], error)
+	LabMemberList(ctx context.Context, req *LabMemberReq) (*common.PageResp[[]*LabMemberResp], error)
+	DelLabMember(ctx context.Context, req *DelLabMemberReq) error
+	CreateInvite(ctx context.Context, req *InviteReq) (*InviteResp, error)
+	AcceptInvite(ctx context.Context, req *AcceptInviteReq) error
 }

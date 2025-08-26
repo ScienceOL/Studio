@@ -19,6 +19,8 @@ type LaboratoryRepo interface {
 	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID
 	FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error
 	ExecTx(ctx context.Context, fn func(ctx context.Context) error) error
+	Count(ctx context.Context, tableModel schema.Tabler, condition map[string]any) (int64, error)
+	DelData(ctx context.Context, tableModel schema.Tabler, condition map[string]any) error
 
 	CreateLaboratoryEnv(ctx context.Context, data *model.Laboratory) error
 	// 根据 uuid 获取实验室
@@ -41,12 +43,16 @@ type LaboratoryRepo interface {
 	GetResourceNodeTemplates(ctx context.Context, ids []int64) ([]*model.ResourceNodeTemplate, error)
 	// 根据实验室 id 获取所有的模板信息
 	GetAllResourceTemplateByLabID(ctx context.Context, labID int64, selectKeys ...string) ([]*model.ResourceNodeTemplate, error)
-	// 根据 device ids 获取所有的 handles
-	GetResourceTemplateHandlesByID(ctx context.Context, templateIDs []int64, selectKeys ...string) ([]*model.ResourceHandleTemplate, error)
-	// 根据 uuid 获取 template 数据
-	GetResourceTemplateByUUD(ctx context.Context, uuid uuid.UUID, selectKeys ...string) (*model.ResourceNodeTemplate, error)
 	// 获取实验室列表
 	GetLabList(ctx context.Context, userIDs []string, req *common.PageReq) (*common.PageResp[[]*model.Laboratory], error)
 	// 创建 action handle
 	UpsertActionHandleTemplate(ctx context.Context, datas []*model.WorkflowHandleTemplate) error
+	// 获取所有驱动名称
+	GetAllResourceName(ctx context.Context, labID int64) []string
+	// 增加实验室成员
+	AddLabMemeber(ctx context.Context, datas ...*model.LaboratoryMember) error
+	// 获取该用户的所有实验室
+	GetLabByUserID(ctx context.Context, req *common.PageReqT[string]) (*common.PageResp[[]*model.LaboratoryMember], error)
+	// 根据实验室获取成员
+	GetLabByLabID(ctx context.Context, req *common.PageReqT[int64]) (*common.PageResp[[]*model.LaboratoryMember], error)
 }

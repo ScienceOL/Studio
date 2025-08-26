@@ -50,6 +50,7 @@ func (w *workflowImpl) GetWorkflowByUUID(ctx context.Context, uuid uuid.UUID) (*
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, code.RecordNotFound.WithMsgf("uuid: %s", uuid)
 		}
+
 		logger.Errorf(ctx, "GetWorkflowByUUID fail uuid: %+v, error: %+v", uuid, err)
 		return nil, code.QueryRecordErr.WithMsg(err.Error())
 	}
@@ -397,7 +398,11 @@ func (w *workflowImpl) GetWorkflowList(ctx context.Context, userID string, labID
 }
 
 // GetTemplateList 获取模板列表（分页）
-func (w *workflowImpl) GetTemplateList(ctx context.Context, labID int64, page *common.PageReq) ([]*model.WorkflowNodeTemplate, int64, error) {
+func (w *workflowImpl) GetTemplateList(ctx context.Context, req *common.PageReqT[*repo.QueryTemplage]) (*common.PageResp[[]*model.WorkflowNodeTemplate], error) {
+	if req.Data.LabID == 0 {
+		return nil, code.QueryRecordErr.WithMsg("lab id is zero")
+	}
+
 	templates := make([]*model.WorkflowNodeTemplate, 0, 1)
 	total := int64(0)
 
@@ -405,24 +410,36 @@ func (w *workflowImpl) GetTemplateList(ctx context.Context, labID int64, page *c
 	query := w.DBWithContext(ctx).Model(&model.WorkflowNodeTemplate{})
 
 	// 按实验室ID过滤
-	query = query.Where("lab_id = ?", labID)
+	query = query.Where("lab_id = ?", req.Data.LabID)
+	if req.Data.Name != "" {
+		query = query.Where("name like ?", "%"+req.Data.Name+"%")
+	}
+
+	if len(req.Data.ResourceNodeIDs) > 0 {
+		query = query.Where("resource_node_id in ?", req.Data.ResourceNodeIDs)
+	}
 
 	// 获取总数
 	if err := query.Count(&total).Error; err != nil {
-		logger.Errorf(ctx, "GetTemplateList count fail lab_id: %d, err: %+v", labID, err)
-		return nil, 0, code.QueryRecordErr.WithMsg(err.Error())
+		logger.Errorf(ctx, "GetTemplateList count fail query: %+v, err: %+v", *req, err)
+		return nil, code.QueryRecordErr.WithMsg(err.Error())
 	}
 
 	// 分页查询
-	if err := query.Offset(page.Offest()).
-		Limit(page.PageSize).
+	if err := query.Offset(req.Offest()).
+		Limit(req.PageSize).
 		Order("created_at desc").
 		Find(&templates).Error; err != nil {
-		logger.Errorf(ctx, "GetTemplateList query fail lab_id: %d, err: %+v", labID, err)
-		return nil, 0, code.QueryRecordErr.WithMsg(err.Error())
+		logger.Errorf(ctx, "GetTemplateList query fail query: %+v, err: %+v", *req, err)
+		return nil, code.QueryRecordErr.WithMsg(err.Error())
 	}
 
-	return templates, total, nil
+	return &common.PageResp[[]*model.WorkflowNodeTemplate]{
+		Total:    total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+		Data:     templates,
+	}, nil
 }
 
 // GetNodeTemplateByUUID 根据UUID获取节点模板详情
@@ -475,6 +492,37 @@ func (w *workflowImpl) UpsertNodes(ctx context.Context, nodes []*model.WorkflowN
 	return nil
 }
 
+func (w *workflowImpl) DuplicateEdge(ctx context.Context, edges []*model.WorkflowEdge) error {
+	if len(edges) == 0 {
+		return nil
+	}
+
+	if err := w.DBWithContext(ctx).Clauses(
+		clause.OnConflict{
+			Columns: []clause.Column{
+				{
+					Name: "source_node_uuid",
+				},
+				{
+					Name: "target_node_uuid",
+				},
+				{
+					Name: "source_handle_uuid",
+				},
+				{
+					Name: "target_handle_uuid",
+				},
+			},
+			DoNothing: true,
+		}).Create(edges).Error; err != nil {
+
+		logger.Errorf(ctx, "UpsertEdge fail err: %+v", err)
+		return code.UpdateDataErr.WithErr(err)
+	}
+
+	return nil
+}
+
 func (w *workflowImpl) UpsertEdge(ctx context.Context, edges []*model.WorkflowEdge) error {
 	if len(edges) == 0 {
 		return nil
@@ -487,7 +535,6 @@ func (w *workflowImpl) UpsertEdge(ctx context.Context, edges []*model.WorkflowEd
 					Name: "uuid",
 				},
 			},
-
 			DoUpdates: clause.AssignmentColumns([]string{
 				"updated_at",
 			}),

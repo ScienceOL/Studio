@@ -262,56 +262,6 @@ func (e *envImpl) GetAllResourceTemplateByLabID(ctx context.Context, labID int64
 	return datas, nil
 }
 
-// 根据 获取所有 handles 获取所有的 handles
-func (e *envImpl) GetResourceTemplateHandlesByID(
-	ctx context.Context,
-	templateIDs []int64,
-	selectKeys ...string) (
-	[]*model.ResourceHandleTemplate, error,
-) {
-	datas := make([]*model.ResourceHandleTemplate, 0, 1)
-	if len(templateIDs) == 0 {
-		return datas, nil
-	}
-	query := e.DBWithContext(ctx).Where("resource_node_id in ?", templateIDs)
-	if len(selectKeys) != 0 {
-		query = query.Select(selectKeys)
-	}
-
-	statement := query.Find(&datas)
-	if statement.Error != nil {
-		logger.Errorf(ctx, "GetAllDeviceTemplateHandlesByID sql: %+s, err: %+v",
-			statement.Statement.SQL.String(),
-			statement.Error)
-		return nil, code.QueryRecordErr
-	}
-
-	return datas, nil
-}
-
-// 根据 uuid 获取 template 数据
-func (e *envImpl) GetResourceTemplateByUUD(ctx context.Context, uuid uuid.UUID, selectKeys ...string) (*model.ResourceNodeTemplate, error) {
-	if uuid.IsNil() {
-		return nil, code.QueryRecordErr
-	}
-
-	data := &model.ResourceNodeTemplate{}
-	query := e.DBWithContext(ctx).Where("uuid = ?", uuid)
-	if len(selectKeys) != 0 {
-		query = query.Select(selectKeys)
-	}
-	statement := query.First(data)
-	if statement.Error != nil {
-		if errors.Is(statement.Error, gorm.ErrRecordNotFound) {
-			return nil, code.RecordNotFound
-		}
-		logger.Errorf(ctx, "GetResourceTemplateByUUD fail uuid: %+v, err: %+v", uuid, statement.Error)
-		return nil, code.QueryRecordErr.WithMsg(statement.Error.Error())
-	}
-
-	return data, nil
-}
-
 // 根据实验室
 func (e *envImpl) GetLabList(ctx context.Context, userIDs []string, req *common.PageReq) (*common.PageResp[[]*model.Laboratory], error) {
 	datas := make([]*model.Laboratory, 0, 1)
@@ -363,4 +313,97 @@ func (e *envImpl) UpsertActionHandleTemplate(ctx context.Context, datas []*model
 	}
 
 	return nil
+}
+
+func (w *envImpl) GetAllResourceName(ctx context.Context, labID int64) []string {
+	if labID == 0 {
+		return []string{}
+	}
+
+	names := make([]string, 0, 1)
+	statement := w.DBWithContext(ctx).
+		Model(&model.ResourceNodeTemplate{}).Select("name").
+		Where("lab_id = ? and resource_type = ?", labID, "device").Find(&names)
+	if statement.Error != nil {
+		logger.Errorf(ctx, "GetAllResourceName lab id: %+d, err: %+v", labID, statement.Error)
+		return []string{}
+	}
+
+	return names
+}
+
+func (w *envImpl) AddLabMemeber(ctx context.Context, datas ...*model.LaboratoryMember) error {
+	if len(datas) == 0 {
+		return nil
+	}
+	statement := w.DBWithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "user_id"},
+			{Name: "lab_id"},
+		},
+		DoNothing: true,
+	}).Create(&datas)
+
+	if statement.Error != nil {
+		logger.Errorf(ctx, "AddLabMemeber err: %+v", statement.Error)
+		return code.CreateDataErr.WithErr(statement.Error)
+	}
+
+	return nil
+}
+
+func (w *envImpl) GetLabByUserID(ctx context.Context, req *common.PageReqT[string]) (*common.PageResp[[]*model.LaboratoryMember], error) {
+	if req.Data == "" {
+		return nil, code.UserIDIsEmptyErr
+	}
+
+	var total int64
+
+	datas := make([]*model.LaboratoryMember, 0, 1)
+	if err := w.DBWithContext(ctx).
+		Model(&model.LaboratoryMember{}).
+		Where("user_id = ?", req.Data).
+		Count(&total).
+		Offset(req.Offest()).
+		Limit(req.PageSize).
+		Order("id asc").
+		Find(&datas).Error; err != nil {
+
+		return nil, code.QueryRecordErr.WithErr(err)
+	}
+
+	return &common.PageResp[[]*model.LaboratoryMember]{
+		Total:    total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+		Data:     datas,
+	}, nil
+}
+
+func (w *envImpl) GetLabByLabID(ctx context.Context, req *common.PageReqT[int64]) (*common.PageResp[[]*model.LaboratoryMember], error) {
+	if req.Data == 0 {
+		return nil, code.LabIDIsEmptyErr
+	}
+
+	var total int64
+
+	datas := make([]*model.LaboratoryMember, 0, 1)
+	if err := w.DBWithContext(ctx).
+		Model(&model.LaboratoryMember{}).
+		Where("lab_id = ?", req.Data).
+		Count(&total).
+		Offset(req.Offest()).
+		Limit(req.PageSize).
+		Order("id asc").
+		Find(&datas).Error; err != nil {
+
+		return nil, code.QueryRecordErr.WithErr(err)
+	}
+
+	return &common.PageResp[[]*model.LaboratoryMember]{
+		Total:    total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+		Data:     datas,
+	}, nil
 }

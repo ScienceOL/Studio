@@ -31,9 +31,29 @@ func NewMaterialImpl() repo.MaterialRepo {
 	}
 }
 
-func (m *materialImpl) UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode) error {
+func (m *materialImpl) UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode, keys ...string) error {
 	if len(datas) == 0 {
 		return nil
+	}
+
+	updateKeys := []string{
+		"display_name",
+		"description",
+		"status",
+		"type",
+		"resource_node_id",
+		"class",
+		"init_param_data",
+		"schema",
+		"data",
+		"pose",
+		"model",
+		"icon",
+		"updated_at",
+	}
+
+	if len(keys) > 0 {
+		updateKeys = keys
 	}
 
 	statement := m.DBWithContext(ctx).Clauses(clause.OnConflict{
@@ -42,21 +62,7 @@ func (m *materialImpl) UpsertMaterialNode(ctx context.Context, datas []*model.Ma
 			{Name: "name"},
 			{Name: "parent_id"},
 		},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"display_name",
-			"description",
-			"status",
-			"type",
-			"resource_node_id",
-			"class",
-			"init_param_data",
-			"schema",
-			"data",
-			"pose",
-			"model",
-			"icon",
-			"updated_at",
-		}),
+		DoUpdates: clause.AssignmentColumns(updateKeys),
 	}).Create(datas)
 
 	if statement.Error != nil {

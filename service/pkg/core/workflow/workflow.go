@@ -16,6 +16,7 @@ type Service interface {
 	NodeTemplateDetail(ctx context.Context, templateUUID uuid.UUID) (*NodeTemplateDetailResp, error)
 	TemplateDetail(ctx context.Context)
 	TemplateList(ctx context.Context, req *TplPageReq) (*common.PageResp[[]*TemplateListResp], error)
+	TemplateTags(ctx context.Context, req *TemplateTagsReq) ([]string, error)
 	UpdateNodeTemplate(ctx context.Context)
 	GetWorkflowList(ctx context.Context, req *WorkflowListReq) (*WorkflowListResult, error)
 	GetWorkflowDetail(ctx context.Context, workflowUUID uuid.UUID) (*WorkflowDetailResp, error)

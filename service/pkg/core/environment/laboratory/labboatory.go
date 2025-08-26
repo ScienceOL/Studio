@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/scienceol/studio/service/pkg/common"
@@ -16,6 +17,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/repo/casdoor"
 	eStore "github.com/scienceol/studio/service/pkg/repo/environment"
+	"github.com/scienceol/studio/service/pkg/repo/invite"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"gorm.io/datatypes"
@@ -24,12 +26,14 @@ import (
 type lab struct {
 	envStore      repo.LaboratoryRepo
 	accountClient repo.Account
+	inviteStore   repo.Invite
 }
 
 func NewLab() environment.EnvService {
 	return &lab{
 		envStore:      eStore.New(),
 		accountClient: casdoor.NewCasClient(),
+		inviteStore:   invite.New(),
 	}
 }
 
@@ -54,6 +58,14 @@ func (l *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Laborato
 			},
 		}
 		if err := l.envStore.CreateLaboratoryEnv(ctx, data); err != nil {
+			return err
+		}
+
+		if err := l.envStore.AddLabMemeber(ctx, &model.LaboratoryMember{
+			UserID: data.UserID,
+			LabID:  data.ID,
+			Role:   model.LaboratoryMemberAdmin,
+		}); err != nil {
 			return err
 		}
 
@@ -381,23 +393,230 @@ func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageRes
 	if userInfo == nil {
 		return nil, code.UnLogin
 	}
-	resp, err := l.envStore.GetLabList(ctx, []string{userInfo.ID}, req)
+
+	labs, err := l.envStore.GetLabByUserID(ctx, &common.PageReqT[string]{
+		PageReq: *req,
+		Data:    userInfo.ID,
+	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	labs := utils.FilterSlice(resp.Data, func(item *model.Laboratory) (*environment.LaboratoryResp, bool) {
+	labIDs := utils.FilterSlice(labs.Data, func(labMemeber *model.LaboratoryMember) (int64, bool) {
+		return labMemeber.LabID, true
+	})
+
+	labDatas := make([]*model.Laboratory, 0, len(labIDs))
+	if err := l.envStore.FindDatas(ctx, &labDatas, map[string]any{
+		"id": labIDs,
+	}); err != nil {
+		return nil, err
+	}
+
+	labMap := utils.SliceToMap(labDatas, func(l *model.Laboratory) (int64, *model.Laboratory) {
+		return l.ID, l
+	})
+
+	labResp := utils.FilterSlice(labs.Data, func(item *model.LaboratoryMember) (*environment.LaboratoryResp, bool) {
+		lab, ok := labMap[item.LabID]
+		if !ok {
+			logger.Infof(ctx, "can not found lab id: %+d", item.LabID)
+			return nil, false
+		}
+
 		return &environment.LaboratoryResp{
-			UUID:        item.UUID,
-			Name:        item.Name,
-			Description: item.Description,
+			UUID:        lab.UUID,
+			Name:        lab.Name,
+			Description: lab.Description,
 		}, true
 	})
 
 	return &common.PageResp[[]*environment.LaboratoryResp]{
-		Data:     labs,
-		Page:     req.Page,
-		Total:    resp.Total,
-		PageSize: req.PageSize,
+		Data:     labResp,
+		Page:     labs.Page,
+		Total:    labs.Total,
+		PageSize: labs.PageSize,
 	}, nil
+}
+
+func (l *lab) LabMemberList(ctx context.Context, req *environment.LabMemberReq) (*common.PageResp[[]*environment.LabMemberResp], error) {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return nil, code.UnLogin
+	}
+
+	labID := l.envStore.UUID2ID(ctx, &model.Laboratory{}, req.LabUUID)[req.LabUUID]
+	if labID == 0 {
+		return nil, code.CanNotGetLabIDErr
+	}
+
+	c, err := l.envStore.Count(ctx, &model.LaboratoryMember{}, map[string]any{
+		"user_id": userInfo.ID,
+		"lab_id":  labID,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	if c == 0 {
+		return nil, code.NoPermission
+	}
+
+	labMembers, err := l.envStore.GetLabByLabID(ctx, &common.PageReqT[int64]{
+		PageReq: req.PageReq,
+		Data:    labID,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp := utils.FilterSlice(labMembers.Data, func(l *model.LaboratoryMember) (*environment.LabMemberResp, bool) {
+		return &environment.LabMemberResp{
+			UUID:   l.UUID,
+			UserID: l.UserID,
+			LabID:  l.LabID,
+			Role:   l.Role,
+		}, true
+	})
+
+	return &common.PageResp[[]*environment.LabMemberResp]{
+		Total:    labMembers.Total,
+		Page:     labMembers.Page,
+		PageSize: labMembers.PageSize,
+		Data:     resp,
+	}, nil
+}
+
+func (l *lab) DelLabMember(ctx context.Context, req *environment.DelLabMemberReq) error {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return code.UnLogin
+	}
+
+	labID := l.envStore.UUID2ID(ctx, &model.Laboratory{}, req.LabUUID)[req.LabUUID]
+	if labID <= 0 {
+		return code.LabNotFound
+	}
+
+	// 只有管理员可以删除
+	if count, err := l.envStore.Count(ctx, &model.LaboratoryMember{}, map[string]any{
+		"lab_id":  labID,
+		"user_id": userInfo.ID,
+		"role":    model.LaboratoryMemberAdmin,
+	}); err != nil {
+		return err
+	} else if count == 0 {
+		return code.NoPermission
+	}
+
+	datas := []*model.LaboratoryMember{}
+
+	if err := l.envStore.FindDatas(ctx, &datas, map[string]any{
+		"uuid": req.MemberUUID,
+	}); err != nil {
+		return err
+	}
+
+	if len(datas) != 1 {
+		return nil
+	}
+
+	if datas[0].UserID == userInfo.ID {
+		return code.NoPermission
+	}
+
+	return l.envStore.DelData(ctx, &model.LaboratoryMember{}, map[string]any{
+		"uuid": req.MemberUUID,
+	})
+}
+
+func (l *lab) CreateInvite(ctx context.Context, req *environment.InviteReq) (*environment.InviteResp, error) {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return nil, code.UnLogin
+	}
+
+	labID := l.envStore.UUID2ID(ctx, &model.Laboratory{}, req.LabUUID)[req.LabUUID]
+	if labID <= 0 {
+		return nil, code.LabNotFound
+
+	}
+
+	// 只有管理员可以创建
+	if count, err := l.envStore.Count(ctx, &model.LaboratoryMember{}, map[string]any{
+		"lab_id":  labID,
+		"user_id": userInfo.ID,
+		"role":    model.LaboratoryMemberAdmin,
+	}); err != nil {
+		return nil, err
+	} else if count == 0 {
+		return nil, code.NoPermission
+	}
+
+	data := &model.LaboratoryInvitation{
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
+		Type:      model.InvitationTypeLab,
+		ThirdID:   strconv.FormatInt(labID, 10),
+		UserID:    userInfo.ID,
+	}
+	if err := l.inviteStore.CreateData(ctx, data); err != nil {
+		return nil, err
+	}
+
+	return &environment.InviteResp{
+		Path: fmt.Sprintf("/api/v1/lab/invite/%s", data.UUID),
+	}, nil
+}
+
+func (l *lab) AcceptInvite(ctx context.Context, req *environment.AcceptInviteReq) error {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return code.UnLogin
+	}
+
+	datas := make([]*model.LaboratoryInvitation, 0, 1)
+	if err := l.inviteStore.FindDatas(ctx, &datas, map[string]any{
+		"uuid": req.UUID,
+	}); err != nil {
+		return err
+	}
+
+	if len(datas) != 1 {
+		return code.LabInviteNotFoundErr
+	}
+
+	data := datas[0]
+	if data.ExpiresAt.Unix() < time.Now().Unix() {
+		return code.InviteExpiredErr
+	}
+
+	if data.UserID == userInfo.ID {
+		return nil
+	}
+
+	switch data.Type {
+	case model.InvitationTypeLab:
+		return l.addLabMemeber(ctx, data)
+
+	default:
+		logger.Warnf(ctx, "can not found this invite type: %+s", data.Type)
+	}
+
+	return nil
+}
+
+func (l *lab) addLabMemeber(ctx context.Context, data *model.LaboratoryInvitation) error {
+	userInfo := auth.GetCurrentUser(ctx)
+	labID, err := strconv.ParseInt(data.ThirdID, 10, 64)
+	if err != nil {
+		return code.InvalidateThirdID.WithErr(err)
+	}
+
+	return l.envStore.AddLabMemeber(ctx, &model.LaboratoryMember{
+		UserID: userInfo.ID,
+		LabID:  labID,
+		Role:   model.LaboratoryMemberNormal,
+	})
 }

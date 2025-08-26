@@ -21,7 +21,7 @@ const (
 // TODO: 字段是否有部分可以删除，或者是合并到一个 json 字段内
 type MaterialNode struct {
 	BaseModel
-	ParentID       int64                    `gorm:"type:bigint;index::idx_mn_p;uniqueIndex:idx_mn_ln,priority:3" json:"parent_id"`
+	ParentID       int64                    `gorm:"type:bigint;index:idx_mn_p;uniqueIndex:idx_mn_ln,priority:3" json:"parent_id"`
 	LabID          int64                    `gorm:"type:bigint;not null;uniqueIndex:idx_mn_ln,priority:1" json:"lab_id"`
 	Name           string                   `gorm:"type:varchar(255);not null;uniqueIndex:idx_mn_ln,priority:2" json:"name"`
 	DisplayName    string                   `gorm:"type:varchar(255);not null" json:"display_name"`
