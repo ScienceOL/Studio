@@ -1,8 +1,12 @@
 package material
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -69,6 +73,45 @@ func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
 	}
 
 	common.ReplyOk(ctx)
+}
+
+func (m *Handle) DownloadMaterial(ctx *gin.Context) {
+	var err error
+	req := &material.DownloadMaterial{}
+	if err := ctx.ShouldBindUri(req); err != nil {
+		logger.Errorf(ctx, "parse DownloadMaterial param err: %+v", err.Error())
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	resp, err := m.mService.DownloadMaterial(ctx, req)
+	if err != nil {
+		logger.Errorf(ctx, "DownloadMaterial err: %+v", err)
+		common.ReplyErr(ctx, err)
+		return
+	}
+
+	commonResp := &common.Resp{
+		Code: code.Success,
+		Data: resp,
+	}
+
+	data, err := json.Marshal(commonResp)
+	if err != nil {
+		logger.Errorf(ctx, "DownloadMaterial err: %+v", err)
+		common.ReplyErr(ctx, err)
+		return
+	}
+
+	ctx.Header("Cache-Control", "no-cache")
+	ctx.Header("Content-Disposition", "attachment; filename=material_graph.json")
+	ctx.Header("Content-Type", "application/json")
+	ctx.Header("Pragma", "public")
+	ctx.Header("Content-Length", fmt.Sprintf("%d", len(data)))
+
+	// 创建Reader并发送数据
+	reader := bytes.NewReader(data)
+	ctx.DataFromReader(http.StatusOK, int64(len(data)), "application/json", reader, nil)
 }
 
 func (m *Handle) initMaterialWebSocket() {

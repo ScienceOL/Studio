@@ -12,4 +12,5 @@ type Service interface {
 	OnWSMsg(ctx context.Context, s *melody.Session, b []byte) error
 	OnWSConnect(ctx context.Context, s *melody.Session) error
 	HandleNotify(ctx context.Context, msg string) error
+	DownloadMaterial(ctx context.Context, req *DownloadMaterial) (*GraphNodeReq, error)
 }

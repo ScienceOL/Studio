@@ -96,24 +96,26 @@ const (
 
 // environment business layer errors
 const (
-	RegActionNameEmptyErr ErrCode = iota + 20000 // reg action name empty
-	ResourceIsEmptyErr                           // resource is empty
-	ResourceNotExistErr                          // resource not exist
+	RegActionNameEmptyErr       ErrCode = iota + 20000 // reg action name empty
+	ResourceIsEmptyErr                                 // resource is empty
+	ResourceNotExistErr                                // resource not exist
+	WorkflowTemplateNotFoundErr                        // can not found workflow template error
 )
 
 // material module errors
 const (
-	ResNotExistErr          ErrCode = iota + 22000 // resource not exist
-	EdgeNodeNotExistErr                            // edge node not exist
-	EdgeHandleNotExistErr                          // node handle not exist
-	UnknownWSActionErr                             // unknown material websocket action
-	UnmarshalWSDataErr                             // unmarshal material websocket data error
-	CanNotGetLabIDErr                              // cannot get lab id error
-	UpdateNodeErr                                  // update material node error
-	ParentNodeNotFoundErr                          // parent node not found error
-	TemplateNodeNotFoundErr                        // template node not found error
-	InvalidDagErr                                  // invalid dag error
-	MaxTplNodeDeepErr                              // max template node deep error
+	ResNotExistErr             ErrCode = iota + 22000 // resource not exist
+	EdgeNodeNotExistErr                               // edge node not exist
+	EdgeHandleNotExistErr                             // node handle not exist
+	UnknownWSActionErr                                // unknown material websocket action
+	UnmarshalWSDataErr                                // unmarshal material websocket data error
+	CanNotGetLabIDErr                                 // cannot get lab id error
+	UpdateNodeErr                                     // update material node error
+	ParentNodeNotFoundErr                             // parent node not found error
+	TemplateNodeNotFoundErr                           // template node not found error
+	InvalidDagErr                                     // invalid dag error
+	MaxTplNodeDeepErr                                 // max template node deep error
+	CanNotFoundMaterialNodeErr                        // can not found material node error
 )
 
 // notify module errors
@@ -137,6 +139,9 @@ const (
 	PermissionDenied                                // permission denied
 	SaveWorkflowNodeErr                             // batch save nodes error
 	SaveWorkflowEdgeErr                             // batch save workflow edge error
+	WorkflowNodeNotFoundErr                         // workflow node not found error
+	CanNotGetworkflowErr                            // workflow not found error
+	FormatCSVTaskErr                                // format csv data error
 )
 
 // schedule module errors

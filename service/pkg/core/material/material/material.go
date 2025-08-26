@@ -71,9 +71,9 @@ func (m *materialImpl) RecalculatePosition(ctx context.Context, req *material.Gr
 		pose := node.Pose.Data()
 		pose.Layout = utils.Or(pose.Layout, "2d")
 		pose.Position = model.Position{
-			X: utils.Or(pose.Position.X, 0),
-			Y: utils.Or(pose.Position.Y, 0),
-			Z: utils.Or(pose.Position.Z, 0),
+			X: utils.Or(node.Position.X, 0),
+			Y: utils.Or(node.Position.Y, 0),
+			Z: utils.Or(node.Position.Z, 0),
 		}
 		pose.Size = model.Size{
 			Width:  utils.Or(pose.Size.Width, 200),
@@ -90,8 +90,8 @@ func (m *materialImpl) RecalculatePosition(ctx context.Context, req *material.Gr
 			Z: utils.Or(pose.Rotation.Z, 0),
 		}
 
-		pose.Position.X = float32((pose.Size.Width + 20) * (index % 10))
-		pose.Position.Y = float32(2 * pose.Size.Height * (index / 10))
+		// pose.Position.X = float32((pose.Size.Width + 20) * (index % 10))
+		// pose.Position.Y = float32(2 * pose.Size.Height * (index / 10))
 
 		node.Pose = datatypes.NewJSONType(pose)
 		index += 1
@@ -289,39 +289,46 @@ func (m *materialImpl) OnWSMsg(ctx context.Context, s *melody.Session, b []byte)
 		return err
 	}
 
+	var data any
+
 	switch material.ActionType(msgType.Action) {
 	case material.FetchGraph: // 首次获取组态图
-		return m.fetchGraph(ctx, s, msgType.MsgUUID, material.FetchGraph)
+		data, err = m.fetchGraph(ctx, s)
 	case material.FetchTemplate: // 首次获取模板
-		return m.fetchDeviceTemplate(ctx, s, msgType.MsgUUID)
+		data, err = m.fetchDeviceTemplate(ctx, s, msgType.MsgUUID)
 	case material.SaveGraph:
-		return m.saveGraph(ctx, s, b)
+		data, err = m.saveGraph(ctx, s, b)
 	case material.CreateNode:
-		return m.createNode(ctx, s, b)
+		data, err = m.createNode(ctx, s, b)
 	case material.UpdateNode: // 批量更新节点
-		return m.upateNode(ctx, s, b)
+		data, err = m.upateNode(ctx, s, b)
 	case material.BatchDelNode: // 批量删除节点
-		return m.batchDelNode(ctx, s, b)
+		data, err = m.batchDelNode(ctx, s, b)
 	case material.BatchCreateEdge: // 批量创建边
-		return m.batchCreateEdge(ctx, s, b)
+		data, err = m.batchCreateEdge(ctx, s, b)
 	case material.BatchDelEdge: // 批量删除边
-		return m.batchDelEdge(ctx, s, b)
+		data, err = m.batchDelEdge(ctx, s, b)
 	default:
 		return common.ReplyWSErr(s, msgType.Action, msgType.MsgUUID, code.UnknownWSActionErr)
+	}
+
+	if data != nil {
+		return common.ReplyWSOk(s, msgType.Action, msgType.MsgUUID, data)
+	} else {
+		return common.ReplyWSOk(s, msgType.Action, msgType.MsgUUID)
 	}
 }
 
 // 获取组态图
-func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUID uuid.UUID, action material.ActionType) error {
+func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session) (any, error) {
 	// 获取所有组态图信息
 	labData, err := m.getLab(ctx, s)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	nodes, err := m.materialStore.GetNodesByLabID(ctx, labData.ID)
 	if err != nil {
-		common.ReplyWSErr(s, string(action), msgUUID, err)
-		return err
+		return nil, err
 	}
 
 	resTplIDS := utils.FilterSlice(nodes, func(nodeItem *model.MaterialNode) (int64, bool) {
@@ -330,30 +337,28 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 		}
 		return nodeItem.ResourceNodeID, true
 	})
-	resTplIDS = utils.RemoveDuplicates(resTplIDS)
 
+	resTplIDS = utils.RemoveDuplicates(resTplIDS)
 	nodesMap := utils.SliceToMap(nodes, func(item *model.MaterialNode) (int64, *model.MaterialNode) {
 		return item.ID, item
 	})
 
 	resHandlesMap, err := m.envStore.GetResourceHandleTemplates(ctx, resTplIDS)
 	if err != nil {
-		common.ReplyWSErr(s, string(action), msgUUID, err)
-		return err
+		return nil, err
 	}
 
 	nodeUUIDs := utils.FilterSlice(nodes, func(nodeItem *model.MaterialNode) (uuid.UUID, bool) {
 		return nodeItem.UUID, true
 	})
+
 	edges, err := m.materialStore.GetEdgesByNodeUUID(ctx, nodeUUIDs)
 	if err != nil {
-		common.ReplyWSErr(s, string(action), msgUUID, err)
-		return err
+		return nil, err
 	}
 	resNodes, err := m.envStore.GetResourceNodeTemplates(ctx, resTplIDS)
 	if err != nil {
-		common.ReplyWSErr(s, string(action), msgUUID, err)
-		return err
+		return nil, err
 	}
 
 	resNodeTplMap := utils.SliceToMap(resNodes, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
@@ -421,7 +426,7 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session, msgUUI
 		Edges: respEdges,
 	}
 
-	return common.ReplyWSOk(s, string(action), msgUUID, resp)
+	return resp, nil
 }
 
 func (m *materialImpl) getLab(ctx context.Context, s *melody.Session) (*model.Laboratory, error) {
@@ -488,17 +493,15 @@ func (m *materialImpl) getChildren(ctx context.Context, node *model.ResourceNode
 }
 
 // 获取设备模板
-func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Session, msgUUID uuid.UUID) error {
+func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Session, msgUUID uuid.UUID) (any, error) {
 	labData, err := m.getLab(ctx, s)
 	if err != nil {
-		common.ReplyWSErr(s, string(material.FetchTemplate), msgUUID, err)
-		return err
+		return nil, err
 	}
 
 	tplNodes, err := m.envStore.GetAllResourceTemplateByLabID(ctx, labData.ID)
 	if err != nil {
-		common.ReplyWSErr(s, string(material.FetchTemplate), msgUUID, err)
-		return err
+		return nil, err
 	}
 	tplIDs := utils.FilterSlice(tplNodes, func(item *model.ResourceNodeTemplate) (int64, bool) {
 		return item.ID, true
@@ -506,8 +509,7 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 
 	tplHandles, err := m.envStore.GetResourceHandleTemplates(ctx, tplIDs)
 	if err != nil {
-		common.ReplyWSErr(s, string(material.FetchTemplate), msgUUID, err)
-		return err
+		return nil, err
 	}
 
 	tplNodeMap := utils.SliceToMap(tplNodes, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
@@ -595,36 +597,33 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 	})
 
 	if err != nil {
-		common.ReplyWSErr(s, string(material.FetchTemplate), msgUUID, err)
-		return err
+		return nil, err
 	}
 
 	resData := &material.DeviceTemplates{
 		Templates: tplDatas,
 	}
 
-	return common.ReplyWSOk(s, string(material.FetchTemplate), msgUUID, resData)
+	return resData, nil
 }
 
 // 全量保存
-func (m *materialImpl) saveGraph(ctx context.Context, s *melody.Session, b []byte) error {
+func (m *materialImpl) saveGraph(ctx context.Context, s *melody.Session, b []byte) (any, error) {
 	req := &common.WSData[*material.WSGraph]{}
 	if err := json.Unmarshal(b, req); err != nil {
-		logger.Errorf(ctx, "saveGraph unmarshal data fail err: %+v", err)
-		return common.ReplyWSErr(s, string(material.SaveGraph), req.MsgUUID, code.ParamErr.WithErr(err))
+		return nil, code.ParamErr.WithErr(err)
 	}
 	labData, err := m.getLab(ctx, s)
 	if err != nil {
 		logger.Errorf(ctx, "saveGraph get lab fail err: %+v", err)
-		return common.ReplyWSErr(s, string(material.SaveGraph), req.MsgUUID, err)
+		return nil, err
 	}
 
 	nodeUUIDs := make([]uuid.UUID, 0, len(req.Data.Nodes))
 	tplUUIDs := make([]uuid.UUID, 0, len(req.Data.Nodes))
 	for _, n := range req.Data.Nodes {
 		if n.UUID.IsNil() {
-			logger.Errorf(ctx, "saveGraph check node uuid id empty")
-			return common.ReplyWSErr(s, string(material.SaveGraph), req.MsgUUID, code.ParamErr)
+			return nil, code.ParamErr.WithMsg("saveGraph check node uuid id empty")
 		}
 
 		if !n.UUID.IsNil() {
@@ -663,49 +662,48 @@ func (m *materialImpl) saveGraph(ctx context.Context, s *melody.Session, b []byt
 	})
 
 	if err != nil {
-		logger.Errorf(ctx, "saveGraph check node param err: %+v", err)
-		return common.ReplyWSErr(s, string(material.SaveGraph), req.MsgUUID, err)
+		return nil, err
 	}
 
 	if err := m.materialStore.UpsertMaterialNode(ctx, nodes); err != nil {
-		logger.Errorf(ctx, "saveGraph upsert material node err: %+v", err)
-		return common.ReplyWSErr(s, string(material.SaveGraph), req.MsgUUID, err)
+		return nil, err
 	}
 
-	return m.fetchGraph(ctx, s, req.MsgUUID, material.SaveGraph)
+	return material.SaveGraph, nil
 }
 
 // 批量创建节点
-func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []byte) error {
+func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []byte) (any, error) {
 	req := &common.WSData[*material.WSNode]{}
 	err := json.Unmarshal(b, req)
 	if err != nil {
-		logger.Errorf(ctx, "createNode unmarshal data err: %+v", err)
-		return code.UnmarshalWSDataErr.WithMsg(err.Error())
+		return nil, code.UnmarshalWSDataErr.WithMsg(err.Error())
 	}
 	labData, err := m.getLab(ctx, s)
 	if err != nil {
-		logger.Errorf(ctx, "createNode can not get lab err: %+v", err)
-		return err
+		return nil, err
 	}
 	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
-		common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, code.UnLogin)
-		return code.UnLogin
+		return nil, code.UnLogin
+	}
+
+	labUUIDI, _ := s.Get("lab_uuid")
+	labUUID, _ := labUUIDI.(uuid.UUID)
+	if labUUID.IsNil() {
+		return nil, code.UnLogin
 	}
 
 	reqData := req.Data
 	mData := &model.MaterialNode{}
 
 	if reqData.ResTemplateUUID.IsNil() {
-		common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, code.TemplateNodeNotFoundErr)
-		return code.TemplateNodeNotFoundErr
+		return nil, code.TemplateNodeNotFoundErr
 	}
 
 	resNodeTpl, resNodeChildrenTpl := m.getResourceTemplates(ctx, reqData.ResTemplateUUID)
 	if resNodeTpl == nil {
-		common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, code.TemplateNodeNotFoundErr)
-		return code.TemplateNodeNotFoundErr
+		return nil, code.TemplateNodeNotFoundErr
 	} else {
 		mData.ResourceNodeID = resNodeTpl.ID
 		mData.Icon = resNodeTpl.Icon
@@ -715,8 +713,8 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		if nodeID, ok := m.materialStore.UUID2ID(ctx,
 			&model.MaterialNode{},
 			reqData.ParentUUID)[reqData.ParentUUID]; !ok {
-			common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, err)
-			return err
+
+			return nil, code.CanNotFoundMaterialNodeErr
 		} else {
 			mData.ParentID = nodeID
 		}
@@ -734,8 +732,7 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 	mData.Model = reqData.Model
 
 	if err := m.materialStore.UpsertMaterialNode(ctx, []*model.MaterialNode{mData}); err != nil {
-		common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, err)
-		return err
+		return nil, err
 	}
 	reqData.UUID = mData.UUID
 
@@ -758,8 +755,7 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 	})
 
 	if err := m.materialStore.UpsertMaterialNode(ctx, childrenMaterialNode); err != nil {
-		common.ReplyWSErr(s, string(material.CreateNode), req.MsgUUID, err)
-		return err
+		return nil, err
 	}
 
 	resDatas := make([]*material.WSNode, 0, 1+len(childrenMaterialNode))
@@ -786,34 +782,25 @@ func (m *materialImpl) createNode(ctx context.Context, s *melody.Session, b []by
 	})
 
 	resDatas = append(resDatas, childrenDatas...)
-	if err = common.ReplyWSOk(s, string(material.CreateNode), req.MsgUUID, resDatas); err != nil {
-		logger.Errorf(ctx, "updateNode reply ws ok fail err: %+v", err)
-	}
-
-	labUUID, _ := s.Get("lab_uuid")
-	if userInfo == nil {
-		logger.Warnf(ctx, "batchDelNode broadcast can not get user info")
-		return nil
-	}
 
 	if err := m.msgCenter.Broadcast(ctx, &notify.SendMsg{
 		Channel: notify.MaterialModify,
 		UserID:  userInfo.ID,
-		LabUUID: labUUID.(uuid.UUID),
+		LabUUID: labUUID,
 		UUID:    uuid.NewV4(),
 		Data:    req,
 	}); err != nil {
 		logger.Errorf(ctx, "updateNode notify fail err: %+v", err)
 	}
 
-	return nil
+	return resDatas, nil
 }
 
 func (m *materialImpl) getResourceTemplates(ctx context.Context, resourceNodeUUID uuid.UUID) (*model.ResourceNodeTemplate, []*model.ResourceNodeTemplate) {
 	res := make([]*model.ResourceNodeTemplate, 0, 2)
 	if err := m.envStore.FindDatas(ctx, &res, map[string]any{
 		"uuid": resourceNodeUUID,
-	}, "id", "uuid", "parent_id", "icon"); err != nil {
+	}, "id", "uuid", "parent_id", "icon", "name", "resource_type", "data_schema", "config_schema", "pose"); err != nil {
 		logger.Errorf(ctx, "getResourceTemplate fail err: %+v", err)
 		return nil, nil
 	}
@@ -839,7 +826,7 @@ func (m *materialImpl) getResourceTemplates(ctx context.Context, resourceNodeUUI
 	childrenRes := make([]*model.ResourceNodeTemplate, 0, 1)
 	if err := m.envStore.FindDatas(ctx, &childrenRes, map[string]any{
 		"parent_id": childRes[0].ID,
-	}, []string{"id", "uuid", "icon"}...); err != nil {
+	}, "id", "uuid", "parent_id", "icon", "name", "resource_type", "data_schema", "config_schema", "pose"); err != nil {
 		logger.Warnf(ctx, "getResourceTemplate fail err: %+v", err)
 		return res[0], nil
 	}
@@ -848,18 +835,16 @@ func (m *materialImpl) getResourceTemplates(ctx context.Context, resourceNodeUUI
 }
 
 // 批量更新节点
-func (m *materialImpl) upateNode(ctx context.Context, s *melody.Session, b []byte) error {
+func (m *materialImpl) upateNode(ctx context.Context, s *melody.Session, b []byte) (any, error) {
 	req := &common.WSData[*material.WSUpdateNode]{}
 	err := json.Unmarshal(b, req)
 	if err != nil {
-		logger.Errorf(ctx, "batchDelNode unmarshal data err: %+v", err)
-		return code.UnmarshalWSDataErr.WithMsg(err.Error())
+		return nil, code.UnmarshalWSDataErr.WithMsg(err.Error())
 	}
 
 	data := req.Data
 	if data.UUID.IsNil() {
-		common.ReplyWSErr(s, string(material.UpdateNode), req.MsgUUID, code.ParamErr)
-		return code.ParamErr.WithMsg("update node uuid is empyt")
+		return nil, code.ParamErr.WithMsg("update node uuid is empyt")
 	}
 
 	keys := make([]string, 0, 7)
@@ -871,11 +856,8 @@ func (m *materialImpl) upateNode(ctx context.Context, s *melody.Session, b []byt
 	if data.ParentUUID != nil && !(*data.ParentUUID).IsNil() {
 		parentID, err := m.materialStore.GetNodeIDByUUID(ctx, *data.ParentUUID)
 		if err != nil {
-			common.ReplyWSErr(s,
-				string(material.UpdateNode),
-				req.MsgUUID,
-				code.ParentNodeNotFoundErr.WithMsg((*data.ParentUUID).String()))
-			return code.ParamErr.WithMsg("update node uuid is empyt")
+
+			return nil, code.ParamErr.WithMsgf("update node uuid is empyt uuid: %s", *data.ParentUUID)
 		}
 		keys = append(keys, "parent_id")
 		materialData.ParentID = parentID
@@ -908,12 +890,7 @@ func (m *materialImpl) upateNode(ctx context.Context, s *melody.Session, b []byt
 
 	err = m.materialStore.UpdateNodeByUUID(ctx, materialData, keys...)
 	if err != nil {
-		common.ReplyWSErr(s, string(material.UpdateNode), req.MsgUUID, code.UpdateNodeErr.WithMsg(err.Error()))
-		return err
-	}
-
-	if err := common.ReplyWSOk(s, string(material.UpdateNode), req.MsgUUID); err != nil {
-		logger.Errorf(ctx, "updateNode reply ws ok fail err: %+v", err)
+		return nil, err
 	}
 
 	// 广播
@@ -921,7 +898,7 @@ func (m *materialImpl) upateNode(ctx context.Context, s *melody.Session, b []byt
 	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
 		logger.Warnf(ctx, "batchDelNode broadcast can not get user info")
-		return nil
+		return nil, code.UnLogin
 	}
 
 	if err := m.msgCenter.Broadcast(ctx, &notify.SendMsg{
@@ -934,34 +911,30 @@ func (m *materialImpl) upateNode(ctx context.Context, s *melody.Session, b []byt
 		logger.Errorf(ctx, "updateNode notify fail err: %+v", err)
 	}
 
-	return nil
+	return nil, nil
 }
 
 // 批量删除节点
-func (m *materialImpl) batchDelNode(ctx context.Context, s *melody.Session, b []byte) error {
+func (m *materialImpl) batchDelNode(ctx context.Context, s *melody.Session, b []byte) (any, error) {
 	// FIXME: 如果删除父节点，子节点全部删除.
 	data := &common.WSData[[]uuid.UUID]{}
 	err := json.Unmarshal(b, data)
 	if err != nil {
 		logger.Errorf(ctx, "batchDelNode unmarshal data err: %+v", err)
-		return code.UnmarshalWSDataErr.WithMsg(err.Error())
+		return nil, code.UnmarshalWSDataErr.WithMsg(err.Error())
 	}
 
 	res, err := m.materialStore.DelNodes(ctx, data.Data)
 	if err != nil {
-		common.ReplyWSErr(s, string(material.BatchDelNode), data.MsgUUID, err)
-		return err
+		return nil, err
 	}
 
-	if err := common.ReplyWSOk(s, data.Action, data.MsgUUID, res); err != nil {
-		logger.Errorf(ctx, "batchDelNode reply ws ok fail err: %+v", err)
-	}
 	// 广播
 	labUUID, _ := s.Get("lab_uuid")
 	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
 		logger.Warnf(ctx, "batchDelNode broadcast can not get user info")
-		return nil
+		return nil, code.UnLogin
 	}
 
 	resData := &common.WSData[*repo.DelNodeInfo]{
@@ -977,30 +950,24 @@ func (m *materialImpl) batchDelNode(ctx context.Context, s *melody.Session, b []
 		logger.Errorf(ctx, "batchDelEdge notify fail err: %+v", err)
 	}
 
-	return nil
+	return res, nil
 }
 
 // 批量创建 edge
-func (m *materialImpl) batchCreateEdge(ctx context.Context, s *melody.Session, b []byte) error {
+func (m *materialImpl) batchCreateEdge(ctx context.Context, s *melody.Session, b []byte) (any, error) {
 	userInfo := auth.GetCurrentUser(ctx)
 	labData, err := m.getLab(ctx, s)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	data := &common.WSData[[]material.WSEdge]{}
 	err = json.Unmarshal(b, data)
 	if err != nil {
-		logger.Errorf(ctx, "batchDelEdge unmarshal data err: %+v", err)
-		return code.UnmarshalWSDataErr.WithMsg(err.Error())
+		return nil, code.UnmarshalWSDataErr.WithMsg(err.Error())
 	}
 	resDatas, err := m.addWSEdges(ctx, data.Data)
 	if err != nil {
-		_ = common.ReplyWSErr(s, string(material.BatchCreateEdge), data.MsgUUID, err)
-		return err
-	}
-
-	if err = common.ReplyWSOk(s, string(material.BatchCreateEdge), data.MsgUUID, resDatas); err != nil {
-		logger.Errorf(ctx, "batchCreateEdge send msg fail err: %+v", err)
+		return nil, err
 	}
 
 	wsData := &common.WSData[[]material.WSEdge]{
@@ -1011,35 +978,33 @@ func (m *materialImpl) batchCreateEdge(ctx context.Context, s *melody.Session, b
 		Data: resDatas,
 	}
 
-	return m.msgCenter.Broadcast(ctx, &notify.SendMsg{
+	if err := m.msgCenter.Broadcast(ctx, &notify.SendMsg{
 		Channel: notify.MaterialModify,
 		UserID:  userInfo.ID,
 		LabUUID: labData.UUID,
 		Data:    wsData,
-	})
+	}); err != nil {
+		logger.Errorf(ctx, "batchCreateEdge broadcast err: %+v", err)
+	}
+
+	return resDatas, nil
 }
 
-func (m *materialImpl) batchDelEdge(ctx context.Context, s *melody.Session, b []byte) error {
+func (m *materialImpl) batchDelEdge(ctx context.Context, s *melody.Session, b []byte) (any, error) {
 	data := &common.WSData[[]uuid.UUID]{}
 	err := json.Unmarshal(b, data)
 	if err != nil {
-		logger.Errorf(ctx, "batchDelEdge unmarshal data err: %+v", err)
-		return code.UnmarshalWSDataErr.WithMsg(err.Error())
+		return nil, code.UnmarshalWSDataErr.WithMsg(err.Error())
 	}
 
 	if err := m.materialStore.DelEdges(ctx, data.Data); err != nil {
-		common.ReplyWSErr(s, string(material.BatchDelEdge), data.MsgUUID, err)
-		return err
-	}
-
-	if err = common.ReplyWSOk(s, string(material.BatchDelEdge), data.MsgUUID, data.Data); err != nil {
-		logger.Errorf(ctx, "batchDelEdge reply ws ok fail err: %+v", err)
+		return nil, err
 	}
 
 	userInfo := auth.GetCurrentUser(ctx)
 	labData, err := m.getLab(ctx, s)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	resData := &common.WSData[[]uuid.UUID]{
@@ -1049,12 +1014,16 @@ func (m *materialImpl) batchDelEdge(ctx context.Context, s *melody.Session, b []
 		},
 		Data: data.Data,
 	}
-	return m.msgCenter.Broadcast(ctx, &notify.SendMsg{
+	if err := m.msgCenter.Broadcast(ctx, &notify.SendMsg{
 		Channel: notify.MaterialModify,
 		UserID:  userInfo.ID,
 		LabUUID: labData.UUID,
 		Data:    resData,
-	})
+	}); err != nil {
+		logger.Errorf(ctx, "batchDelEdge fail err: %+v", err)
+	}
+
+	return data.Data, nil
 }
 
 // 接受到 redis 广播通知消息
@@ -1191,4 +1160,83 @@ func (m *materialImpl) addWSEdges(ctx context.Context, edges []material.WSEdge) 
 	})
 
 	return res, nil
+}
+
+func (m *materialImpl) DownloadMaterial(ctx context.Context, req *material.DownloadMaterial) (*material.GraphNodeReq, error) {
+	respMap := m.materialStore.UUID2ID(ctx, &model.Laboratory{}, req.LabUUID)
+	if _, ok := respMap[req.LabUUID]; !ok {
+		return nil, code.CanNotGetLabIDErr
+	}
+
+	// TODO: 获取组态图
+	nodes, err := m.materialStore.GetNodesByLabID(ctx, respMap[req.LabUUID])
+	if err != nil {
+		return nil, err
+	}
+
+	nodesUUIDs := utils.FilterSlice(nodes, func(node *model.MaterialNode) (uuid.UUID, bool) {
+		return node.UUID, true
+	})
+
+	edges, err := m.materialStore.GetEdgesByNodeUUID(ctx, nodesUUIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeMap := utils.SliceToMap(nodes, func(node *model.MaterialNode) (int64, *model.MaterialNode) {
+		return node.ID, node
+	})
+
+	nodeUUIDMap := utils.SliceToMap(nodes, func(node *model.MaterialNode) (uuid.UUID, *model.MaterialNode) {
+		return node.UUID, node
+	})
+
+	formatNodes := utils.FilterSlice(nodes, func(node *model.MaterialNode) (*material.Node, bool) {
+		return &material.Node{
+			DeviceID:    node.Name,
+			Name:        node.DisplayName,
+			Type:        node.Type,
+			Class:       node.Class,
+			Parent:      nodeMap[node.ID].Name,
+			Pose:        node.Pose,
+			Config:      node.InitParamData,
+			Data:        node.Data,
+			Schema:      node.Schema,
+			Description: node.Description,
+			Model:       node.Model,
+			Position:    node.Pose.Data().Position,
+		}, true
+	})
+
+	handlesUUIDs := make([]uuid.UUID, 0, 2*len(nodes))
+	for _, edge := range edges {
+		handlesUUIDs = utils.AppendUniqSlice(handlesUUIDs, edge.SourceHandleUUID)
+		handlesUUIDs = utils.AppendUniqSlice(handlesUUIDs, edge.TargetHandleUUID)
+	}
+
+	edgesData := make([]*model.ResourceHandleTemplate, 0, 2*len(nodes))
+	if err := m.envStore.FindDatas(ctx, &edgesData, map[string]any{
+		"uuid": handlesUUIDs,
+	}, "id", "uuid", "name"); err != nil {
+		return nil, err
+	}
+
+	edgeDataMap := utils.SliceToMap(edgesData, func(edge *model.ResourceHandleTemplate) (uuid.UUID, *model.ResourceHandleTemplate) {
+		return edge.UUID, edge
+	})
+
+	formatEdges := utils.FilterSlice(edges, func(edge *model.MaterialEdge) (*material.Edge, bool) {
+		return &material.Edge{
+			Source:       nodeUUIDMap[edge.SourceNodeUUID].Name,
+			Target:       nodeUUIDMap[edge.TargetNodeUUID].Name,
+			SourceHandle: edgeDataMap[edge.SourceHandleUUID].Name,
+			TargetHandle: edgeDataMap[edge.TargetHandleUUID].Name,
+		}, true
+
+	})
+
+	return &material.GraphNodeReq{
+		Nodes: formatNodes,
+		Edges: formatEdges,
+	}, nil
 }

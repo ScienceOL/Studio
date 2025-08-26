@@ -548,3 +548,44 @@ func (w *workflowImpl) CreateWorkflowTask(ctx context.Context, data *model.Workf
 
 	return nil
 }
+
+func (w *workflowImpl) GetWorkflowTasks(ctx context.Context, req *common.PageReqT[*repo.TaskReq]) (*common.PageMoreResp[[]*model.WorkflowTask], error) {
+	tasks := make([]*model.WorkflowTask, 0, 1)
+	total := int64(0)
+
+	// 构建查询条件
+	query := w.DBWithContext(ctx).Model(&model.WorkflowTask{})
+
+	// 如果指定了实验室ID，则按实验室过滤
+	query = query.Where("lab_id = ?", req.Data.LabID)
+
+	// 按用户ID过滤
+	query = query.Where("user_id = ?", req.Data.UserID)
+
+	// 工作流
+	query = query.Where("workflow_id = ?", req.Data.WrokflowID)
+
+	req.Normalize()
+
+	// 获取总数
+	if err := query.Count(&total).Error; err != nil {
+		logger.Errorf(ctx, "GetWorkflowTasks count fail param: %+v, err: %+v", req, err)
+		return nil, code.QueryRecordErr.WithMsg(err.Error())
+	}
+
+	// 分页查询
+	if err := query.Offset(req.Offest()).
+		Limit(req.PageSize).
+		Order("created_at desc").
+		Find(&tasks).Error; err != nil {
+		logger.Errorf(ctx, "GetWorkflowTasks query fail param: %+v, err: %+v", req, err)
+		return nil, code.QueryRecordErr.WithMsg(err.Error())
+	}
+
+	return &common.PageMoreResp[[]*model.WorkflowTask]{
+		HasMore:  total > (int64(req.Page)+1)*int64(req.PageSize),
+		Page:     req.Page,
+		PageSize: req.PageSize,
+		Data:     tasks,
+	}, nil
+}

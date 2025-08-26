@@ -81,6 +81,7 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 				materialRouter := labRouter.Group("/material")
 				materialRouter.POST("", materialHandle.CreateLabMaterial)
 				materialRouter.POST("/edge", materialHandle.CreateMaterialEdge)
+				materialRouter.GET("/download/:lab_uuid", materialHandle.DownloadMaterial)
 
 				labRouter.GET("/ws/material/:lab_uuid", materialHandle.LabMaterial) // TODO: websocket 是否要放在统一的路由下
 			}
@@ -96,6 +97,8 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 				workflowRouter.GET("/template/detail", workflowHandle.TemplateDetail)       // 模板详情
 				workflowRouter.GET("/template/list", workflowHandle.TemplateList)           // 模板列表
 				workflowRouter.PUT("/node", workflowHandle.UpdateNodeTemplate)              // 更新节点
+				workflowRouter.GET("/task/:uuid", workflowHandle.TaskList)                  // fork 工作流
+				workflowRouter.GET("/task/download/:uuid", workflowHandle.DownloadTask)     // fork 工作流
 
 				workflowRouter.GET("/ws/workflow/:uuid", workflowHandle.LabWorkflow) // TODO: websocket 是否放在统一的路由下
 			}

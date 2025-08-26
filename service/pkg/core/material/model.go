@@ -37,7 +37,8 @@ type Node struct {
 	// FIXME: 这块后续要优化掉，从 reg 获取
 	Schema      datatypes.JSON `json:"schema"`
 	Description *string        `json:"description,omitempty"`
-	Model       string         `json:"model"`
+	Model       datatypes.JSON `json:"model"`
+	Position    model.Position `json:"position"`
 }
 
 type GraphEdge struct {
@@ -54,6 +55,10 @@ type Edge struct {
 }
 
 type LabWS struct {
+	LabUUID uuid.UUID `uri:"lab_uuid" binding:"required"`
+}
+
+type DownloadMaterial struct {
 	LabUUID uuid.UUID `uri:"lab_uuid" binding:"required"`
 }
 

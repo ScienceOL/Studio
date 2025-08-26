@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/olahol/melody"
@@ -20,4 +21,6 @@ type Service interface {
 	GetWorkflowDetail(ctx context.Context, workflowUUID uuid.UUID) (*WorkflowDetailResp, error)
 	OnWSMsg(ctx context.Context, s *melody.Session, b []byte) error
 	OnWSConnect(ctx context.Context, s *melody.Session) error
+	WorkflowTaskList(ctx context.Context, req *WorkflowTaskReq) (*common.PageMoreResp[[]*WorkflowTaskResp], error)
+	TaskDownload(ctx context.Context, req *WorkflowTaskDownloadReq) (*bytes.Buffer, error)
 }

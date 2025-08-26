@@ -3,6 +3,8 @@ package workflow
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -55,6 +57,47 @@ func (w *workflowHandle) TemplateDetail(ctx *gin.Context) {}
 
 // 工作流模板 fork
 func (w *workflowHandle) ForkTemplate(ctx *gin.Context) {}
+
+// 获取工作流 task 列表
+func (w *workflowHandle) TaskList(ctx *gin.Context) {
+	req := workflow.WorkflowTaskReq{}
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
+	if res, err := w.wService.WorkflowTaskList(ctx, &req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx, res)
+	}
+}
+
+// 下载 task
+func (w *workflowHandle) DownloadTask(ctx *gin.Context) {
+	req := workflow.WorkflowTaskDownloadReq{}
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
+	if res, err := w.wService.TaskDownload(ctx, &req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		ctx.Header("Content-Disposition", "attachment; filename=task.csv")
+		ctx.Header("Content-Type", "text/csv")
+		ctx.Header("Pragma", "public")
+		ctx.Header("Content-Length", fmt.Sprintf("%d", len(res.Bytes())))
+
+		// 发送文件数据
+		ctx.Data(http.StatusOK, "text/csv", res.Bytes())
+	}
+}
 
 // 节点模板列表，节点模板分类
 func (w *workflowHandle) NodeTemplateList(ctx *gin.Context) {}

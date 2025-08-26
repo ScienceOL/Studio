@@ -87,9 +87,10 @@ func (events *Events) Broadcast(ctx context.Context, msg *notify.SendMsg) error 
 	}
 
 	data, _ := json.Marshal(msg)
+	// FIXME: ctx 被取消后，通知消息发送直接失败。
 	ret := events.client.Publish(ctx, string(msg.Channel), data)
 	if ret.Err() != nil {
-		logger.Errorf(ctx, "send msg fail action: %s", msg.Channel)
+		logger.Errorf(ctx, "send msg fail action: %s, err: %+v", msg.Channel, ret.Err())
 		return code.NotifySendMsgErr
 	}
 

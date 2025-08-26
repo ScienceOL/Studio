@@ -1,6 +1,8 @@
 package workflow
 
 import (
+	"time"
+
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/repo/model"
@@ -240,4 +242,20 @@ type WorkflowDetailResp struct {
 	UserID      string    `json:"user_id"`
 }
 
-// 全局保存节点
+// 获取任务列表
+type WorkflowTaskReq struct {
+	UUID uuid.UUID `json:"uuid" uri:"uuid" form:"uuid" binding:"required"`
+	common.PageReq
+}
+
+// 下载 task
+type WorkflowTaskDownloadReq struct {
+	UUID uuid.UUID `json:"uuid" uri:"uuid" form:"uuid" binding:"required"`
+}
+
+type WorkflowTaskResp struct {
+	UUID       uuid.UUID                `json:"uuid"`
+	Status     model.WorkflowTaskStatus `json:"status"`
+	CreatedAt  time.Time                `json:"created_at"`
+	FinishedAt time.Time                `json:"finished_at"`
+}

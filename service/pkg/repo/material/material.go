@@ -175,13 +175,37 @@ func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []uuid.UUID) (*re
 			return code.DeleteDataErr.WithErr(err)
 		}
 
+		parentIDs := make([]int64, 0, len(delNodes))
 		res.NodeUUIDs = utils.FilterSlice(delNodes, func(node *model.MaterialNode) (uuid.UUID, bool) {
+			parentIDs = append(parentIDs, node.ID)
 			return node.UUID, true
 		})
 
 		if len(res.NodeUUIDs) == 0 {
 			return nil
 		}
+
+		// 孔板类型，删除所有子节点
+		childrenNodes := []*model.MaterialNode{}
+		if err := m.DBWithContext(txCtx).Clauses(
+			clause.Returning{
+				Columns: []clause.Column{
+					{Name: "id"},
+					{Name: "uuid"},
+				},
+			}).
+			Where("parent_id in ?", parentIDs).
+			Delete(&childrenNodes).Error; err != nil {
+			logger.Errorf(ctx, "DelNodes delete query node fail uuids: %+v, err: %+v", nodeUUIDs, err)
+			return code.DeleteDataErr.WithErr(err)
+		}
+
+		childrenUUIDs := utils.FilterSlice(childrenNodes, func(node *model.MaterialNode) (uuid.UUID, bool) {
+			parentIDs = append(parentIDs, node.ID)
+			return node.UUID, true
+		})
+
+		res.NodeUUIDs = append(res.NodeUUIDs, childrenUUIDs...)
 
 		delNodeEdges := []*model.MaterialEdge{}
 		if err := m.DBWithContext(txCtx).Clauses(

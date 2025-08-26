@@ -26,6 +26,12 @@ type DeleteWorkflow struct {
 	EdgesUUIDs []uuid.UUID
 }
 
+type TaskReq struct {
+	UserID     string
+	LabID      int64
+	WrokflowID int64
+}
+
 type WorkflowRepo interface {
 	FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error
 	UpdateData(ctx context.Context, data any, condition map[string]any, keys ...string) error
@@ -54,4 +60,5 @@ type WorkflowRepo interface {
 	GetTemplateList(ctx context.Context, labID int64, page *common.PageReq) ([]*model.WorkflowNodeTemplate, int64, error)
 	GetNodeTemplateByUUID(ctx context.Context, templateUUID uuid.UUID) (*model.WorkflowNodeTemplate, error)
 	CreateWorkflowTask(ctx context.Context, data *model.WorkflowTask) error
+	GetWorkflowTasks(ctx context.Context, req *common.PageReqT[*TaskReq]) (*common.PageMoreResp[[]*model.WorkflowTask], error)
 }

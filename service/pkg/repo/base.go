@@ -133,7 +133,7 @@ func (b *Base) FindDatas(ctx context.Context, datas any, condition map[string]an
 		db = db.Select(keys)
 	}
 
-	if err := db.Where(condition).Find(datas).Error; err != nil {
+	if err := db.Where(condition).Order("id desc").Find(datas).Error; err != nil {
 		logger.Errorf(ctx, "FindDatas fail table name: %s, condition: %+v, err: %+v", tableModel.TableName(), condition, err)
 		return code.QueryRecordErr.WithErr(err)
 	}
