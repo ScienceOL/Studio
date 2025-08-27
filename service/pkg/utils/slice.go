@@ -127,7 +127,7 @@ func FilterSliceWithErr[S any, T any](sources []T, f func(i T) ([]S, bool, error
 	return newSlice, nil
 }
 
-func SliceToMap[K comparable, V any, T any](sources []T, f func(i T) (K, V)) map[K]V {
+func Slice2Map[K comparable, V any, T any](sources []T, f func(i T) (K, V)) map[K]V {
 	result := make(map[K]V)
 	for _, item := range sources {
 		key, value := f(item)

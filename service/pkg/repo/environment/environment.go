@@ -15,6 +15,11 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+type MemberCount struct {
+	Count int64 `gorm:"column:count"`
+	LabID int64 `gorm:"column:lab_id"`
+}
+
 type envImpl struct {
 	repo.IDOrUUIDTranslate
 }
@@ -406,4 +411,30 @@ func (w *envImpl) GetLabByLabID(ctx context.Context, req *common.PageReqT[int64]
 		PageSize: req.PageSize,
 		Data:     datas,
 	}, nil
+}
+
+func (w *envImpl) GetLabMemberCount(ctx context.Context, userID string, labIDs ...int64) map[int64]int64 {
+	if userID == "" {
+		return map[int64]int64{}
+	}
+
+	datas := make([]*MemberCount, 0, 10)
+
+	query := w.DBWithContext(ctx).Table("laboratory_member").
+		Select("COUNT(user_id) as count, lab_id").
+		Where("user_id = ?", userID)
+	if len(labIDs) > 0 {
+		query.Where("lab_id in ", labIDs)
+	}
+
+	if err := query.
+		Group("lab_id").
+		Scan(&datas).Error; err != nil {
+
+		return map[int64]int64{}
+	}
+
+	return utils.Slice2Map(datas, func(m *MemberCount) (int64, int64) {
+		return m.LabID, m.Count
+	})
 }

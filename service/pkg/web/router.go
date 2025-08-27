@@ -83,52 +83,46 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 			{
 				materialHandle := material.NewMaterialHandle(ctx)
 				materialRouter := labRouter.Group("/material")
-				materialRouter.POST("", materialHandle.CreateLabMaterial)
-				materialRouter.POST("/edge", materialHandle.CreateMaterialEdge)
-				materialRouter.GET("/download/:lab_uuid", materialHandle.DownloadMaterial)
+				materialRouter.POST("", materialHandle.CreateLabMaterial)                  //  创建物料 done
+				materialRouter.POST("/edge", materialHandle.CreateMaterialEdge)            // 创建物料连线 done
+				materialRouter.GET("/download/:lab_uuid", materialHandle.DownloadMaterial) // 下载物料dag done
 
-				labRouter.GET("/ws/material/:lab_uuid", materialHandle.LabMaterial) // TODO: websocket 是否要放在统一的路由下
+				labRouter.GET("/ws/material/:lab_uuid", materialHandle.LabMaterial) // WARN: websocket 是否要放在统一的路由下
 			}
 			{
 				workflowHandle := workflow.NewWorkflowHandle(ctx)
 				workflowRouter := labRouter.Group("/workflow")
-				workflowRouter.GET("/task/:uuid", workflowHandle.TaskList)              // fork 工作流
-				workflowRouter.GET("/task/download/:uuid", workflowHandle.DownloadTask) // fork 工作流
+				workflowRouter.GET("/task/:uuid", workflowHandle.TaskList)              // 工作流 task 列表 done
+				workflowRouter.GET("/task/download/:uuid", workflowHandle.DownloadTask) // 工作流任务下载 done
 
 				{
 					// 工作流模板
 					tpl := workflowRouter.Group("/template")
 					tpl.GET("/detail/:uuid", workflowHandle.GetWorkflowDetail) // 获取工作流模板详情
-					tpl.PUT("/fork", workflowHandle.ForkTemplate)              // fork 工作流
-					tpl.GET("/tags", workflowHandle.WorkflowTemplateTags)      // 节点详情
-
+					tpl.PUT("/fork", workflowHandle.ForkTemplate)              // fork 工作流 TODO:
+					tpl.GET("/tags", workflowHandle.WorkflowTemplateTags)      // 获取工作流 tags done
+					tpl.GET("/list", workflowHandle.WorkflowTemplateList)      // 获取工作流模板列表 done
 				}
 				{
 					// 工作流节点模板
 					nodeTpl := workflowRouter.Group("/node/template")
-					nodeTpl.GET("/tags/:lab_uuid", workflowHandle.TemplateTags)     // 节点模板 tags
-					nodeTpl.GET("/list", workflowHandle.TemplateList)               // 模板列表
-					nodeTpl.GET("/detail/:uuid", workflowHandle.NodeTemplateDetail) // 节点模板详情
+					nodeTpl.GET("/tags/:lab_uuid", workflowHandle.TemplateTags)     // 节点模板 tags done
+					nodeTpl.GET("/list", workflowHandle.TemplateList)               // 模板列表 done
+					nodeTpl.GET("/detail/:uuid", workflowHandle.NodeTemplateDetail) // 节点模板详情 done
 
 				}
 				{
 					// 我的工作流
 					owner := workflowRouter.Group("owner")
-					owner.PATCH("", workflowHandle.UpdateWorkflow)     // 更新工作流
-					owner.POST("", workflowHandle.Create)              // 创建工作流
-					owner.DELETE("", workflowHandle.DelWrokflow)       //  删除自己创建的工作流
-					owner.GET("/list", workflowHandle.GetWorkflowList) // 获取工作流列表
+					owner.PATCH("", workflowHandle.UpdateWorkflow)        // 更新工作流 done
+					owner.POST("", workflowHandle.Create)                 // 创建工作流 done
+					owner.DELETE("/:uuid", workflowHandle.DelWrokflow)    //  删除自己创建的工作流 done
+					owner.GET("/list", workflowHandle.GetWorkflowList)    // 获取工作流列表  done
+					owner.GET("/export", workflowHandle.GetWorkflowList)  // 导出工作流 TODO:
+					owner.POST("/import", workflowHandle.GetWorkflowList) // 导入工作流 TODO:
 				}
 
-				/*
-					1. /template 发布工作流节点。
-					2. /node/template
-					3. /owner/
-
-
-				*/
-
-				workflowRouter.GET("/ws/workflow/:uuid", workflowHandle.LabWorkflow) // TODO: websocket 是否放在统一的路由下
+				workflowRouter.GET("/ws/workflow/:uuid", workflowHandle.LabWorkflow) // WARN: websocket 是否放在统一的路由下
 			}
 		}
 	}

@@ -345,7 +345,7 @@ func (l *lab) createConfigInfo(ctx context.Context, res []*environment.Resource)
 func (l *lab) createActionHandles(ctx context.Context, actions []*model.WorkflowNodeTemplate) error {
 	resHandles, _ := utils.FilterSliceWithErr(actions, func(item *model.WorkflowNodeTemplate) ([]*model.WorkflowHandleTemplate, bool, error) {
 		resHi, _ := utils.FilterSliceWithErr(item.Handles.Data().Input, func(h *model.Handle) ([]*model.WorkflowHandleTemplate, bool, error) {
-			return []*model.WorkflowHandleTemplate{&model.WorkflowHandleTemplate{
+			return []*model.WorkflowHandleTemplate{{
 				WorkflowNodeID: item.ID,
 				HandleKey:      h.HandlerKey,
 				IoType:         "source",
@@ -356,7 +356,7 @@ func (l *lab) createActionHandles(ctx context.Context, actions []*model.Workflow
 			}}, true, nil
 		})
 		resHo, _ := utils.FilterSliceWithErr(item.Handles.Data().Output, func(h *model.Handle) ([]*model.WorkflowHandleTemplate, bool, error) {
-			return []*model.WorkflowHandleTemplate{&model.WorkflowHandleTemplate{
+			return []*model.WorkflowHandleTemplate{{
 				WorkflowNodeID: item.ID,
 				HandleKey:      h.HandlerKey,
 				IoType:         "source",
@@ -388,7 +388,7 @@ func (l *lab) createActionHandles(ctx context.Context, actions []*model.Workflow
 	return l.envStore.UpsertActionHandleTemplate(ctx, resHandles)
 }
 
-func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageResp[[]*environment.LaboratoryResp], error) {
+func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageMoreResp[[]*environment.LaboratoryResp], error) {
 	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
 		return nil, code.UnLogin
@@ -414,9 +414,11 @@ func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageRes
 		return nil, err
 	}
 
-	labMap := utils.SliceToMap(labDatas, func(l *model.Laboratory) (int64, *model.Laboratory) {
+	labMap := utils.Slice2Map(labDatas, func(l *model.Laboratory) (int64, *model.Laboratory) {
 		return l.ID, l
 	})
+
+	labMemberMap := l.envStore.GetLabMemberCount(ctx, userInfo.ID, labIDs...)
 
 	labResp := utils.FilterSlice(labs.Data, func(item *model.LaboratoryMember) (*environment.LaboratoryResp, bool) {
 		lab, ok := labMap[item.LabID]
@@ -428,14 +430,16 @@ func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageRes
 		return &environment.LaboratoryResp{
 			UUID:        lab.UUID,
 			Name:        lab.Name,
+			UserID:      lab.UserID,
 			Description: lab.Description,
+			MemberCount: labMemberMap[lab.ID],
 		}, true
 	})
 
-	return &common.PageResp[[]*environment.LaboratoryResp]{
+	return &common.PageMoreResp[[]*environment.LaboratoryResp]{
 		Data:     labResp,
 		Page:     labs.Page,
-		Total:    labs.Total,
+		HasMore:  labs.Total > int64(labs.Page+1)*int64(labs.PageSize),
 		PageSize: labs.PageSize,
 	}, nil
 }

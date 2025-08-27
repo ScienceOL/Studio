@@ -258,6 +258,7 @@ type WorkflowDetailResp struct {
 	Name        string    `json:"name"`
 	Description *string   `json:"description,omitempty"`
 	UserID      string    `json:"user_id"`
+	Nodes       []*WSNode `json:"nodes"`
 }
 
 // 获取任务列表
@@ -281,4 +282,37 @@ type WorkflowTaskResp struct {
 type DuplicateWorkflow struct {
 	SourceUUID uuid.UUID `json:"source_uuid"`
 	Name       string    `json:"name"`
+}
+
+type UpdateReq struct {
+	UUID        uuid.UUID `json:"uuid" binding:"required"`
+	Name        *string   `json:"name"`
+	Published   *bool     `json:"published"`
+	Description *string   `json:"description"`
+}
+
+type DelReq struct {
+	UUID uuid.UUID `json:"uuid" form:"uuid" uri:"uuid" binding:"required"`
+}
+
+type WorkflowTemplateListReq struct {
+	LabUUID uuid.UUID `json:"lab_uuid" uri:"lab_uuid" form:"lab_uuid" binding:"required"`
+	Tags    []string  `json:"tags" uri:"tags" form:"tags"`
+	common.PageReq
+}
+
+type WorkflowTemplateListRes struct {
+	UUID      uuid.UUID `json:"uuid"`
+	Name      string    `json:"name"`
+	UserID    string    `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type DetailReq struct {
+	UUID uuid.UUID `json:"uuid" form:"uuid" uri:"uuid" binding:"required"`
+}
+
+type ForkReq struct {
+	TargetLabUUID      uuid.UUID `json:"target_lab_uuid" uri:"target_lab_uuid" form:"target_lab_uuid" binding:"required"`
+	SourceWorkflowUUID uuid.UUID `json:"source_workflow_uuid" uri:"source_workflow_uuid" form:"source_workflow_uuid" binding:"required"`
 }

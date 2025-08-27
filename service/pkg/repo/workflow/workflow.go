@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -103,7 +104,7 @@ func (w *workflowImpl) GetWorkflowGraph(ctx context.Context, userID string, work
 		logger.Errorf(ctx, "GetWorkflowGraph get node fail err: %+v", err)
 		return nil, code.QueryRecordErr.WithMsg("get node fail")
 	}
-	actionMap := utils.SliceToMap(actions, func(action *model.WorkflowNodeTemplate) (int64, *model.WorkflowNodeTemplate) {
+	actionMap := utils.Slice2Map(actions, func(action *model.WorkflowNodeTemplate) (int64, *model.WorkflowNodeTemplate) {
 		return action.ID, action
 	})
 
@@ -189,11 +190,11 @@ func (w *workflowImpl) GetWorkflowNodeTemplate(ctx context.Context, condition ma
 	return workflowNodeTpls, nil
 }
 
-func (w *workflowImpl) GetWorkflowHandleTemaplates(ctx context.Context, workflowIDs []int64) ([]*model.WorkflowHandleTemplate, error) {
+func (w *workflowImpl) GetWorkflowHandleTemplates(ctx context.Context, wfTemaplteIds []int64) ([]*model.WorkflowHandleTemplate, error) {
 	handles := make([]*model.WorkflowHandleTemplate, 0, 1)
-	query := w.DBWithContext(ctx).Where("workflow_node_id in ?", workflowIDs)
+	query := w.DBWithContext(ctx).Where("workflow_node_id in ?", wfTemaplteIds)
 	if err := query.Order("id desc").Find(&handles).Error; err != nil {
-		logger.Errorf(ctx, "GetWorkflowHandleTemaplates fail action ids: %v, err: %+v", workflowIDs, err)
+		logger.Errorf(ctx, "GetWorkflowHandleTemaplates fail action ids: %v, err: %+v", wfTemaplteIds, err)
 		return nil, code.QueryRecordErr.WithMsg(err.Error())
 	}
 
@@ -630,9 +631,95 @@ func (w *workflowImpl) GetWorkflowTasks(ctx context.Context, req *common.PageReq
 	}
 
 	return &common.PageMoreResp[[]*model.WorkflowTask]{
-		HasMore:  total > (int64(req.Page)+1)*int64(req.PageSize),
+		HasMore:  total > int64(req.Page+1)*int64(req.PageSize),
 		Page:     req.Page,
 		PageSize: req.PageSize,
 		Data:     tasks,
 	}, nil
+}
+
+func (w *workflowImpl) DelWorkflow(ctx context.Context, workflowID int64) error {
+	if workflowID == 0 {
+		return code.WorkflowNotExistErr
+	}
+
+	return w.ExecTx(ctx, func(txCtx context.Context) error {
+		nodes := make([]*model.WorkflowNode, 0, 1)
+		if err := w.DBWithContext(txCtx).Clauses(
+			clause.Returning{
+				Columns: []clause.Column{
+					{Name: "id"},
+					{Name: "uuid"},
+					{Name: "type"},
+				},
+			}).
+			Where("workflow_id in ?").
+			Delete(&nodes).Error; err != nil {
+
+			logger.Errorf(ctx, "DeleteWorkflow fail id: %d, err: %+v", workflowID, err)
+			return code.DeleteDataErr.WithErr(err)
+		}
+
+		nodeUUIDs := utils.FilterSlice(nodes, func(n *model.WorkflowNode) (uuid.UUID, bool) {
+			return n.UUID, true
+		})
+
+		return w.DBWithContext(txCtx).
+			Where("source_node_uuid in ? or target_node_uuid in ?", nodeUUIDs, nodeUUIDs).
+			Delete(&model.WorkflowEdge{}).Error
+	})
+}
+
+func (w *workflowImpl) GetWorkflow(ctx context.Context, req *common.PageReqT[*repo.QueryWorkflow]) (*common.PageResp[[]*model.Workflow], error) {
+	/*
+		tagsToFind := []string{"AI", "ML"}
+
+		// 方法 1: 使用 Where 条件 包含其中一个
+		db.Where("tags ?| array[?]", tagsToFind).Find(&workflows)
+
+
+
+		tagsToFind := []string{"AI", "ML"}
+
+		// 将标签数组转换为 JSON 字符串 包含所有
+		tagsJSON, _ := json.Marshal(tagsToFind)
+
+		// 方法 1: 使用 Where 条件
+		db.Where("tags @> ?", string(tagsJSON)).Find(&workflows)
+	*/
+
+	query := w.DBWithContext(ctx).Where("published = true")
+	if len(req.Data.Tags) > 0 {
+		tagsJson, _ := json.Marshal(req.Data.Tags)
+		query.Where("tags @> ?", tagsJson)
+	}
+
+	var count int64
+	var datas []*model.Workflow
+	if err := query.Count(&count).
+		Offset(req.Offest()).
+		Limit(req.PageSize).Select("uuid", "name", "created_at", "user_id").
+		Find(&datas).Error; err != nil {
+		return nil, err
+	}
+
+	return &common.PageResp[[]*model.Workflow]{
+		Total:    count,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+		Data:     datas,
+	}, nil
+}
+
+func (w *workflowImpl) GetTemplateTags(ctx context.Context, tagType model.TagType) ([]string, error) {
+	var tags []string
+	if err := w.DBWithContext(ctx).
+		Model(&model.Tags{}).
+		Where("type = ?", tagType).
+		Select("name").
+		Find(&tags).Error; err != nil {
+		return nil, code.QueryRecordErr.WithErr(err)
+	}
+
+	return tags, nil
 }

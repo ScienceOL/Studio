@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"reflect"
 
 	"github.com/scienceol/studio/service/pkg/common/code"
@@ -32,6 +33,8 @@ type IDOrUUIDTranslate interface {
 	DelData(ctx context.Context, tableModel schema.Tabler, condition map[string]any) error
 	// 创建单条
 	CreateData(ctx context.Context, data schema.Tabler) error
+	// 获取单条
+	GetData(ctx context.Context, data schema.Tabler, condition map[string]any, keys ...string) error
 }
 
 type Base struct {
@@ -65,7 +68,7 @@ func (b *Base) UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids ...u
 		return map[uuid.UUID]int64{}
 	}
 
-	return utils.SliceToMap(datas, func(item *model.BaseModel) (uuid.UUID, int64) {
+	return utils.Slice2Map(datas, func(item *model.BaseModel) (uuid.UUID, int64) {
 		return item.UUID, item.ID
 	})
 }
@@ -83,7 +86,7 @@ func (b *Base) ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int
 		return map[int64]uuid.UUID{}
 	}
 
-	return utils.SliceToMap(datas, func(item *model.BaseModel) (int64, uuid.UUID) {
+	return utils.Slice2Map(datas, func(item *model.BaseModel) (int64, uuid.UUID) {
 		return item.ID, item.UUID
 	})
 }
@@ -154,7 +157,7 @@ func (b *Base) UpdateData(ctx context.Context, data any, condition map[string]an
 
 	dataValue := reflect.ValueOf(data)
 	if dataValue.IsNil() {
-		return code.NotPointerErr
+		return code.PointerIsNilErr
 	}
 
 	query := b.DBWithContext(ctx).Where(condition)
@@ -179,6 +182,34 @@ func (b *Base) DelData(ctx context.Context, tableModel schema.Tabler, condition 
 func (b *Base) CreateData(ctx context.Context, data schema.Tabler) error {
 	if err := b.DBWithContext(ctx).Create(data).Error; err != nil {
 		return code.CreateDataErr.WithErr(err)
+	}
+
+	return nil
+}
+
+func (b *Base) GetData(ctx context.Context, data schema.Tabler, condition map[string]any, keys ...string) error {
+	tType := reflect.TypeOf(data)
+	if tType.Kind() != reflect.Ptr {
+		return code.NotPointerErr
+	}
+
+	dataValue := reflect.ValueOf(data)
+	if dataValue.IsNil() {
+		return code.PointerIsNilErr
+	}
+
+	query := b.DBWithContext(ctx)
+	if len(keys) > 0 {
+		query = query.Select(keys)
+	}
+
+	if err := query.Where(condition).Last(data).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return code.RecordNotFound
+		}
+
+		logger.Errorf(ctx, "GetData fail table: %s, query: %+v, err: %+v", data.TableName(), condition, err)
+		return code.QueryRecordErr.WithErr(err)
 	}
 
 	return nil

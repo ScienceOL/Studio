@@ -123,7 +123,7 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 		return code.ResNotExistErr
 	}
 
-	resMap := utils.SliceToMap(resourceNodes, func(item *model.ResourceNodeTemplate) (string, *model.ResourceNodeTemplate) {
+	resMap := utils.Slice2Map(resourceNodes, func(item *model.ResourceNodeTemplate) (string, *model.ResourceNodeTemplate) {
 		return item.Name, item
 	})
 
@@ -339,7 +339,7 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session) (any, 
 	})
 
 	resTplIDS = utils.RemoveDuplicates(resTplIDS)
-	nodesMap := utils.SliceToMap(nodes, func(item *model.MaterialNode) (int64, *model.MaterialNode) {
+	nodesMap := utils.Slice2Map(nodes, func(item *model.MaterialNode) (int64, *model.MaterialNode) {
 		return item.ID, item
 	})
 
@@ -361,7 +361,7 @@ func (m *materialImpl) fetchGraph(ctx context.Context, s *melody.Session) (any, 
 		return nil, err
 	}
 
-	resNodeTplMap := utils.SliceToMap(resNodes, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
+	resNodeTplMap := utils.Slice2Map(resNodes, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
 		return item.ID, item
 	})
 
@@ -447,7 +447,7 @@ func (m *materialImpl) getLab(ctx context.Context, s *melody.Session) (*model.La
 }
 
 func (m *materialImpl) buildTplNode(ctx context.Context, nodes []*model.ResourceNodeTemplate) []*model.ResourceNodeTemplate {
-	nodeMap := utils.SliceToMap(nodes, func(node *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
+	nodeMap := utils.Slice2Map(nodes, func(node *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
 		return node.ID, node
 	})
 
@@ -512,7 +512,7 @@ func (m *materialImpl) fetchDeviceTemplate(ctx context.Context, s *melody.Sessio
 		return nil, err
 	}
 
-	tplNodeMap := utils.SliceToMap(tplNodes, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
+	tplNodeMap := utils.Slice2Map(tplNodes, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
 		return item.ID, item
 	})
 
@@ -1201,11 +1201,11 @@ func (m *materialImpl) DownloadMaterial(ctx context.Context, req *material.Downl
 		return nil, err
 	}
 
-	nodeMap := utils.SliceToMap(nodes, func(node *model.MaterialNode) (int64, *model.MaterialNode) {
+	nodeMap := utils.Slice2Map(nodes, func(node *model.MaterialNode) (int64, *model.MaterialNode) {
 		return node.ID, node
 	})
 
-	nodeUUIDMap := utils.SliceToMap(nodes, func(node *model.MaterialNode) (uuid.UUID, *model.MaterialNode) {
+	nodeUUIDMap := utils.Slice2Map(nodes, func(node *model.MaterialNode) (uuid.UUID, *model.MaterialNode) {
 		return node.UUID, node
 	})
 
@@ -1239,7 +1239,7 @@ func (m *materialImpl) DownloadMaterial(ctx context.Context, req *material.Downl
 		return nil, err
 	}
 
-	edgeDataMap := utils.SliceToMap(edgesData, func(edge *model.ResourceHandleTemplate) (uuid.UUID, *model.ResourceHandleTemplate) {
+	edgeDataMap := utils.Slice2Map(edgesData, func(edge *model.ResourceHandleTemplate) (uuid.UUID, *model.ResourceHandleTemplate) {
 		return edge.UUID, edge
 	})
 

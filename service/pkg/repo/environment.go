@@ -55,4 +55,6 @@ type LaboratoryRepo interface {
 	GetLabByUserID(ctx context.Context, req *common.PageReqT[string]) (*common.PageResp[[]*model.LaboratoryMember], error)
 	// 根据实验室获取成员
 	GetLabByLabID(ctx context.Context, req *common.PageReqT[int64]) (*common.PageResp[[]*model.LaboratoryMember], error)
+	// 获取实验室成员数量
+	GetLabMemberCount(ctx context.Context, userID string, labIDs ...int64) map[int64]int64
 }

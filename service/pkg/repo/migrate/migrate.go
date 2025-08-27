@@ -28,5 +28,11 @@ func Table(_ context.Context) error {
 			&model.LaboratoryMember{},
 			&model.LaboratoryInvitation{},
 		) // 动作节点handle 模板
+	}, func() error {
+		// 创建 gin 索引
+		return db.DB().DBIns().Exec(`CREATE INDEX IF NOT EXISTS idx_workflow_tags ON workflow USING gin(tags) WHERE published = true;`).Error
+	}, func() error {
+		// 创建 gin 索引
+		return db.DB().DBIns().Exec(`CREATE INDEX IF NOT EXISTS idx_resource_node_template_tags ON resource_node_template USING gin(tags);`).Error
 	})
 }

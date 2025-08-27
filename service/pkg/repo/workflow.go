@@ -38,15 +38,20 @@ type QueryTemplage struct {
 	LabID           int64
 }
 
+type QueryWorkflow struct {
+	Tags []string
+}
+
 type WorkflowRepo interface {
 	FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error
 	UpdateData(ctx context.Context, data any, condition map[string]any, keys ...string) error
+	GetData(ctx context.Context, data schema.Tabler, condition map[string]any, keys ...string) error
 	Create(ctx context.Context, data *model.Workflow) error
 	CreateNode(ctx context.Context, data *model.WorkflowNode) error
 	GetWorkflowByUUID(ctx context.Context, uuid uuid.UUID) (*model.Workflow, error)
 	GetWorkflowGraph(ctx context.Context, userID string, uuid uuid.UUID) (*WorkflowGrpah, error)
 	GetWorkflowNodeTemplate(ctx context.Context, condition map[string]any) ([]*model.WorkflowNodeTemplate, error)
-	GetWorkflowHandleTemaplates(ctx context.Context, actionIDs []int64) ([]*model.WorkflowHandleTemplate, error)
+	GetWorkflowHandleTemplates(ctx context.Context, wfTemaplteIds []int64) ([]*model.WorkflowHandleTemplate, error)
 	GetWorkflowNodes(ctx context.Context, condition map[string]any) ([]*model.WorkflowNode, error)
 	GetWorkflowEdges(ctx context.Context, nodeUUIDs []uuid.UUID) ([]*model.WorkflowEdge, error)
 	UpdateWorkflowNode(ctx context.Context, nodeUUID uuid.UUID, data *model.WorkflowNode, updateColumns []string) error
@@ -68,4 +73,7 @@ type WorkflowRepo interface {
 	GetNodeTemplateByUUID(ctx context.Context, templateUUID uuid.UUID) (*model.WorkflowNodeTemplate, error)
 	CreateWorkflowTask(ctx context.Context, data *model.WorkflowTask) error
 	GetWorkflowTasks(ctx context.Context, req *common.PageReqT[*TaskReq]) (*common.PageMoreResp[[]*model.WorkflowTask], error)
+	DelWorkflow(ctx context.Context, workflowID int64) error
+	GetWorkflow(ctx context.Context, req *common.PageReqT[*QueryWorkflow]) (*common.PageResp[[]*model.Workflow], error)
+	GetTemplateTags(ctx context.Context, tagType model.TagType) ([]string, error)
 }

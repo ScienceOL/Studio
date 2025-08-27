@@ -40,7 +40,6 @@ type workflowImpl struct {
 }
 
 func New(ctx context.Context, wsClient *melody.Melody) workflow.Service {
-
 	w := &workflowImpl{
 		workflowStore: wfl.New(),
 		labStore:      el.New(),
@@ -116,10 +115,6 @@ func (w *workflowImpl) NodeTemplateList(ctx context.Context, req *workflow.TplPa
 	return nil, nil
 }
 
-func (w *workflowImpl) ForkTemplate(ctx context.Context) {
-	// TODO: 未实现
-}
-
 func (w *workflowImpl) NodeTemplateDetail(ctx context.Context, templateUUID uuid.UUID) (*workflow.NodeTemplateDetailResp, error) {
 	if templateUUID.IsNil() {
 		return nil, code.ParamErr.WithMsg("template uuid is empty")
@@ -138,7 +133,7 @@ func (w *workflowImpl) NodeTemplateDetail(ctx context.Context, templateUUID uuid
 	}
 
 	// 获取模板的handle列表
-	handles, err := w.workflowStore.GetWorkflowHandleTemaplates(ctx, []int64{template.ID})
+	handles, err := w.workflowStore.GetWorkflowHandleTemplates(ctx, []int64{template.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +216,7 @@ func (w *workflowImpl) TemplateList(ctx context.Context, req *workflow.TplPageRe
 		return t.ID, true
 	})
 
-	handles, err := w.workflowStore.GetWorkflowHandleTemaplates(ctx, templateIDs)
+	handles, err := w.workflowStore.GetWorkflowHandleTemplates(ctx, templateIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +336,7 @@ func (w *workflowImpl) fetchGraph(ctx context.Context, s *melody.Session) (any, 
 		return nil, err
 	}
 
-	nodeIDUUIDMap := utils.SliceToMap(resp.Nodes, func(node *repo.WorkflowNodeInfo) (int64, uuid.UUID) {
+	nodeIDUUIDMap := utils.Slice2Map(resp.Nodes, func(node *repo.WorkflowNodeInfo) (int64, uuid.UUID) {
 		return node.Node.ID, node.Node.UUID
 	})
 
@@ -425,7 +420,7 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session)
 		return nil, code.TemplateNodeNotFoundErr
 	}
 
-	resMap := utils.SliceToMap(resNodes, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
+	resMap := utils.Slice2Map(resNodes, func(item *model.ResourceNodeTemplate) (int64, *model.ResourceNodeTemplate) {
 		return item.ID, item
 	})
 
@@ -433,7 +428,7 @@ func (w *workflowImpl) fetchNodeTemplate(ctx context.Context, s *melody.Session)
 		return item.ID, true
 	})
 
-	respHandles, err := w.workflowStore.GetWorkflowHandleTemaplates(ctx, actionIDs)
+	respHandles, err := w.workflowStore.GetWorkflowHandleTemplates(ctx, actionIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -609,7 +604,7 @@ func (w *workflowImpl) createNode(ctx context.Context, s *melody.Session, b []by
 		return nil, code.WorkflowTemplateNotFoundErr
 	}
 
-	actionHandles, err := w.workflowStore.GetWorkflowHandleTemaplates(ctx, []int64{deviceAction[0].ID})
+	actionHandles, err := w.workflowStore.GetWorkflowHandleTemplates(ctx, []int64{deviceAction[0].ID})
 	if err != nil {
 		return nil, err
 	}
@@ -1312,28 +1307,76 @@ func (w *workflowImpl) GetWorkflowList(ctx context.Context, req *workflow.Workfl
 }
 
 // GetWorkflowDetail 获取工作流详情
-func (w *workflowImpl) GetWorkflowDetail(ctx context.Context, workflowUUID uuid.UUID) (*workflow.WorkflowDetailResp, error) {
+func (w *workflowImpl) GetWorkflowDetail(ctx context.Context, req *workflow.DetailReq) (*workflow.WorkflowDetailResp, error) {
 	userInfo := auth.GetCurrentUser(ctx)
 	if userInfo == nil {
 		return nil, code.UnLogin
 	}
 
 	// 从数据库获取工作流详情
-	wf, err := w.workflowStore.GetWorkflowByUUID(ctx, workflowUUID)
+	wf, err := w.workflowStore.GetWorkflowByUUID(ctx, req.UUID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 检查权限（只能查看自己的工作流）
-	if wf.UserID != userInfo.ID {
-		return nil, code.PermissionDenied
+	wfNodes, err := w.workflowStore.GetWorkflowNodes(ctx, map[string]any{
+		"workflow_id": wf.ID,
+	})
+
+	if err != nil {
+		return nil, err
 	}
+
+	tplNodeIDs := utils.FilterSlice(wfNodes, func(node *model.WorkflowNode) (int64, bool) {
+		return node.WorkflowNodeID, node.WorkflowNodeID > 0
+	})
+
+	handles, err := w.workflowStore.GetWorkflowHandleTemplates(ctx, tplNodeIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	handleMap := utils.SliceToMapSlice(handles, func(h *model.WorkflowHandleTemplate) (int64, *model.WorkflowHandleTemplate, bool) {
+		return h.WorkflowNodeID, h, true
+	})
 
 	return &workflow.WorkflowDetailResp{
 		UUID:        wf.UUID,
 		Name:        wf.Name,
 		Description: wf.Description,
 		UserID:      wf.UserID,
+		Nodes: utils.FilterSlice(wfNodes, func(node *model.WorkflowNode) (*workflow.WSNode, bool) {
+			if node.Type == model.WorkflowNodeGroup {
+				return nil, false
+			}
+			return &workflow.WSNode{
+				UUID:   node.UUID,
+				Name:   node.Name,
+				UserID: node.UserID,
+				Status: node.Status,
+				Type:   node.Type,
+				Icon:   node.Icon,
+				Pose:   node.Pose,
+				Param:  node.Param,
+				Handles: utils.FilterSlice(handleMap[node.WorkflowNodeID], func(h *model.WorkflowHandleTemplate) (*workflow.WSNodeHandle, bool) {
+					return &workflow.WSNodeHandle{
+						UUID:        h.UUID,
+						HandleKey:   h.HandleKey,
+						IoType:      h.IoType,
+						DisplayName: h.DisplayName,
+						Type:        h.Type,
+						DataSource:  h.DataSource,
+						DataKey:     h.DataKey,
+					}, true
+				}),
+				Footer:      node.Footer,
+				DeviceName:  node.DeviceName,
+				Disabled:    node.Disabled,
+				Minimized:   node.Minimized,
+				LabNodeType: node.LabNodeType,
+			}, true
+
+		}),
 	}, nil
 }
 
@@ -1441,4 +1484,110 @@ func (w *workflowImpl) TaskDownload(ctx context.Context, req *workflow.WorkflowT
 	writer.Flush()
 
 	return &buf, nil
+
+}
+
+func (w *workflowImpl) UpdateWorkflow(ctx context.Context, req *workflow.UpdateReq) error {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return code.UnLogin
+	}
+
+	if req.UUID.IsNil() {
+		return code.ParamErr.WithMsg("workflow uuid is empty")
+	}
+
+	wk := &model.Workflow{}
+	if err := w.workflowStore.GetData(ctx, wk, map[string]any{
+		"uuid": req.UUID,
+	}); err != nil {
+		return err
+	}
+
+	if userInfo.ID != wk.UserID {
+		return code.NoPermission
+	}
+
+	keys := make([]string, 0, 3)
+	if req.Name != nil {
+		wk.Name = utils.Or(*req.Name, "Untitled")
+		keys = append(keys, "name")
+	}
+
+	if req.Published != nil {
+		wk.Published = utils.Or(*req.Published, false)
+		keys = append(keys, "published")
+	}
+
+	if req.Description != nil {
+		wk.Description = utils.Or(req.Description, wk.Description)
+		keys = append(keys, "description")
+	}
+
+	if len(keys) == 0 {
+		return nil
+	}
+
+	if err := w.workflowStore.UpdateData(ctx, wk, map[string]any{
+		"uuid": req.UUID,
+	}, keys...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (w *workflowImpl) DelWorkflow(ctx context.Context, req *workflow.DelReq) error {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return code.UnLogin
+	}
+	// 检查权限
+	wf := &model.Workflow{}
+	if err := w.workflowStore.GetData(ctx, wf, map[string]any{
+		"uuid": req.UUID,
+	}); err != nil {
+		return err
+	}
+
+	if wf.UserID != userInfo.ID {
+		return code.NoPermission
+	}
+
+	return w.workflowStore.DelWorkflow(ctx, wf.ID)
+}
+
+func (w *workflowImpl) WorkflowTemplateList(ctx context.Context, req *workflow.WorkflowTemplateListReq) (*common.PageResp[[]*workflow.WorkflowTemplateListRes], error) {
+	res, err := w.workflowStore.GetWorkflow(ctx, &common.PageReqT[*repo.QueryWorkflow]{
+		PageReq: req.PageReq,
+		Data: &repo.QueryWorkflow{
+			Tags: req.Tags,
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &common.PageResp[[]*workflow.WorkflowTemplateListRes]{
+		Total:    res.Total,
+		Page:     res.Page,
+		PageSize: res.PageSize,
+		Data: utils.FilterSlice(res.Data, func(item *model.Workflow) (*workflow.WorkflowTemplateListRes, bool) {
+			return &workflow.WorkflowTemplateListRes{
+				UUID:      item.UUID,
+				Name:      item.Name,
+				UserID:    item.UserID,
+				CreatedAt: item.CreatedAt,
+			}, true
+		}),
+	}, nil
+}
+
+func (w *workflowImpl) WorkflowTemplateTags(ctx context.Context) ([]string, error) {
+	return w.workflowStore.GetTemplateTags(ctx, model.WorkflowTemplateTag)
+}
+
+func (w *workflowImpl) ForkWrokflow(ctx context.Context, req *workflow.ForkReq) error {
+	panic("not implemented") // TODO: Implement
 }

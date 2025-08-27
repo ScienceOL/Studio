@@ -62,6 +62,7 @@ const (
 	ParamErr           ErrCode = iota + 1000 // parse parameter error
 	NotPointerErr                            // not pointer err
 	NotSlicePointerErr                       // must be a pointer to a slice
+	PointerIsNilErr                          // pointer is nil error
 )
 
 // login module errors

@@ -146,7 +146,7 @@ func (d *dagEngine) boardMsg(ctx context.Context, msg *engine.BoardMsg) {
 
 func (d *dagEngine) buildTask(ctx context.Context) error {
 	// 构建图关系
-	nodeMap := utils.SliceToMap(d.nodes, func(node *model.WorkflowNode) (uuid.UUID, *model.WorkflowNode) {
+	nodeMap := utils.Slice2Map(d.nodes, func(node *model.WorkflowNode) (uuid.UUID, *model.WorkflowNode) {
 		return node.UUID, node
 	})
 

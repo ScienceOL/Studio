@@ -68,12 +68,44 @@ func (w *workflowHandle) TemplateTags(ctx *gin.Context) {
 // 工作流模板详情
 func (w *workflowHandle) TemplateDetail(ctx *gin.Context) {}
 
-// 工作流模板 tags 
-func (w *workflowHandle) WorkflowTemplateTags(ctx *gin.Context) {}
+// 工作流模板 tags
+func (w *workflowHandle) WorkflowTemplateTags(ctx *gin.Context) {
+	if res, err := w.wService.WorkflowTemplateTags(ctx); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx, res)
+	}
+}
 
+// 工作流模板列表
+func (w *workflowHandle) WorkflowTemplateList(ctx *gin.Context) {
+	req := workflow.WorkflowTemplateListReq{}
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
+	if res, err := w.wService.WorkflowTemplateList(ctx, &req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx, res)
+	}
+}
 
 // 工作流模板 fork
-func (w *workflowHandle) ForkTemplate(ctx *gin.Context) {}
+func (w *workflowHandle) ForkTemplate(ctx *gin.Context) {
+	req := &workflow.ForkReq{}
+	if err := ctx.ShouldBindQuery(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
+	if err := w.wService.ForkWrokflow(ctx, req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx)
+	}
+}
 
 // 获取工作流 task 列表
 func (w *workflowHandle) TaskList(ctx *gin.Context) {
@@ -117,7 +149,6 @@ func (w *workflowHandle) DownloadTask(ctx *gin.Context) {
 }
 
 // 节点模板列表，节点模板分类
-func (w *workflowHandle) DelWrokflow(ctx *gin.Context) {}
 
 // 节点模板详情
 func (w *workflowHandle) NodeTemplateDetail(ctx *gin.Context) {
@@ -140,7 +171,39 @@ func (w *workflowHandle) NodeTemplateDetail(ctx *gin.Context) {
 }
 
 // 节点模板编辑
-func (w *workflowHandle) UpdateWorkflow(ctx *gin.Context) {}
+func (w *workflowHandle) UpdateWorkflow(ctx *gin.Context) {
+	req := &workflow.UpdateReq{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
+	if req.UUID.IsNil() {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg("workflow uuid is empty"))
+		return
+	}
+
+	if err := w.wService.UpdateWorkflow(ctx, req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx)
+	}
+}
+
+// 删除工作流
+func (w *workflowHandle) DelWrokflow(ctx *gin.Context) {
+	req := &workflow.DelReq{}
+	if err := ctx.ShouldBindUri(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
+	if err := w.wService.DelWorkflow(ctx, req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx)
+	}
+}
 
 // 我创建的工作流
 func (w *workflowHandle) Create(ctx *gin.Context) {
@@ -174,8 +237,7 @@ func (w *workflowHandle) GetWorkflowList(ctx *gin.Context) {
 
 // GetWorkflowDetail 获取工作流详情
 func (w *workflowHandle) GetWorkflowDetail(ctx *gin.Context) {
-	// FIXME: 工作流模板详情
-	req := &workflow.WorkflowNodeTemplateReq{}
+	req := &workflow.DetailReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
 		return
@@ -186,7 +248,7 @@ func (w *workflowHandle) GetWorkflowDetail(ctx *gin.Context) {
 		return
 	}
 
-	if res, err := w.wService.GetWorkflowDetail(ctx, req.UUID); err != nil {
+	if res, err := w.wService.GetWorkflowDetail(ctx, req); err != nil {
 		common.ReplyErr(ctx, err)
 	} else {
 		common.ReplyOk(ctx, res)

@@ -30,7 +30,9 @@ type UpdateEnvReq struct {
 type LaboratoryResp struct {
 	UUID        uuid.UUID `json:"uuid"`
 	Name        string    `json:"name"`
+	UserID      string    `json:"user_id"`
 	Description *string   `json:"description"`
+	MemberCount int64     `json:"member_count"`
 }
 
 type RegAction struct {

@@ -19,7 +19,7 @@ func BuildHierarchy[T comparable, D any](nodes []*Node[T, D]) ([][]D, error) {
 	// 构建邻接表和入度表
 	graph := make(map[T][]*Node[T, D])
 
-	nodeMap := SliceToMap(nodes, func(item *Node[T, D]) (T, *Node[T, D]) {
+	nodeMap := Slice2Map(nodes, func(item *Node[T, D]) (T, *Node[T, D]) {
 		return item.Name, item
 	})
 
@@ -27,7 +27,7 @@ func BuildHierarchy[T comparable, D any](nodes []*Node[T, D]) ([][]D, error) {
 		return [][]D{}, errors.New("节点名重复")
 	}
 
-	inDegree := SliceToMap(nodes, func(item *Node[T, D]) (T, int) {
+	inDegree := Slice2Map(nodes, func(item *Node[T, D]) (T, int) {
 		return item.Name, 0
 	})
 

@@ -9,11 +9,12 @@ import (
 
 type Workflow struct {
 	BaseModel
-	UserID      string  `gorm:"type:varchar(120);not null;index:idx_workflow_lu,priority:2" json:"user_id"`
-	LabID       int64   `gorm:"type:bigint;not null;index:idx_workflow_lu,priority:1" json:"lab_id"`
-	Name        string  `gorm:"type:text;not null;default:'Untitled'" json:"name"`
-	Published   bool    `gorm:"type:bool;not null;default:false" json:"published"`
-	Description *string `gorm:"type:text" json:"description"`
+	UserID      string                      `gorm:"type:varchar(120);not null;index:idx_workflow_lu,priority:2" json:"user_id"`
+	LabID       int64                       `gorm:"type:bigint;not null;index:idx_workflow_lu,priority:1" json:"lab_id"`
+	Name        string                      `gorm:"type:text;not null;default:'Untitled'" json:"name"`
+	Published   bool                        `gorm:"type:bool;not null;default:false" json:"published"`
+	Tags        datatypes.JSONSlice[string] `gorm:"type:jsonb" json:"tags"`
+	Description *string                     `gorm:"type:text" json:"description"`
 }
 
 func (*Workflow) TableName() string {
