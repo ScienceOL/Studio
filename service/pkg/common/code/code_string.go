@@ -14,6 +14,7 @@ func _() {
 	_ = x[ParamErr-1000]
 	_ = x[NotPointerErr-1001]
 	_ = x[NotSlicePointerErr-1002]
+	_ = x[PointerIsNilErr-1003]
 	_ = x[LoginConfigErr-5000]
 	_ = x[LoginSetStateErr-5001]
 	_ = x[RefreshTokenErr-5002]
@@ -88,7 +89,7 @@ func _() {
 
 const (
 	_ErrCode_name_0 = "successundefinedno permission"
-	_ErrCode_name_1 = "parse parameter errornot pointer errmust be a pointer to a slice"
+	_ErrCode_name_1 = "parse parameter errornot pointer errmust be a pointer to a slicepointer is nil error"
 	_ErrCode_name_2 = "login configuration errorset login state errorrefresh token failedstate verification failedexchange token failedcallback parameter errorget user info failedlogin process user info failednot logged inlogin verification format errorinvalid tokenrefresh token parameter errorredirect login url error"
 	_ErrCode_name_3 = "database create data errordatabase update data errordatabase record not founddatabase query errordatabase delete errornot base db type errormodel not implement schema.Tablerredis lua script errorredis lua return type errorredis add user set errorredis remove user set error"
 	_ErrCode_name_4 = "reg action name emptyresource is emptyresource not existcan not found workflow template erroruser id is emptylab id is empty errorlaboratory not found errorcan not found laboratory invite link errorinvite expired errorinvalidate third id error"
@@ -101,7 +102,7 @@ const (
 
 var (
 	_ErrCode_index_0 = [...]uint8{0, 7, 16, 29}
-	_ErrCode_index_1 = [...]uint8{0, 21, 36, 64}
+	_ErrCode_index_1 = [...]uint8{0, 21, 36, 64, 84}
 	_ErrCode_index_2 = [...]uint16{0, 25, 46, 66, 91, 112, 136, 156, 186, 199, 230, 243, 272, 296}
 	_ErrCode_index_3 = [...]uint16{0, 26, 52, 77, 97, 118, 140, 173, 195, 222, 246, 273}
 	_ErrCode_index_4 = [...]uint8{0, 21, 38, 56, 93, 109, 130, 156, 198, 218, 243}
@@ -116,7 +117,7 @@ func (i ErrCode) String() string {
 	switch {
 	case 0 <= i && i <= 2:
 		return _ErrCode_name_0[_ErrCode_index_0[i]:_ErrCode_index_0[i+1]]
-	case 1000 <= i && i <= 1002:
+	case 1000 <= i && i <= 1003:
 		i -= 1000
 		return _ErrCode_name_1[_ErrCode_index_1[i]:_ErrCode_index_1[i+1]]
 	case 5000 <= i && i <= 5012:
