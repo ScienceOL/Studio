@@ -1,7 +1,9 @@
 package environment
 
 import (
-	"github.com/gofrs/uuid/v5"
+	"github.com/scienceol/studio/service/pkg/common"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
+	"github.com/scienceol/studio/service/pkg/repo/model"
 	"gorm.io/datatypes"
 )
 
@@ -28,17 +30,19 @@ type UpdateEnvReq struct {
 type LaboratoryResp struct {
 	UUID        uuid.UUID `json:"uuid"`
 	Name        string    `json:"name"`
+	UserID      string    `json:"user_id"`
 	Description *string   `json:"description"`
+	MemberCount int64     `json:"member_count"`
 }
 
 type RegAction struct {
-	Feedback    datatypes.JSON `json:"feedback"`
-	Goal        datatypes.JSON `json:"goal"`
-	GoalDefault datatypes.JSON `json:"goal_default"`
-	Result      datatypes.JSON `json:"result"`
-	Schema      datatypes.JSON `json:"schema"`
-	Type        string         `json:"type"`
-	Handles     datatypes.JSON `json:"handles"`
+	Feedback    datatypes.JSON                         `json:"feedback"`
+	Goal        datatypes.JSON                         `json:"goal"`
+	GoalDefault datatypes.JSON                         `json:"goal_default"`
+	Result      datatypes.JSON                         `json:"result"`
+	Schema      datatypes.JSON                         `json:"schema"`
+	Type        string                                 `json:"type"`
+	Handles     datatypes.JSONType[model.ActionHandle] `json:"handles"`
 }
 
 type RegClass struct {
@@ -71,18 +75,72 @@ type RegInitParamSchema struct {
 }
 
 type ResourceReq struct {
-	Resources []Resource `json:"resources"`
+	Resources []*Resource `json:"resources"`
+}
+
+type InnerBaseConfig struct {
+	Rotation model.Rotation `json:"rotation"`
+	Category string         `json:"category"`
+	SizeX    float32        `json:"size_x"`
+	SizeY    float32        `json:"size_y"`
+	SizeZ    float32        `json:"size_z"`
+	Type     string         `json:"type"`
+}
+
+type Config struct {
+	Class    string         `json:"class"`
+	Config   datatypes.JSON `json:"config"`
+	Data     datatypes.JSON `json:"data"`
+	ID       string         `json:"id"`
+	Name     string         `json:"name"`
+	Parent   string         `json:"parent"`
+	Position model.Position `json:"position"`
+	Type     string         `json:"type"`
+	// SampleID
 }
 
 type Resource struct {
-	RegName         string              `json:"id" binding:"required"`
-	Description     *string             `json:"description,omitempty"`
-	Icon            string              `json:"icon,omitempty"`
-	Language        string              `json:"registry_type" binding:"required"`
-	Version         string              `json:"version" default:"0.0.1"`
-	FilePath        string              `json:"file_path"`
-	Class           RegClass            `json:"class"`
-	Handles         []*RegHandle        `json:"handles"`
-	InitParamSchema *RegInitParamSchema `json:"init_param_schema,omitempty"`
-	Model           datatypes.JSON      `json:"model"`
+	RegName         string                      `json:"id" binding:"required"`
+	Description     *string                     `json:"description,omitempty"`
+	Icon            string                      `json:"icon,omitempty"`
+	ResourceType    string                      `json:"registry_type" binding:"required"`
+	Version         string                      `json:"version" default:"0.0.1"`
+	FilePath        string                      `json:"file_path"`
+	Class           RegClass                    `json:"class"`
+	Handles         []*RegHandle                `json:"handles"`
+	InitParamSchema *RegInitParamSchema         `json:"init_param_schema,omitempty"`
+	Model           datatypes.JSON              `json:"model"`
+	Tags            datatypes.JSONSlice[string] `json:"category"`
+	ConfigInfo      []*Config                   `json:"config_info"`
+
+	SelfDB *model.ResourceNodeTemplate
+}
+
+type LabMemberReq struct {
+	LabUUID uuid.UUID `json:"lab_uuid" uri:"lab_uuid" form:"lab_uuid"`
+	common.PageReq
+}
+
+type DelLabMemberReq struct {
+	LabUUID    uuid.UUID `json:"lab_uuid" uri:"lab_uuid" form:"lab_uuid"`
+	MemberUUID uuid.UUID `json:"member_uuid" uri:"member_uuid" form:"member_uuid"`
+}
+
+type LabMemberResp struct {
+	UUID   uuid.UUID                  `json:"uuid"`
+	UserID string                     `json:"user_id"`
+	LabID  int64                      `json:"lab_id"`
+	Role   model.LaboratoryMemberRole `json:"role"`
+}
+
+type InviteReq struct {
+	LabUUID uuid.UUID `json:"lab_uuid" uri:"lab_uuid" form:"lab_uuid"`
+}
+
+type InviteResp struct {
+	Path string `json:"url"`
+}
+
+type AcceptInviteReq struct {
+	UUID uuid.UUID `json:"uuid" uri:"uuid" form:"uuid"`
 }

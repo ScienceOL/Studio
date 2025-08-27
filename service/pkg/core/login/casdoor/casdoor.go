@@ -40,6 +40,7 @@ func (c *casdoorLogin) Login(ctx context.Context) (*login.Resp, error) {
 
 	// 构建授权URL并重定向用户到OAuth2提供商登录页面
 	authURL := c.oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
+
 	return &login.Resp{RedirectURL: authURL}, nil
 }
 

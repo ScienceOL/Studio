@@ -1,7 +1,7 @@
+//nolint:revive // var-naming: common package contains shared utilities
 package common
 
 import (
-	"fmt"
 	"testing"
 
 	"gorm.io/datatypes"
@@ -12,5 +12,5 @@ func TestBinUUID(t *testing.T) {
 	_ = uuid
 	uuid1 := "56d92f9f-a1c5-4ac2-84a0-a753f0fbf65b"
 	uuidT := datatypes.BinUUIDFromString(uuid1)
-	fmt.Println(uuidT)
+	t.Log(uuidT)
 }

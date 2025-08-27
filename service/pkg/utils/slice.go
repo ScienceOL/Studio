@@ -3,11 +3,29 @@ package utils
 
 import "slices"
 
-func AppendUniqSlice[T comparable](slice []T, elem T) []T {
-	if slices.Contains(slice, elem) {
-		return slice
+func AppendUniqSlice[T comparable](slice []T, elems ...T) []T {
+	for _, elem := range elems {
+		if slices.Contains(slice, elem) {
+			continue
+		}
+		slice = append(slice, elem)
 	}
-	return append(slice, elem) // 添加新元素
+	return slice
+}
+
+func FilterUniqSlice[T comparable, V comparable](slice []T, f func(elem T) (V, bool)) []V {
+	tmpMap := make(map[V]struct{})
+	for _, v := range slice {
+		if value, isAdd := f(v); isAdd {
+			tmpMap[value] = struct{}{}
+		}
+	}
+
+	res := make([]V, 0, len(slice))
+	for key := range tmpMap {
+		res = append(res, key)
+	}
+	return res
 }
 
 func Or[T comparable](values ...T) T {
@@ -17,6 +35,11 @@ func Or[T comparable](values ...T) T {
 			return v
 		}
 	}
+
+	if len(values) > 0 {
+		return values[len(values)-1]
+	}
+
 	return zero
 }
 
@@ -27,6 +50,14 @@ func TernaryLazy[T any](condition bool, trueFn, falseFn func() T) T {
 		return trueFn()
 	}
 	return falseFn()
+}
+
+func Ternary[T any](condition bool, okValue T, defaultValue T) T {
+	if condition {
+		return okValue
+	}
+
+	return defaultValue
 }
 
 func SafeValue[T any](f func() T, defaultVal T) (res T) {
@@ -64,6 +95,25 @@ func FilterSlice[S any, T any](sources []T, f func(i T) (S, bool)) []S {
 	return newSlice
 }
 
+func Range[T any](source []T, f func(index int, i T) bool) {
+	for index, item := range source {
+		if !f(index, item) {
+			return
+		}
+	}
+}
+
+func FindTarget[S any, T any](sources []T, f func(i T) (S, bool)) S {
+	var zero S
+	for _, item := range sources {
+		data, ok := f(item)
+		if ok {
+			return data
+		}
+	}
+	return zero
+}
+
 func FilterSliceWithErr[S any, T any](sources []T, f func(i T) ([]S, bool, error)) ([]S, error) {
 	newSlice := make([]S, 0, len(sources))
 	for _, item := range sources {
@@ -78,11 +128,21 @@ func FilterSliceWithErr[S any, T any](sources []T, f func(i T) ([]S, bool, error
 	return newSlice, nil
 }
 
-func SliceToMap[K comparable, V any, T any](sources []T, f func(i T) (K, V)) map[K]V {
+func Slice2Map[K comparable, V any, T any](sources []T, f func(i T) (K, V)) map[K]V {
 	result := make(map[K]V)
 	for _, item := range sources {
 		key, value := f(item)
 		result[key] = value
+	}
+	return result
+}
+
+func SliceToMapSlice[K comparable, V any, T any](sources []T, f func(i T) (K, V, bool)) map[K][]V {
+	result := make(map[K][]V)
+	for _, item := range sources {
+		if key, value, isAdd := f(item); isAdd {
+			result[key] = append(result[key], value)
+		}
 	}
 	return result
 }

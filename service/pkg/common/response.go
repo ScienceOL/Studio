@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gofrs/uuid/v5"
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common/code"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 )
 
 const (
-	MaxPageSize = 50
+	MaxPageSize = 2000
 )
 
 type Error struct {
@@ -35,9 +35,21 @@ type PageResp[T any] struct {
 	Data     T     `json:"data"`
 }
 
+type PageMoreResp[T any] struct {
+	HasMore  bool `json:"has_more"`
+	Page     int  `json:"page"`
+	PageSize int  `json:"page_size"`
+	Data     T    `json:"data"`
+}
+
 type PageReq struct {
 	Page     int `json:"page" form:"page" uri:"page"`
 	PageSize int `json:"page_size" form:"page_size" uri:"page_size"`
+}
+
+type PageReqT[T any] struct {
+	PageReq
+	Data T `json:"data"`
 }
 
 func (p *PageReq) Normalize() {

@@ -16,6 +16,7 @@ type WebGlobalConfig struct {
 	MQTT          MQTT     `mapstructure:",squash"`
 	Trace         Trace    `mapstructure:",squash"`
 	Nacos         Nacos    `mapstructure:",squash"`
+	Job           Job      `mapstructure:",squash"`
 	DynamicConfig *DynamicConfig
 }
 

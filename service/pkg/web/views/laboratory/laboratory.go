@@ -91,3 +91,76 @@ func (l *EnvHandle) CreateLabResource(ctx *gin.Context) {
 
 	common.ReplyOk(ctx)
 }
+
+func (l *EnvHandle) GetLabMemeber(ctx *gin.Context) {
+	req := &environment.LabMemberReq{}
+	if err := ctx.ShouldBindUri(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	if err := ctx.ShouldBindQuery(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	resp, err := l.envService.LabMemberList(ctx, req)
+	if err != nil {
+		logger.Errorf(ctx, "GetLabMemeber err: %+v", err)
+		common.ReplyErr(ctx, err)
+		return
+	}
+
+	common.ReplyOk(ctx, resp)
+}
+
+func (l *EnvHandle) DelLabMember(ctx *gin.Context) {
+	req := &environment.DelLabMemberReq{}
+	if err := ctx.ShouldBindUri(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	err := l.envService.DelLabMember(ctx, req)
+	if err != nil {
+		logger.Errorf(ctx, "DelLabMember err: %+v", err)
+		common.ReplyErr(ctx, err)
+		return
+	}
+
+	common.ReplyOk(ctx)
+}
+
+func (l *EnvHandle) CreateInvite(ctx *gin.Context) {
+	req := &environment.InviteReq{}
+	if err := ctx.ShouldBindUri(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	resp, err := l.envService.CreateInvite(ctx, req)
+	if err != nil {
+		logger.Errorf(ctx, "CreateInvite err: %+v", err)
+		common.ReplyErr(ctx, err)
+		return
+	}
+
+	common.ReplyOk(ctx, resp)
+}
+
+func (l EnvHandle) AcceptInvite(ctx *gin.Context) {
+	req := &environment.AcceptInviteReq{}
+	if err := ctx.ShouldBindUri(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	err := l.envService.AcceptInvite(ctx, req)
+	if err != nil {
+		logger.Errorf(ctx, "AcceptInvite err: %+v", err)
+		common.ReplyErr(ctx, err)
+		return
+	}
+
+	common.ReplyOk(ctx)
+}

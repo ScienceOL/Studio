@@ -8,7 +8,7 @@ MODULE_NAME := studio/service
 BINARY_NAME := api
 BINARY_DIR := bin
 BUILD_DIR := build
-CMD_DIR := cmd/api
+CMD_DIR := ./
 
 # Go 配置
 GO := go
@@ -201,18 +201,26 @@ info: ## 显示项目信息
 
 
 stringer-install:
-	go install golang.org/x/tools/cmd/stringer@latest
+	@if ! command -v stringer > /dev/null; then \
+		echo "📦 安装 stringer..."; \
+		go install golang.org/x/tools/cmd/stringer@latest; \
+	fi
 # 生成错误码
 generate: stringer-install
 	go generate ./pkg/...
 
 # 运行 migrate 
 migrate:
-	go run cmd/api/main.go migrate
+	go run main.go migrate
 
 # 运行服务
 apiserver: generate
-	go run cmd/api/main.go apiserver
+	go run main.go apiserver
+
+# 运行调度
+schedule: generate
+	go run main.go schedule
+
 
 fmt-install:
 	go install mvdan.cc/gofumpt@v0.8.0
@@ -231,5 +239,5 @@ lint-go: fmt-go lint-install-go
 
 
 build-web: fmt 
-	go build -o ./bin/web cmd/api/main.go
+	go build -o ./bin/web main.go
 

@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/gofrs/uuid/v5"
 	"github.com/scienceol/studio/service/pkg/common/code"
-	"github.com/scienceol/studio/service/pkg/middleware/db"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -22,40 +22,47 @@ type NodeHandleInfo struct {
 }
 
 type materialImpl struct {
-	*db.Datastore
+	repo.IDOrUUIDTranslate
 }
 
 func NewMaterialImpl() repo.MaterialRepo {
 	return &materialImpl{
-		Datastore: db.DB(),
+		IDOrUUIDTranslate: repo.NewBaseDB(),
 	}
 }
 
-func (m *materialImpl) UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode) error {
+func (m *materialImpl) UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode, keys ...string) error {
 	if len(datas) == 0 {
 		return nil
+	}
+
+	updateKeys := []string{
+		"display_name",
+		"description",
+		"status",
+		"type",
+		"resource_node_id",
+		"class",
+		"init_param_data",
+		"schema",
+		"data",
+		"pose",
+		"model",
+		"icon",
+		"updated_at",
+	}
+
+	if len(keys) > 0 {
+		updateKeys = keys
 	}
 
 	statement := m.DBWithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{
 			{Name: "lab_id"},
 			{Name: "name"},
+			{Name: "parent_id"},
 		},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"parent_id",
-			"display_name",
-			"description",
-			"type",
-			"status",
-			"resource_node_template_id",
-			"init_param_data",
-			"schema",
-			"data",
-			"pose",
-			"model",
-			"icon",
-			"updated_at",
-		}),
+		DoUpdates: clause.AssignmentColumns(updateKeys),
 	}).Create(datas)
 
 	if statement.Error != nil {
@@ -78,9 +85,7 @@ func (m *materialImpl) UpsertMaterialEdge(ctx context.Context, datas []*model.Ma
 			{Name: "source_handle_uuid"},
 			{Name: "target_handle_uuid"},
 		},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"updated_at",
-		}),
+		DoNothing: true,
 	}).Create(datas)
 
 	if statement.Error != nil {
@@ -100,7 +105,7 @@ func (m *materialImpl) GetNodeHandles(
 	res := make([]*NodeHandleInfo, 0, len(handleNames))
 	if err := m.DBWithContext(ctx).Table("material_node as n").
 		Select("n.uuid as node_uuid, n.name as node_name, h.uuid as handle_uuid, h.name as handle_name").
-		Joins("inner join resource_handle_template as h on n.resource_node_template_id = h.node_id").
+		Joins("inner join resource_handle_template as h on n.resource_node_id = h.resource_node_id").
 		Where("n.lab_id = ? and n.name in ? and h.name in ?", labID, nodeNames, handleNames).
 		Find(&res).Error; err != nil {
 		logger.Errorf(ctx, "GetNodeHandles fail lab id: %d, node names: %+v, handle names: %+v, err: %+v", labID, nodeNames, handleNames, err)
@@ -131,7 +136,7 @@ func (m *materialImpl) GetNodeHandlesByUUID(ctx context.Context, nodeUUIDs []uui
 	res := make([]*NodeHandleInfo, 0, len(nodeUUIDs))
 	if err := m.DBWithContext(ctx).Table("material_node as n").
 		Select("n.uuid as node_uuid, h.uuid as handle_uuid").
-		Joins("inner join resource_handle_template as h on n.resource_node_template_id = h.node_id").
+		Joins("inner join resource_handle_template as h on n.resource_node_id = h.resource_node_id").
 		Where("n.uuid in ?", nodeUUIDs).
 		Find(&res).Error; err != nil {
 		logger.Errorf(ctx, "GetNodeHandlesByUUID fail node uuids: %+v, err: %+v", nodeUUIDs, err)
@@ -162,54 +167,69 @@ func (m *materialImpl) DelNodes(ctx context.Context, nodeUUIDs []uuid.UUID) (*re
 	res := &repo.DelNodeInfo{}
 	if err := m.ExecTx(ctx, func(txCtx context.Context) error {
 		// 获取所有删除 id 的 node id 和 uuid
-		// TODO: node 的 parent id 如果被删除了，所有子 node 要删除么？目前处理是吧 parent id 设置为 0
 		delNodes := []*model.MaterialNode{}
-		if err := m.DBWithContext(txCtx).
-			Select("id, uuid").
+		if err := m.DBWithContext(txCtx).Clauses(
+			clause.Returning{
+				Columns: []clause.Column{
+					{Name: "id"},
+					{Name: "uuid"},
+				},
+			}).
 			Where("uuid in ?", nodeUUIDs).
-			Find(&delNodes).Error; err != nil {
-			logger.Errorf(ctx, "DelNodes query node fail uuids: %+v, err: %+v", nodeUUIDs, err)
-			return code.QueryRecordErr
+			Delete(&delNodes).Error; err != nil {
+			logger.Errorf(ctx, "DelNodes delete query node fail uuids: %+v, err: %+v", nodeUUIDs, err)
+			return code.DeleteDataErr.WithErr(err)
 		}
 
-		nodeIDs := make([]int64, 0, len(delNodes))
-		queryNodeUUIDs := make([]uuid.UUID, 0, len(delNodes))
-		for _, n := range delNodes {
-			nodeIDs = append(nodeIDs, n.ID)
-			queryNodeUUIDs = append(queryNodeUUIDs, n.UUID)
-		}
-		if len(nodeIDs) == 0 {
+		parentIDs := make([]int64, 0, len(delNodes))
+		res.NodeUUIDs = utils.FilterSlice(delNodes, func(node *model.MaterialNode) (uuid.UUID, bool) {
+			parentIDs = append(parentIDs, node.ID)
+			return node.UUID, true
+		})
+
+		if len(res.NodeUUIDs) == 0 {
 			return nil
 		}
 
+		// 孔板类型，删除所有子节点
+		childrenNodes := []*model.MaterialNode{}
+		if err := m.DBWithContext(txCtx).Clauses(
+			clause.Returning{
+				Columns: []clause.Column{
+					{Name: "id"},
+					{Name: "uuid"},
+				},
+			}).
+			Where("parent_id in ?", parentIDs).
+			Delete(&childrenNodes).Error; err != nil {
+			logger.Errorf(ctx, "DelNodes delete query node fail uuids: %+v, err: %+v", nodeUUIDs, err)
+			return code.DeleteDataErr.WithErr(err)
+		}
+
+		childrenUUIDs := utils.FilterSlice(childrenNodes, func(node *model.MaterialNode) (uuid.UUID, bool) {
+			parentIDs = append(parentIDs, node.ID)
+			return node.UUID, true
+		})
+
+		res.NodeUUIDs = append(res.NodeUUIDs, childrenUUIDs...)
+
 		delNodeEdges := []*model.MaterialEdge{}
-		if err := m.DBWithContext(txCtx).
-			Select("id, uuid").
+		if err := m.DBWithContext(txCtx).Clauses(
+			clause.Returning{
+				Columns: []clause.Column{
+					{Name: "id"},
+					{Name: "uuid"},
+				},
+			}).
 			Where("source_node_uuid in ? or target_node_uuid in ? ", nodeUUIDs, nodeUUIDs).
-			Find(&delNodeEdges).Error; err != nil {
-			logger.Errorf(ctx, "DelNodes query edge fail uuids: %+v, err: %+v", nodeUUIDs, err)
-			return code.QueryRecordErr
-		}
-		edgeIDs := make([]int64, 0, len(delNodeEdges))
-		edgeUUIDs := make([]uuid.UUID, 0, len(delNodeEdges))
-		for _, e := range delNodeEdges {
-			edgeIDs = append(edgeIDs, e.ID)
-			edgeUUIDs = append(edgeUUIDs, e.UUID)
+			Delete(&delNodeEdges).Error; err != nil {
+			logger.Errorf(ctx, "DelNodes delete edge fail uuids: %+v, err: %+v", nodeUUIDs, err)
+			return code.QueryRecordErr.WithErr(err)
 		}
 
-		// 删除节点
-		if err := m.DBWithContext(txCtx).Delete(&model.MaterialNode{}, nodeIDs).Error; err != nil {
-			logger.Errorf(txCtx, "DelNodes fail ids: %+v, err: %+v", nodeIDs, err)
-			return code.DeleteDataErr.WithMsg(err.Error())
-		}
-
-		// 删除 edge
-		if err := m.DBWithContext(txCtx).Where("id in ?", edgeIDs).Delete(&model.MaterialEdge{}).Error; err != nil {
-			logger.Errorf(txCtx, "DelNodes fail ids: %+v, err: %+v", nodeIDs, err)
-			return code.DeleteDataErr.WithMsg(err.Error())
-		}
-		res.NodeUUIDs = queryNodeUUIDs
-		res.EdgeUUIDs = edgeUUIDs
+		res.EdgeUUIDs = utils.FilterSlice(delNodeEdges, func(edge *model.MaterialEdge) (uuid.UUID, bool) {
+			return edge.UUID, true
+		})
 
 		return nil
 	}); err != nil {
@@ -230,7 +250,7 @@ func (m *materialImpl) GetNodesByLabID(ctx context.Context, labID int64, selectK
 		query = query.Select(selectKeys)
 	}
 
-	statement := query.Find(&datas)
+	statement := query.Order("id asc").Find(&datas)
 	if statement.Error != nil {
 		logger.Errorf(ctx, "GetNodesByLabID sql: %+s, err: %+v",
 			statement.Statement.SQL.String(),
@@ -307,67 +327,4 @@ func (m *materialImpl) GetNodeIDByUUID(ctx context.Context, nodeUUID uuid.UUID) 
 	}
 
 	return data.ID, nil
-}
-
-// 批量插入 workflowTpl
-func (m *materialImpl) UpsertWorkflowNodeTemplate(ctx context.Context, datas []*model.WorkflowNodeTemplate) error {
-	if len(datas) == 0 {
-		return nil
-	}
-
-	statement := m.DBWithContext(ctx).Clauses(clause.OnConflict{
-		Columns: []clause.Column{
-			{Name: "lab_id"},
-			{Name: "name"},
-			{Name: "device_action_id"},
-			{Name: "material_node_id"},
-		},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"resource_node_template_id",
-			"display_name",
-			"header",
-			"footer",
-			"param_type",
-			"schema",
-			"execute_script",
-			"node_type",
-			"updated_at",
-		}),
-	}).Create(datas)
-
-	if statement.Error != nil {
-		logger.Errorf(ctx, "UpsertWorkflowHandleTemplate err: %+v", statement.Error)
-		return code.CreateDataErr.WithMsg(statement.Error.Error())
-	}
-
-	return nil
-}
-
-// 批量插入 workflowHandleTpl
-func (m *materialImpl) UpsertWorkflowHandleTemplate(ctx context.Context, datas []*model.WorkflowHandleTemplate) error {
-	if len(datas) == 0 {
-		return nil
-	}
-
-	statement := m.DBWithContext(ctx).Clauses(clause.OnConflict{
-		Columns: []clause.Column{
-			{Name: "node_template_id"},
-			{Name: "handle_key"},
-			{Name: "io_type"},
-		},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"display_name",
-			"type",
-			"data_source",
-			"data_key",
-			"updated_at",
-		}),
-	}).Create(datas)
-
-	if statement.Error != nil {
-		logger.Errorf(ctx, "UpsertWorkflowHandleTemplate err: %+v", statement.Error)
-		return code.CreateDataErr.WithMsg(statement.Error.Error())
-	}
-
-	return nil
 }
