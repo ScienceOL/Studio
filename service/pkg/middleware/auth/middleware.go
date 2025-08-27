@@ -92,7 +92,7 @@ func (u *userAuth) AuthUser(ctx *gin.Context) {
 	cookie, _ := ctx.Cookie("access_token_v2")
 	authHeader := ctx.GetHeader("Authorization")
 	queryToken := ctx.Query("access_token_v2")
-	authHeader = utils.Or(queryToken, cookie, authHeader)
+	authHeader = utils.Or(cookie, queryToken, authHeader)
 	if authHeader == "" {
 		ctx.JSON(http.StatusUnauthorized, &common.Resp{
 			Code: code.UnLogin,
