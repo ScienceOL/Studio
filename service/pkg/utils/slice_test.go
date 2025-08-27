@@ -1,3 +1,4 @@
+// notlint:revive
 package utils
 
 import (

@@ -18,11 +18,10 @@ type Redis struct {
 }
 
 type Server struct {
-	Platform  string `mapstructure:"PLATFORM" default:"sciol"` // linux、darwin、windows
-	Service   string `mapstructure:"SERVICE" default:"studio"` // api、schedule
-	SecretKey string `mapstructure:"SECRET_KEY"`
-	Port      int    `mapstructure:"SERVER_PORT" default:"48197"`
-	Env       string `mapstructure:"ENV" default:"dev"`
+	Platform string `mapstructure:"PLATFORM" default:"sciol"` // linux、darwin、windows
+	Service  string `mapstructure:"SERVICE" default:"api"`    // api、schedule
+	Port     int    `mapstructure:"WEB_PORT" default:"48197"`
+	Env      string `mapstructure:"ENV" default:"dev"`
 }
 
 type OAuth2 struct {
@@ -31,9 +30,10 @@ type OAuth2 struct {
 	Scopes       []string `mapstructure:"OAUTH2_SCOPES" default:"[\"read\",\"write\",\"offline_access\"]"`
 	Addr         string   `mapstructure:"ADDR" default:"http://localhost:8000"`
 	TokenURL     string   `mapstructure:"OAUTH2_TOKEN_URL" default:"http://localhost:8000/api/login/oauth/access_token"`
-	AuthURL      string   `mapstructure:"OAUTH2_AUTH_URL" default:"http://localhost:8000/login/oauth/authorize"`
-	RedirectURL  string   `mapstructure:"OAUTH2_REDIRECT_URL" default:"http://localhost:48197/api/auth/callback/casdoor"`
-	UserInfoURL  string   `mapstructure:"OAUTH2_USERINFO_URL" default:"http://localhost:8000/api/get-account"`
+	AuthURL      string   `mapstructure:"OAUTH2_AUTH_URL" default:"http://172.21.3.15:8000/login/oauth/authorize"`
+	// RedirectURL  string   `mapstructure:"OAUTH2_REDIRECT_URL" default:"http://localhost:48197/api/auth/callback/casdoor"`
+	FrontendURL string `mapstructure:"OAUTH2_FRONTENT_URL" default:"http://localhost:32234/login/callback"`
+	UserInfoURL string `mapstructure:"OAUTH2_USERINFO_URL" default:"http://localhost:8000/api/get-account"`
 }
 
 type Log struct {
@@ -71,7 +71,11 @@ type Nacos struct {
 	Password    string `mapstructure:"NACOS_PASSWORD" default:"nacos"`
 	Port        uint64 `mapstructure:"NACOS_PORT" default:"8848"`
 	RegionID    string `mapstructure:"NACOS_REGION_ID" default:""`
-	DataID      string `mapstructure:"NACOS_DATA_ID" default:"studio-config"`
+	DataID      string `mapstructure:"NACOS_DATA_ID" default:"studio-api"`
 	Group       string `mapstructure:"NACOS_GROUP" default:"DEFAULT_GROUP"`
 	NeedWatch   bool   `mapstructure:"NACOS_NEED_WATCH" default:"true"`
+}
+
+type Job struct {
+	JobQueueName string `mapstructure:"JOB_QUEUE_NAME" default:"studio_workflow_job_queue"`
 }

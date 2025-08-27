@@ -1,20 +1,24 @@
 package material
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gofrs/uuid/v5"
+	"github.com/gorilla/websocket"
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/constant"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/core/material"
 	impl "github.com/scienceol/studio/service/pkg/core/material/material"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
-	"gorm.io/datatypes"
 )
 
 type Handle struct {
@@ -22,10 +26,10 @@ type Handle struct {
 	wsClient *melody.Melody
 }
 
-func NewMaterialHandle() *Handle {
+func NewMaterialHandle(ctx context.Context) *Handle {
 	wsClient := melody.New()
 	wsClient.Config.MaxMessageSize = constant.MaxMessageSize
-	mService := impl.NewMaterial(wsClient)
+	mService := impl.NewMaterial(ctx, wsClient)
 	// 注册集群通知
 
 	h := &Handle{
@@ -71,8 +75,47 @@ func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
 	common.ReplyOk(ctx)
 }
 
+func (m *Handle) DownloadMaterial(ctx *gin.Context) {
+	var err error
+	req := &material.DownloadMaterial{}
+	if err := ctx.ShouldBindUri(req); err != nil {
+		logger.Errorf(ctx, "parse DownloadMaterial param err: %+v", err.Error())
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	resp, err := m.mService.DownloadMaterial(ctx, req)
+	if err != nil {
+		logger.Errorf(ctx, "DownloadMaterial err: %+v", err)
+		common.ReplyErr(ctx, err)
+		return
+	}
+
+	commonResp := &common.Resp{
+		Code: code.Success,
+		Data: resp,
+	}
+
+	data, err := json.Marshal(commonResp)
+	if err != nil {
+		logger.Errorf(ctx, "DownloadMaterial err: %+v", err)
+		common.ReplyErr(ctx, err)
+		return
+	}
+
+	ctx.Header("Cache-Control", "no-cache")
+	ctx.Header("Content-Disposition", "attachment; filename=material_graph.json")
+	ctx.Header("Content-Type", "application/json")
+	ctx.Header("Pragma", "public")
+	ctx.Header("Content-Length", fmt.Sprintf("%d", len(data)))
+
+	// 创建Reader并发送数据
+	reader := bytes.NewReader(data)
+	ctx.DataFromReader(http.StatusOK, int64(len(data)), "application/json", reader, nil)
+}
+
 func (m *Handle) initMaterialWebSocket() {
-	m.wsClient.HandleClose(func(s *melody.Session, i int, s2 string) error {
+	m.wsClient.HandleClose(func(s *melody.Session, _ int, _ string) error {
 		if ctx, ok := s.Get("ctx"); ok {
 			logger.Infof(ctx.(context.Context), "client close keys: %+v", s.Keys)
 		}
@@ -89,6 +132,12 @@ func (m *Handle) initMaterialWebSocket() {
 		if errors.Is(err, melody.ErrMessageBufferFull) {
 			return
 		}
+		if closeErr, ok := err.(*websocket.CloseError); ok {
+			if closeErr.Code == websocket.CloseGoingAway {
+				return
+			}
+		}
+
 		if ctx, ok := s.Get("ctx"); ok {
 			logger.Errorf(ctx.(context.Context), "websocket find keys: %+v, err: %+v", s.Keys, err)
 		}
@@ -97,27 +146,31 @@ func (m *Handle) initMaterialWebSocket() {
 	m.wsClient.HandleConnect(func(s *melody.Session) {
 		if ctx, ok := s.Get("ctx"); ok {
 			logger.Infof(ctx.(context.Context), "websocket connect keys: %+v", s.Keys)
-			m.mService.HandleWSConnect(ctx.(context.Context), s)
+			if err := m.mService.OnWSConnect(ctx.(context.Context), s); err != nil {
+				logger.Errorf(ctx.(context.Context), "material OnWSMsg err: %+v", err)
+			}
 		}
 	})
 
 	m.wsClient.HandleMessage(func(s *melody.Session, b []byte) {
 		ctxI, ok := s.Get("ctx")
 		if !ok {
-			s.CloseWithMsg([]byte("no ctx"))
+			if err := s.CloseWithMsg([]byte("no ctx")); err != nil {
+				logger.Errorf(context.Background(), "HandleMessage ctx not exist CloseWithMsg err: %+v", err)
+			}
 			return
 		}
 
-		if err := m.mService.HandleWSMsg(ctxI.(*gin.Context), s, b); err != nil {
+		if err := m.mService.OnWSMsg(ctxI.(*gin.Context), s, b); err != nil {
 			logger.Errorf(ctxI.(*gin.Context), "material handle msg err: %+v", err)
 		}
 	})
 
-	m.wsClient.HandleSentMessage(func(s *melody.Session, b []byte) {
+	m.wsClient.HandleSentMessage(func(_ *melody.Session, _ []byte) {
 		// 发送完消息后的回调
 	})
 
-	m.wsClient.HandleSentMessageBinary(func(s *melody.Session, b []byte) {
+	m.wsClient.HandleSentMessageBinary(func(_ *melody.Session, _ []byte) {
 		// 发送完二进制消息后的回调
 		// 如果发送的是字符串消息，上面的 HandleSentMessage 也会被回调
 	})
@@ -125,14 +178,21 @@ func (m *Handle) initMaterialWebSocket() {
 
 func (m *Handle) LabMaterial(ctx *gin.Context) {
 	req := &material.LabWS{}
+	var err error
 	labUUIDStr := ctx.Param("lab_uuid")
-	req.LabUUID = uuid.UUID(datatypes.BinUUIDFromString(labUUIDStr))
+	req.LabUUID, err = uuid.FromString(labUUIDStr)
+	if err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
 	userInfo := auth.GetCurrentUser(ctx)
 
 	// 阻塞运行
-	m.wsClient.HandleRequestWithKeys(ctx.Writer, ctx.Request, map[string]any{
+	if err := m.wsClient.HandleRequestWithKeys(ctx.Writer, ctx.Request, map[string]any{
 		auth.USERKEY: userInfo,
 		"ctx":        ctx,
 		"lab_uuid":   req.LabUUID,
-	})
+	}); err != nil {
+		logger.Errorf(ctx, "LabMaterial HandleRequestWithKeys err: %+v", err)
+	}
 }

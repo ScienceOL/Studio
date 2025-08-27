@@ -73,6 +73,6 @@ func (c *casClient) GetLabUserInfo(ctx context.Context, req *model.LabAkSk) (*mo
 	return resData.Data, nil
 }
 
-func (c *casClient) DelLabUserInfo(ctx context.Context, req *model.LabAkSk) error {
+func (c *casClient) DelLabUserInfo(_ context.Context, _ *model.LabAkSk) error {
 	panic("not impl")
 }

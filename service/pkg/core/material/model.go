@@ -1,7 +1,7 @@
 package material
 
 import (
-	"github.com/gofrs/uuid/v5"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	"gorm.io/datatypes"
 )
@@ -9,8 +9,9 @@ import (
 type ActionType string
 
 const (
-	FetchGrpah      ActionType = "fetch_graph"
+	FetchGraph      ActionType = "fetch_graph"
 	FetchTemplate   ActionType = "fetch_template"
+	SaveGraph       ActionType = "save_graph"
 	CreateNode      ActionType = "create_node"
 	UpdateNode      ActionType = "update_node"
 	BatchDelNode    ActionType = "batch_del_nodes"
@@ -18,38 +19,26 @@ const (
 	BatchDelEdge    ActionType = "batch_del_edges"
 )
 
-type Handle struct {
-	Label      string `json:"label"`
-	DataKey    string `json:"data_key"`
-	DataType   string `json:"data_type"`
-	DataSource string `json:"data_source"`
-	HandlerKey string `json:"handler_key"`
-}
-
-type ActionHandle struct {
-	Input  []*Handle `json:"input"`
-	Output []*Handle `json:"output"`
-}
-
 type GraphNodeReq struct {
 	Nodes []*Node `json:"nodes"`
 	Edges []*Edge `json:"edges"`
 }
 
 type Node struct {
-	DeviceID string           `json:"id" binding:"required"`   // 实际是数据库的 name
-	Name     string           `json:"name" binding:"required"` // 实际是数据库的 display name
-	Type     model.DEVICETYPE `json:"type" binding:"required"`
-	Class    string           `json:"class" binding:"required"`
-	Children []string         `json:"children,omitempty"`
-	Parent   string           `json:"parent" default:""`
-	Pose     datatypes.JSON   `json:"pose"`
-	Config   datatypes.JSON   `json:"config"`
-	Data     datatypes.JSON   `json:"data"`
+	DeviceID string                         `json:"id" binding:"required"`   // 实际是数据库的 name
+	Name     string                         `json:"name" binding:"required"` // 实际是数据库的 display name
+	Type     model.DEVICETYPE               `json:"type" binding:"required"`
+	Class    string                         `json:"class" binding:"required"`
+	Children []string                       `json:"children,omitempty"`
+	Parent   string                         `json:"parent" default:""`
+	Pose     datatypes.JSONType[model.Pose] `json:"pose"`
+	Config   datatypes.JSON                 `json:"config"`
+	Data     datatypes.JSON                 `json:"data"`
 	// FIXME: 这块后续要优化掉，从 reg 获取
 	Schema      datatypes.JSON `json:"schema"`
 	Description *string        `json:"description,omitempty"`
-	Model       string         `json:"model"`
+	Model       datatypes.JSON `json:"model"`
+	Position    model.Position `json:"position"`
 }
 
 type GraphEdge struct {
@@ -66,6 +55,10 @@ type Edge struct {
 }
 
 type LabWS struct {
+	LabUUID uuid.UUID `uri:"lab_uuid" binding:"required"`
+}
+
+type DownloadMaterial struct {
 	LabUUID uuid.UUID `uri:"lab_uuid" binding:"required"`
 }
 
@@ -91,22 +84,26 @@ type DeviceParamTemplate struct {
 }
 
 type DeviceTemplate struct {
-	Handles      []*DeviceHandleTemplate     `json:"handles"`
-	UUID         uuid.UUID                   `json:"uuid"`
-	Name         string                      `json:"name"`
-	UserID       string                      `json:"user_id"`
-	Header       string                      `json:"header"`
-	Footer       string                      `json:"footer"`
-	Version      string                      `json:"version"`
-	Icon         string                      `json:"icon"`
-	Description  *string                     `json:"description"`
-	Model        datatypes.JSON              `json:"model"`
-	Module       string                      `json:"module"`
-	Language     string                      `json:"language"`
-	StatusTypes  datatypes.JSON              `json:"status_types"`
-	Tags         datatypes.JSONSlice[string] `json:"tags"`
-	DataSchema   datatypes.JSON              `json:"data_schema"`
-	ConfigSchema datatypes.JSON              `json:"config_schema"`
+	Handles      []*DeviceHandleTemplate        `json:"handles"`
+	UUID         uuid.UUID                      `json:"uuid"`
+	ParentUUID   uuid.UUID                      `json:"parent_uuid"`
+	Name         string                         `json:"name"`
+	UserID       string                         `json:"user_id"`
+	Header       string                         `json:"header"`
+	Footer       string                         `json:"footer"`
+	Version      string                         `json:"version"`
+	Icon         string                         `json:"icon"`
+	Description  *string                        `json:"description"`
+	Model        datatypes.JSON                 `json:"model"`
+	Module       string                         `json:"module"`
+	Language     string                         `json:"language"`
+	StatusTypes  datatypes.JSON                 `json:"status_types"`
+	Tags         datatypes.JSONSlice[string]    `json:"tags"`
+	DataSchema   datatypes.JSON                 `json:"data_schema"`
+	ConfigSchema datatypes.JSON                 `json:"config_schema"`
+	ResourceType string                         `json:"resource_type"`
+	ConfigInfos  []*DeviceTemplate              `json:"config_infos,omitempty"`
+	Pose         datatypes.JSONType[model.Pose] `json:"pose"`
 }
 
 // 前端获取 materials 相关数据
@@ -123,26 +120,27 @@ type WSHandle struct {
 }
 
 type WSNode struct {
-	UUID                uuid.UUID        `json:"uuid"`
-	ParentUUID          uuid.UUID        `json:"parent_uuid"`
-	Name                string           `json:"name"`
-	DisplayName         string           `json:"display_name"`
-	Description         *string          `json:"description"`
-	Type                model.DEVICETYPE `json:"type"`
-	ResNodeTemplateUUID uuid.UUID        `json:"res_node_template_uuid"`
-	InitParamData       datatypes.JSON   `json:"init_param_data"`
-	Schema              datatypes.JSON   `json:"schema"`
-	Data                datatypes.JSON   `json:"data"`
-	Status              string           `json:"status"`
-	Header              string           `json:"header"`
-	Pose                datatypes.JSON   `json:"pose"`
-	Model               string           `json:"model"`
-	Icon                string           `json:"icon"`
-	Handles             []*WSHandle      `json:"handles"`
+	UUID            uuid.UUID                      `json:"uuid"`
+	ParentUUID      uuid.UUID                      `json:"parent_uuid"`
+	Name            string                         `json:"name"`
+	DisplayName     string                         `json:"display_name"`
+	Description     *string                        `json:"description"`
+	Type            model.DEVICETYPE               `json:"type"`
+	ResTemplateUUID uuid.UUID                      `json:"res_template_uuid"`
+	ResTemplateName string                         `json:"res_template_name"`
+	InitParamData   datatypes.JSON                 `json:"init_param_data"`
+	Schema          datatypes.JSON                 `json:"schema"`
+	Data            datatypes.JSON                 `json:"data"`
+	Status          string                         `json:"status"`
+	Header          string                         `json:"header"`
+	Pose            datatypes.JSONType[model.Pose] `json:"pose"`
+	Model           datatypes.JSON                 `json:"model"`
+	Icon            string                         `json:"icon"`
+	Handles         []*WSHandle                    `json:"handles"`
 }
 
 type WSEdge struct {
-	UUID             uuid.UUID `json:"uuid,omitempty"`
+	UUID             uuid.UUID `json:"uuid"`
 	SourceNodeUUID   uuid.UUID `json:"source_node_uuid"`
 	TargetNodeUUID   uuid.UUID `json:"target_node_uuid"`
 	SourceHandleUUID uuid.UUID `json:"source_handle_uuid"`
@@ -150,7 +148,7 @@ type WSEdge struct {
 	Type             string    `json:"type"`
 }
 
-type GraphResp struct {
+type WSGraph struct {
 	Nodes []*WSNode `json:"nodes"`
 	Edges []*WSEdge `json:"edges"`
 }
@@ -192,14 +190,14 @@ type WSUpdateNodeEdge struct {
 
 // 更新节点
 type WSUpdateNode struct {
-	UUID          uuid.UUID       `json:"uuid"`
-	ParentUUID    *uuid.UUID      `json:"parent_uuid,omitempty"`
-	DisplayName   *string         `json:"display_name,omitempty"`
-	Description   *string         `json:"description,omitempty"`
-	InitParamData *datatypes.JSON `json:"init_param_data,omitempty"`
-	Data          *datatypes.JSON `json:"data,omitempty"`
-	Pose          *datatypes.JSON `json:"pose,omitempty"`
-	Schema        *datatypes.JSON `json:"schema,omitempty"`
+	UUID          uuid.UUID                       `json:"uuid"`
+	ParentUUID    *uuid.UUID                      `json:"parent_uuid,omitempty"`
+	DisplayName   *string                         `json:"display_name,omitempty"`
+	Description   *string                         `json:"description,omitempty"`
+	InitParamData *datatypes.JSON                 `json:"init_param_data,omitempty"`
+	Data          *datatypes.JSON                 `json:"data,omitempty"`
+	Pose          *datatypes.JSONType[model.Pose] `json:"pose,omitempty"`
+	Schema        *datatypes.JSON                 `json:"schema,omitempty"`
 }
 
 // ======================= 工作流模板相关

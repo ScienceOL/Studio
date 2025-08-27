@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/gofrs/uuid/v5"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"gorm.io/gorm"
 )
 
@@ -23,4 +23,17 @@ func (b *BaseModel) BeforeCreate(*gorm.DB) error {
 func (b *BaseModel) BeforeUpdate(_ *gorm.DB) error {
 	b.UpdatedAt = time.Now()
 	return nil
+}
+
+type BaseDBModel interface {
+	GetID() int64
+	GetUUID() uuid.UUID
+}
+
+func (b BaseModel) GetID() int64 {
+	return b.ID
+}
+
+func (b BaseModel) GetUUID() uuid.UUID {
+	return b.UUID
 }

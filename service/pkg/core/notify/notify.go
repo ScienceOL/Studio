@@ -3,7 +3,7 @@ package notify
 import (
 	"context"
 
-	"github.com/gofrs/uuid/v5"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 )
 
 /*
@@ -21,12 +21,14 @@ const (
 )
 
 type SendMsg struct {
-	Channel   Action    `json:"action"`
-	LabUUID   uuid.UUID `json:"lab_uuid"`
-	UserID    string    `json:"user_id"`
-	Data      any       `json:"data"`
-	UUID      uuid.UUID `json:"uuid"`
-	Timestamp int64     `json:"timestamp"`
+	Channel      Action    `json:"action"`
+	LabUUID      uuid.UUID `json:"lab_uuid"`
+	WorkflowUUID uuid.UUID `json:"work_flow_uud"`
+	TaskUUID     uuid.UUID `json:"task_uuid"`
+	UserID       string    `json:"user_id"`
+	Data         any       `json:"data"`
+	UUID         uuid.UUID `json:"uuid"`
+	Timestamp    int64     `json:"timestamp"`
 }
 
 type HandleFunc func(ctx context.Context, msg string) error

@@ -4,26 +4,29 @@ import (
 	"context"
 	"errors"
 
-	"github.com/gofrs/uuid/v5"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
-	"github.com/scienceol/studio/service/pkg/middleware/db"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	repo "github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	"github.com/scienceol/studio/service/pkg/utils"
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
-type envImpl struct {
-	*db.Datastore
+type MemberCount struct {
+	Count int64 `gorm:"column:count"`
+	LabID int64 `gorm:"column:lab_id"`
 }
 
-func NewEnv() repo.EnvRepo {
+type envImpl struct {
+	repo.IDOrUUIDTranslate
+}
+
+func New() repo.LaboratoryRepo {
 	return &envImpl{
-		Datastore: db.DB(),
+		IDOrUUIDTranslate: repo.NewBaseDB(),
 	}
 }
 
@@ -31,7 +34,7 @@ func (e *envImpl) CreateLaboratoryEnv(ctx context.Context, data *model.Laborator
 	statement := e.DBWithContext(ctx).Create(data)
 	if statement.Error != nil {
 		logger.Errorf(ctx, "CreateLaboratoryEnv err: %+v", statement.Error)
-		return code.CreateDataErr
+		return code.CreateDataErr.WithErr(statement.Error)
 	}
 	return nil
 }
@@ -40,7 +43,7 @@ func (e *envImpl) UpdateLaboratoryEnv(ctx context.Context, data *model.Laborator
 	statement := e.DBWithContext(ctx).Model(data).Updates(data)
 	if statement.Error != nil {
 		logger.Errorf(ctx, "UpdateLaboratoryEnv err: %+v", statement.Error)
-		return code.UpdateDataErr
+		return code.UpdateDataErr.WithErr(statement.Error)
 	}
 	return nil
 }
@@ -63,228 +66,165 @@ func (e *envImpl) GetLabByUUID(ctx context.Context, UUID uuid.UUID, selectKeys .
 			UUID,
 			statement.Statement.SQL.String(),
 			statement.Error)
-		return nil, code.QueryRecordErr
+		return nil, code.QueryRecordErr.WithErr(statement.Error)
 	}
 
 	return data, nil
 }
 
-func (e *envImpl) UpsertDeviceAction(ctx context.Context, datas []*model.DeviceAction) error {
+func (e *envImpl) GetLabByID(ctx context.Context, labID int64, selectKeys ...string) (*model.Laboratory, error) {
+	data := &model.Laboratory{}
+	query := e.DBWithContext(ctx).Where("id = ?", labID)
+	if len(selectKeys) != 0 {
+		query = query.Select(selectKeys)
+	}
+
+	statement := query.First(data)
+	if statement.Error != nil {
+		if errors.Is(statement.Error, gorm.ErrRecordNotFound) {
+			logger.Errorf(ctx, "GetLabByID record not found lab_id: %+v", labID)
+			return nil, code.RecordNotFound
+		}
+
+		logger.Errorf(ctx, "GetLabByID fail lab_id: %+v, sql: %+s, err: %+v",
+			labID,
+			statement.Statement.SQL.String(),
+			statement.Error)
+		return nil, code.QueryRecordErr.WithErr(statement.Error)
+	}
+
+	return data, nil
+}
+
+func (e *envImpl) UpsertWorkflowNodeTemplate(ctx context.Context, datas []*model.WorkflowNodeTemplate) error {
 	if len(datas) == 0 {
 		return nil
 	}
 	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{
-			{Name: "res_node_id"},
+			{Name: "resource_node_id"},
 			{Name: "name"}, // res_node_id + name 是唯一约束
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
+			"lab_id",
+			"class",
 			"goal",
 			"goal_default",
 			"feedback",
 			"result",
 			"schema",
 			"type",
-			"handles",
+			"icon",
 			"updated_at", // 只更新这些字段，不包括 created_at
 		}),
 	}).Create(&datas)
 
 	if statement.Error != nil {
 		logger.Errorf(ctx, "UpsertDeviceAction err: %+v", statement.Error)
-		return code.CreateDataErr
+		return code.CreateDataErr.WithErr(statement.Error)
 	}
 
 	return nil
 }
 
-func (e *envImpl) UpsertDeviceTemplate(ctx context.Context, datas []*model.ResourceNodeTemplate) error {
+func (e *envImpl) UpsertResourceNodeTemplate(ctx context.Context, datas []*model.ResourceNodeTemplate) error {
 	if len(datas) == 0 {
 		return nil
 	}
+
 	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{
 			{Name: "lab_id"},
+			{Name: "parent_id"},
 			{Name: "name"},
-			{Name: "version"}, // 根据 idx_lrnv 推测是这些字段的组合
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
-			"description",
-			"icon",
 			"header",
 			"footer",
-			"updated_at", // 指定需要更新的字段
-			"module",
+			"icon",
+			"description",
 			"model",
+			"module",
+			"resource_type",
 			"language",
 			"status_types",
+			"tags",
 			"data_schema",
 			"config_schema",
+			"pose",
+			"version",
+			"updated_at", // 指定需要更新的字段
 		}),
 	}).Create(datas)
 
 	if statement.Error != nil {
-		logger.Errorf(ctx, "UpsertDeviceTemplate err: %+v", statement.Error)
-		return code.CreateDataErr
+		logger.Errorf(ctx, "UpsertResourceNodeTemplate err: %+v", statement.Error)
+		return code.CreateDataErr.WithErr(statement.Error)
 	}
 
 	return nil
 }
 
-func (e *envImpl) UpsertDeviceHandleTemplate(ctx context.Context, datas []*model.ResourceHandleTemplate) error {
+func (e *envImpl) UpsertResourceHandleTemplate(ctx context.Context, datas []*model.ResourceHandleTemplate) error {
 	if len(datas) == 0 {
 		return nil
 	}
 
 	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{
-			{Name: "node_id"},
+			{Name: "resource_node_id"},
 			{Name: "name"},
+			{Name: "io_type"},
+			{Name: "side"},
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"display_name",
 			"type",
-			"io_type",
 			"source",
 			"key",
-			"side",
 			"updated_at",
 		}),
 	}).Create(datas)
 
 	if statement.Error != nil {
-		logger.Errorf(ctx, "UpsertDeviceHandleTemplate err: %+v", statement.Error)
-		return code.CreateDataErr
+		logger.Errorf(ctx, "UpsertResourceHandleTemplate err: %+v", statement.Error)
+		return code.CreateDataErr.WithErr(statement.Error)
 	}
 
 	return nil
 }
 
-func (e *envImpl) GetResourceTemplate(ctx context.Context, labID int64, names []string) (map[string]*repo.ResNodeTpl, error) {
-	if labID == 0 || len(names) == 0 {
-		return make(map[string]*repo.ResNodeTpl), nil
-	}
-
-	type QueryResult struct {
-		ID     int64     `gorm:"column:id"`
-		UUID   uuid.UUID `gorm:"column:uuid"`
-		Name   string    `gorm:"column:name"`
-		LabID  int64     `gorm:"column:lab_id"`
-		UserID string    `gorm:"column:user_id"`
-		Icon   string    `gorm:"column:icon"`
-
-		ActionID          *int64          `gorm:"column:action_id"`
-		ActionName        *string         `gorm:"column:action_name"`
-		ActionGoal        *datatypes.JSON `gorm:"column:action_goal"`
-		ActionGoalDefault *datatypes.JSON `gorm:"column:action_goal_default"`
-		ActionSchema      *datatypes.JSON `gorm:"column:action_schema"`
-		ActionType        *string         `gorm:"column:action_type"`
-		ActionHandles     *datatypes.JSON `gorm:"column:action_handles"`
-	}
-	results := make([]QueryResult, 0)
-	statement := e.DBWithContext(ctx).
-		Raw(`
-        SELECT 
-            latest_rnt.id,
-            latest_rnt.uuid,
-            latest_rnt.name,
-            latest_rnt.lab_id,
-            latest_rnt.user_id,
-            latest_rnt.icon,
-            da.id as action_id,
-            da.name as action_name,
-            da.goal as action_goal,
-            da.goal_default as action_goal_default,
-            da.schema as action_schema,
-            da.type as action_type,
-            da.handles as action_handles
-        FROM (
-            SELECT rnt.*,
-                   ROW_NUMBER() OVER (PARTITION BY rnt.lab_id, rnt.name ORDER BY rnt.version DESC) as rn 
-            FROM resource_node_template rnt 
-            WHERE rnt.lab_id = ? AND rnt.name IN ?
-        ) latest_rnt
-        LEFT JOIN device_action as da ON latest_rnt.id = da.res_node_id
-        WHERE latest_rnt.rn = 1
-    `, labID, names).
-		Scan(&results)
-
-	if statement.Error != nil {
-		logger.Errorf(ctx, "GetResourceTemplate query fail lab_id: %d, names: %+v, err: %+v, sql: %s", labID, names, statement.Error, "")
-		return nil, code.QueryRecordErr
-	}
-
-	nodeMap := make(map[string]*repo.ResNodeTpl)
-	for _, result := range results {
-		if _, exists := nodeMap[result.Name]; !exists {
-			nodeMap[result.Name] = &repo.ResNodeTpl{
-				Actions: make([]*model.DeviceAction, 0),
-				Node: &model.ResourceNodeTemplate{
-					BaseModel: model.BaseModel{
-						ID:   result.ID,
-						UUID: result.UUID,
-					},
-					Name:   result.Name,
-					LabID:  result.LabID,
-					UserID: result.UserID,
-					Icon:   result.Icon,
-				},
-			}
-		}
-
-		// 如果有关联的 action
-		if result.ActionID != nil && *result.ActionID != 0 {
-			action := &model.DeviceAction{
-				Name:        *result.ActionName,
-				Type:        *result.ActionType,
-				Goal:        *result.ActionGoal,
-				GoalDefault: *result.ActionGoalDefault,
-				Schema:      *result.ActionSchema,
-				Handles:     *result.ActionHandles,
-			}
-			action.ID = *result.ActionID
-			nodeMap[result.Name].Actions = append(nodeMap[result.Name].Actions, action)
-		}
-	}
-
-	return nodeMap, nil
-}
-
-func (e *envImpl) GetResourceHandleTemplates(ctx context.Context, resIDs []int64) (map[int64][]*model.ResourceHandleTemplate, error) {
-	if len(resIDs) == 0 {
+func (e *envImpl) GetResourceHandleTemplates(ctx context.Context, resourceNodeIDs []int64) (map[int64][]*model.ResourceHandleTemplate, error) {
+	if len(resourceNodeIDs) == 0 {
 		return make(map[int64][]*model.ResourceHandleTemplate), nil
 	}
 
 	handles := make([]*model.ResourceHandleTemplate, 0, 1)
-	statement := e.DBWithContext(ctx).Where("node_id in ?", resIDs).Find(&handles)
+	statement := e.DBWithContext(ctx).Where("resource_node_id in ?", resourceNodeIDs).Find(&handles)
 	if statement.Error != nil {
-		logger.Errorf(ctx, "GetDeviceHandelTemplates node id: %+v, err: %+v", resIDs, statement.Error)
+		logger.Errorf(ctx, "GetDeviceHandelTemplates node ids: %+v, err: %+v", resourceNodeIDs, statement.Error)
 		return nil, code.QueryRecordErr
 	}
 
-	res := make(map[int64][]*model.ResourceHandleTemplate)
-	for _, h := range handles {
-		res[h.NodeID] = append(res[h.NodeID], h)
-	}
-	return res, nil
+	return utils.SliceToMapSlice(handles, func(h *model.ResourceHandleTemplate) (int64, *model.ResourceHandleTemplate, bool) {
+		return h.ResourceNodeID, h, true
+	}), nil
 }
 
 // 根据 device template node id 获取所有的 uuid
-func (e *envImpl) GetResourceNodeTemplateUUID(ctx context.Context, resIDs []int64) (map[int64]uuid.UUID, error) {
-	if len(resIDs) == 0 {
-		return make(map[int64]uuid.UUID), nil
+func (e *envImpl) GetResourceNodeTemplates(ctx context.Context, ids []int64) ([]*model.ResourceNodeTemplate, error) {
+	if len(ids) == 0 {
+		return []*model.ResourceNodeTemplate{}, nil
 	}
 
-	datas := make([]*model.ResourceNodeTemplate, 0, len(resIDs))
-	statement := e.DBWithContext(ctx).Select("id, uuid").Where("id in ?", resIDs).Find(&datas)
+	datas := make([]*model.ResourceNodeTemplate, 0, len(ids))
+	statement := e.DBWithContext(ctx).Select("id, uuid, name").Where("id in ?", ids).Find(&datas)
 	if statement.Error != nil {
-		logger.Errorf(ctx, "GetResourceNodeTemplateUUID fail ids: %+v, err: %+v", resIDs, statement.Error)
+		logger.Errorf(ctx, "GetResourceNodeTemplateUUID fail ids: %+v, err: %+v", ids, statement.Error)
 		return nil, code.QueryRecordErr.WithMsg(statement.Error.Error())
 	}
 
-	return utils.SliceToMap(datas, func(item *model.ResourceNodeTemplate) (int64, uuid.UUID) {
-		return item.ID, item.UUID
-	}), nil
+	return datas, nil
 }
 
 func (e *envImpl) GetLabByAkSk(ctx context.Context, accessKey string, accessSecret string) (*model.Laboratory, error) {
@@ -327,61 +267,11 @@ func (e *envImpl) GetAllResourceTemplateByLabID(ctx context.Context, labID int64
 	return datas, nil
 }
 
-// 根据 device ids 获取所有的 handles
-func (e *envImpl) GetAllDeviceTemplateHandlesByID(
-	ctx context.Context,
-	templateIDs []int64,
-	selectKeys ...string) (
-	[]*model.ResourceHandleTemplate, error,
-) {
-	datas := make([]*model.ResourceHandleTemplate, 0, 1)
-	if len(templateIDs) == 0 {
-		return datas, nil
-	}
-	query := e.DBWithContext(ctx).Where("node_id in ?", templateIDs)
-	if len(selectKeys) != 0 {
-		query = query.Select(selectKeys)
-	}
-
-	statement := query.Find(&datas)
-	if statement.Error != nil {
-		logger.Errorf(ctx, "GetAllDeviceTemplateHandlesByID sql: %+s, err: %+v",
-			statement.Statement.SQL.String(),
-			statement.Error)
-		return nil, code.QueryRecordErr
-	}
-
-	return datas, nil
-}
-
-// 根据 uuid 获取 template 数据
-func (e *envImpl) GetResourceTemplateByUUD(ctx context.Context, uuid uuid.UUID, selectKeys ...string) (*model.ResourceNodeTemplate, error) {
-	if uuid.IsNil() {
-		return nil, code.QueryRecordErr
-	}
-
-	data := &model.ResourceNodeTemplate{}
-	query := e.DBWithContext(ctx).Where("uuid = ?", uuid)
-	if len(selectKeys) != 0 {
-		query = query.Select(selectKeys)
-	}
-	statement := query.First(data)
-	if statement.Error != nil {
-		if errors.Is(statement.Error, gorm.ErrRecordNotFound) {
-			return nil, code.RecordNotFound
-		}
-		logger.Errorf(ctx, "GetResourceTemplateByUUD fail uuid: %+v, err: %+v", uuid, statement.Error)
-		return nil, code.QueryRecordErr.WithMsg(statement.Error.Error())
-	}
-
-	return data, nil
-}
-
 // 根据实验室
 func (e *envImpl) GetLabList(ctx context.Context, userIDs []string, req *common.PageReq) (*common.PageResp[[]*model.Laboratory], error) {
 	datas := make([]*model.Laboratory, 0, 1)
 	var total int64
-	req.AddPage(1)
+	req.Normalize()
 	if statement := e.DBWithContext(ctx).
 		Model(&model.Laboratory{}).
 		Count(&total).
@@ -399,4 +289,135 @@ func (e *envImpl) GetLabList(ctx context.Context, userIDs []string, req *common.
 		Page:     req.Page,
 		PageSize: req.PageSize,
 	}, nil
+}
+
+// 创建 action handle
+func (e *envImpl) UpsertActionHandleTemplate(ctx context.Context, datas []*model.WorkflowHandleTemplate) error {
+	if len(datas) == 0 {
+		return nil
+	}
+
+	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "workflow_node_id"},
+			{Name: "handle_key"},
+			{Name: "io_type"},
+		},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"display_name",
+			"type",
+			"data_source",
+			"data_key",
+			"updated_at",
+		}),
+	}).Create(datas)
+
+	if statement.Error != nil {
+		logger.Errorf(ctx, "UpsertActionHandleTemplate err: %+v", statement.Error)
+		return code.CreateDataErr.WithMsg(statement.Error.Error())
+	}
+
+	return nil
+}
+
+func (e *envImpl) GetAllResourceName(ctx context.Context, labID int64) []string {
+	if labID == 0 {
+		return []string{}
+	}
+
+	names := make([]string, 0, 1)
+	statement := e.DBWithContext(ctx).
+		Model(&model.ResourceNodeTemplate{}).Select("name").
+		Where("lab_id = ? and resource_type = ?", labID, "device").Find(&names)
+	if statement.Error != nil {
+		logger.Errorf(ctx, "GetAllResourceName lab id: %+d, err: %+v", labID, statement.Error)
+		return []string{}
+	}
+
+	return names
+}
+
+func (e *envImpl) AddLabMemeber(ctx context.Context, datas ...*model.LaboratoryMember) error {
+	if len(datas) == 0 {
+		return nil
+	}
+	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "user_id"},
+			{Name: "lab_id"},
+		},
+		DoNothing: true,
+	}).Create(&datas)
+
+	if statement.Error != nil {
+		logger.Errorf(ctx, "AddLabMemeber err: %+v", statement.Error)
+		return code.CreateDataErr.WithErr(statement.Error)
+	}
+
+	return nil
+}
+
+func (e *envImpl) GetLabByUserID(ctx context.Context, req *common.PageReqT[string]) (*common.PageResp[[]*model.LaboratoryMember], error) {
+	if req.Data == "" {
+		return nil, code.UserIDIsEmptyErr
+	}
+
+	query := e.DBWithContext(ctx).Where("user_id  = ?", req.Data)
+	return e.getLabMemeber(ctx, query, &req.PageReq)
+}
+
+func (e *envImpl) GetLabByLabID(ctx context.Context, req *common.PageReqT[int64]) (*common.PageResp[[]*model.LaboratoryMember], error) {
+	if req.Data == 0 {
+		return nil, code.LabIDIsEmptyErr
+	}
+
+	query := e.DBWithContext(ctx).Where("lab_id = ?", req.Data)
+	return e.getLabMemeber(ctx, query, &req.PageReq)
+}
+
+func (e *envImpl) getLabMemeber(ctx context.Context, query *gorm.DB, req *common.PageReq) (*common.PageResp[[]*model.LaboratoryMember], error) {
+	var total int64
+	datas := make([]*model.LaboratoryMember, 0, 1)
+	if err := query.
+		Model(&model.LaboratoryMember{}).
+		Count(&total).
+		Offset(req.Offest()).
+		Limit(req.PageSize).
+		Order("id asc").
+		Find(&datas).Error; err != nil {
+		logger.Errorf(ctx, "getLabMemeber fail err: %+v", err)
+		return nil, code.QueryRecordErr.WithErr(err)
+	}
+
+	return &common.PageResp[[]*model.LaboratoryMember]{
+		Total:    total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+		Data:     datas,
+	}, nil
+}
+
+func (e *envImpl) GetLabMemberCount(ctx context.Context, userID string, labIDs ...int64) map[int64]int64 {
+	if userID == "" {
+		return map[int64]int64{}
+	}
+
+	datas := make([]*MemberCount, 0, 10)
+
+	query := e.DBWithContext(ctx).Table("laboratory_member").
+		Select("COUNT(user_id) as count, lab_id").
+		Where("user_id = ?", userID)
+	if len(labIDs) > 0 {
+		query.Where("lab_id in ?", labIDs)
+	}
+
+	if err := query.
+		Group("lab_id").
+		Scan(&datas).Error; err != nil {
+		return map[int64]int64{}
+	}
+
+	return utils.Slice2Map(datas, func(m *MemberCount) (int64, int64) {
+		return m.LabID, m.Count
+	})
 }

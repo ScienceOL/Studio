@@ -1,4 +1,4 @@
-package app
+package schedule
 
 import (
 	"context"
@@ -10,58 +10,33 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/scienceol/studio/service/internal/configs/webapp"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	s "github.com/scienceol/studio/service/internal/configs/schedule"
+	"github.com/scienceol/studio/service/pkg/core/notify/events"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/nacos"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
 	"github.com/scienceol/studio/service/pkg/middleware/trace"
-	"github.com/scienceol/studio/service/pkg/repo/migrate"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"github.com/scienceol/studio/service/pkg/web"
-	"gopkg.in/yaml.v2"
-
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
 )
 
-func NewWeb() *cobra.Command {
-	rootCommand := &cobra.Command{
+func New() *cobra.Command {
+	return &cobra.Command{
+		Use:                "schedule",
+		Long:               `api server workflow schedule`,
 		SilenceUsage:       true,
 		PersistentPreRunE:  initGlobalResource,
 		PersistentPostRunE: cleanGlobalResource,
+		PreRunE:            initSchedule,
+		RunE:               newRouter,
+		PostRunE:           cleanSchedule,
 	}
-
-	webServer := &cobra.Command{
-		Use:  "apiserver",
-		Long: `api server start`,
-
-		// stop printing usage when the command errors
-		SilenceUsage: true,
-		PreRunE:      initWeb,
-		RunE:         newRouter,
-		PostRunE:     cleanWebResource,
-	}
-	webServer.SetContext(utils.SetupSignalContext())
-	migrate := &cobra.Command{
-		Use:          "migrate",
-		Long:         `api server db migrate`,
-		SilenceUsage: true,
-		PreRunE:      initMigrate,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return migrate.Table(cmd.Context())
-		},
-		PostRunE: func(cmd *cobra.Command, _ []string) error {
-			db.ClosePostgres(cmd.Context())
-			return nil
-		},
-	}
-
-	rootCommand.AddCommand(webServer)
-	rootCommand.AddCommand(migrate)
-	return rootCommand
 }
 
 func initGlobalResource(_ *cobra.Command, _ []string) error {
@@ -73,7 +48,7 @@ func initGlobalResource(_ *cobra.Command, _ []string) error {
 	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 	v.AutomaticEnv()
 
-	config := webapp.Config()
+	config := s.Config()
 	if err := v.Unmarshal(config); err != nil {
 		log.Fatal(err)
 	}
@@ -92,25 +67,8 @@ func initGlobalResource(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func initMigrate(cmd *cobra.Command, _ []string) error {
-	config := webapp.Config()
-	// 初始化数据库
-	db.InitPostgres(cmd.Context(), &db.Config{
-		Host:   config.Database.Host,
-		Port:   config.Database.Port,
-		User:   config.Database.User,
-		PW:     config.Database.Password,
-		DBName: config.Database.Name,
-		LogConf: db.LogConf{
-			Level: config.Log.LogLevel,
-		},
-	})
-
-	return nil
-}
-
-func initWeb(cmd *cobra.Command, _ []string) error {
-	config := webapp.Config()
+func initSchedule(cmd *cobra.Command, _ []string) error {
+	config := s.Config()
 	// 初始化 nacos , 注意初始化时序，请勿在动态配置未初始化时候使用配置
 	nacos.MustInit(cmd.Context(), &nacos.Conf{
 		Endpoint:  config.Nacos.Endpoint,
@@ -122,7 +80,7 @@ func initWeb(cmd *cobra.Command, _ []string) error {
 		NeedWatch: config.Nacos.NeedWatch,
 	},
 		func(content []byte) error {
-			d := &webapp.DynamicConfig{}
+			d := &s.DynamicConfig{}
 			if err := yaml.Unmarshal(content, d); err != nil {
 				logger.Errorf(cmd.Context(),
 					"Unmarshal nacos config fail dataID: %s, Group: %s, err: %+v",
@@ -171,18 +129,16 @@ func initWeb(cmd *cobra.Command, _ []string) error {
 func newRouter(cmd *cobra.Command, _ []string) error {
 	router := gin.Default()
 
-	web.NewRouter(router)
-	port := webapp.Config().Server.Port
+	cancel := web.NewSchedule(cmd.Root().Context(), router)
+	port := s.Config().Server.Port
 	addr := ":" + strconv.Itoa(port)
 
 	httpServer := http.Server{
-		Addr:              ":" + strconv.Itoa(webapp.Config().Server.Port),
-		Handler:           router.Handler(),
+		Addr:              ":" + strconv.Itoa(s.Config().Server.Port),
+		Handler:           router,
 		ReadHeaderTimeout: 30 * time.Second,
 		WriteTimeout:      30 * time.Second,
-		TLSNextProto: func() map[string]func(*http.Server, *tls.Conn, http.Handler) {
-			return make(map[string]func(*http.Server, *tls.Conn, http.Handler))
-		}(),
+		TLSNextProto:      make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
 	// 添加启动成功的日志输出
@@ -209,6 +165,7 @@ func newRouter(cmd *cobra.Command, _ []string) error {
 	// 阻塞等待收到中断信号
 	<-cmd.Context().Done()
 
+	cancel()
 	// 平滑超时退出
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -218,9 +175,10 @@ func newRouter(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func cleanWebResource(cmd *cobra.Command, _ []string) error {
+func cleanSchedule(cmd *cobra.Command, _ []string) error {
 	// FIXME: 关系消息通知中心
 	// FIXME: 关闭 websocket
+	events.NewEvents().Close(cmd.Context())
 	redis.CloseRedis(cmd.Context())
 	db.ClosePostgres(cmd.Context())
 	trace.CloseTrace()

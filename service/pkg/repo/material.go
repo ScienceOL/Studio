@@ -3,8 +3,9 @@ package repo
 import (
 	"context"
 
-	"github.com/gofrs/uuid/v5"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/repo/model"
+	"gorm.io/gorm/schema"
 )
 
 type NodeInfo struct {
@@ -23,8 +24,11 @@ type UpdateNode struct {
 }
 
 type MaterialRepo interface {
+	UUID2ID(ctx context.Context, tableModel schema.Tabler, uuids ...uuid.UUID) map[uuid.UUID]int64
+	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID
+	FindDatas(ctx context.Context, datas any, condition map[string]any, keys ...string) error
 	// 更新或者插入物料
-	UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode) error
+	UpsertMaterialNode(ctx context.Context, datas []*model.MaterialNode, keys ...string) error
 	// 更新或插入 edge
 	UpsertMaterialEdge(ctx context.Context, datas []*model.MaterialEdge) error
 	// 获取所有的 node handle
@@ -44,7 +48,7 @@ type MaterialRepo interface {
 	// 根据 uuid 获取节点 ID
 	GetNodeIDByUUID(ctx context.Context, nodeUUID uuid.UUID) (int64, error)
 	// 批量插入 workflowTpl
-	UpsertWorkflowNodeTemplate(ctx context.Context, datas []*model.WorkflowNodeTemplate) error
+	// UpsertWorkflowNodeTemplate(ctx context.Context, datas []*model.WorkflowNodeTemplate) error
 	// 批量插入 workflowHandleTpl
-	UpsertWorkflowHandleTemplate(ctx context.Context, datas []*model.WorkflowHandleTemplate) error
+	// UpsertWorkflowHandleTemplate(ctx context.Context, datas []*model.WorkflowHandleTemplate) error
 }

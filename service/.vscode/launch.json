@@ -4,7 +4,7 @@
     "name": "migrate",
     "type": "dlv_spawn",
     "request": "launch",
-    "program": "${workspaceFolder}/cmd/api/main.go",
+    "program": "${workspaceFolder}/main.go",
     "args": ["migrate"],
     "env": {}
   },
@@ -12,8 +12,17 @@
     "name": "apiserver",
     "type": "dlv_spawn",
     "request": "launch",
-    "program": "${workspaceFolder}/cmd/api/main.go",
+    "program": "${workspaceFolder}/main.go",
     "args": ["apiserver"],
     "env": {}
+  },
+    {
+    "name": "schedule",
+    "type": "dlv_spawn",
+    "request": "launch",
+    "program": "${workspaceFolder}/main.go",
+    "args": ["schedule"],
+    "env": {}
   }]
+
 }

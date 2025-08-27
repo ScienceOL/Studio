@@ -19,6 +19,7 @@ var (
 	oauthConfig *oauth2.Config
 
 	USERKEY = "AUTH_USER_KEY"
+	LABKEY  = "AUTH_LAB_KEY"
 )
 
 // GetOAuthConfig 获取OAuth2配置
@@ -33,7 +34,7 @@ func GetOAuthConfig() *oauth2.Config {
 				TokenURL: authConf.TokenURL,
 				AuthURL:  authConf.AuthURL,
 			},
-			RedirectURL: authConf.RedirectURL,
+			RedirectURL: authConf.FrontendURL,
 		}
 	}
 
