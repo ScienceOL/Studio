@@ -42,6 +42,10 @@ type UserData struct {
 	AccessToken       string `json:"accessToken"`
 	AccessKey         string `json:"accessKey"`
 	AccessSecret      string `json:"accessSecret"`
+	Phone             string `json:"phone"`
+	Status            int    `json:"status"`
+	UserNo            string `json:"user_no"`
+	Email             string `json:"email"`
 }
 
 type UserInfo struct {

@@ -694,7 +694,9 @@ func (w *workflowImpl) GetWorkflow(ctx context.Context, req *common.PageReqT[*re
 		db.Where("tags @> ?", string(tagsJSON)).Find(&workflows)
 	*/
 
-	query := w.DBWithContext(ctx).Where("published = true")
+	query := w.DBWithContext(ctx).
+		Model(&model.Workflow{}).
+		Where("published = true")
 	if len(req.Data.Tags) > 0 {
 		tagsJSON, _ := json.Marshal(req.Data.Tags)
 		query.Where("tags @> ?", tagsJSON)

@@ -6,23 +6,36 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/scienceol/studio/service/internal/configs/schedule"
 	"github.com/scienceol/studio/service/internal/configs/webapp"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/repo"
+	"github.com/scienceol/studio/service/pkg/repo/bohr"
 	"github.com/scienceol/studio/service/pkg/repo/casdoor"
 	"github.com/scienceol/studio/service/pkg/repo/model"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"golang.org/x/oauth2"
 )
 
+type AuthType string
+
+const (
+	AuthTypeBearer AuthType = "Bearer"
+	AuthTypeLab    AuthType = "Lab"
+	AuthTypeApi    AuthType = "Api"
+	AuthTypeBohr   AuthType = "Bohr"
+)
+
 type userAuth struct {
-	casDoorClient repo.Account
+	client      repo.LabAccount
+	AuthFuncMap map[AuthType]func(ctx *gin.Context, authHeader string) (*model.UserData, string)
 }
 
 // 用于认证的错误
@@ -77,10 +90,43 @@ func ValidateToken(ctx context.Context, tokenType string, token string) (*model.
 	return result.Data, nil
 }
 
+func AuthLab() func(ctx *gin.Context) {
+	once.Do(func() {
+		authClient = &userAuth{}
+		authClient.AuthFuncMap = map[AuthType]func(ctx *gin.Context, authHeader string) (*model.UserData, string){
+			AuthTypeBearer: authClient.getNormalUser,
+			AuthTypeLab:    authClient.getLabUser,
+			AuthTypeBohr:   authClient.getBohrUser,
+		}
+
+		if schedule.Config().OAuth2.AuthSource == schedule.AuthBohr {
+			authClient.client = bohr.NewLab()
+		} else if schedule.Config().OAuth2.AuthSource == schedule.AuthCasdoor {
+			authClient.client = casdoor.NewLabAccess()
+		} else {
+			panic("auth type err")
+		}
+	})
+	return authClient.AuthUser
+}
+
 func Auth() func(ctx *gin.Context) {
 	once.Do(func() {
-		authClient = &userAuth{
-			casDoorClient: casdoor.NewCasClient(),
+
+		authClient = &userAuth{}
+
+		authClient.AuthFuncMap = map[AuthType]func(ctx *gin.Context, authHeader string) (*model.UserData, string){
+			AuthTypeBearer: authClient.getNormalUser,
+			AuthTypeLab:    authClient.getLabUser,
+			AuthTypeBohr:   authClient.getBohrUser,
+		}
+
+		if webapp.Config().OAuth2.AuthSource == webapp.AuthBohr {
+			authClient.client = bohr.NewLab()
+		} else if webapp.Config().OAuth2.AuthSource == webapp.AuthCasdoor {
+			authClient.client = casdoor.NewLabAccess()
+		} else {
+			panic("auth type err")
 		}
 	})
 	return authClient.AuthUser
@@ -92,7 +138,7 @@ func (u *userAuth) AuthUser(ctx *gin.Context) {
 	cookie, _ := ctx.Cookie("access_token_v2")
 	authHeader := ctx.GetHeader("Authorization")
 	queryToken := ctx.Query("access_token_v2")
-	authHeader = utils.Or(queryToken, cookie, authHeader)
+	authHeader = utils.Or(cookie, queryToken, authHeader)
 	if authHeader == "" {
 		ctx.JSON(http.StatusUnauthorized, &common.Resp{
 			Code: code.UnLogin,
@@ -119,14 +165,10 @@ func (u *userAuth) AuthUser(ctx *gin.Context) {
 
 	var userInfo *model.UserData
 	authKey := USERKEY
-	switch tokens[0] {
-	case "Bearer":
-		userInfo = u.getNormalUser(ctx, authHeader)
-	case "lab":
-		userInfo = u.getLabUser(ctx, authHeader)
-		authKey = LABKEY
-	case "api":
-		userInfo = u.getLabUser(ctx, authHeader)
+
+	f, ok := u.AuthFuncMap[AuthType(tokens[0])]
+	if ok {
+		userInfo, authKey = f(ctx, tokens[1])
 	}
 
 	if userInfo == nil {
@@ -146,52 +188,64 @@ func (u *userAuth) AuthUser(ctx *gin.Context) {
 	ctx.Next()
 }
 
-func (u *userAuth) getLabUser(ctx *gin.Context, authHeader string) *model.UserData {
-	// 检查格式是否为 "Bearer {token}"
-	baseSplit := strings.Split(authHeader, " ")
-	if len(baseSplit) != 2 {
-		logger.Errorf(ctx, "getLabUser authHeader format invalid")
-		return nil
+func (u *userAuth) getBohrUser(ctx *gin.Context, authHeader string) (*model.UserData, string) {
+	user := &utils.Claims{}
+	if err := utils.ParseJWTWithPublicKey(authHeader, utils.DefaultPublicKey, user); err != nil {
+		logger.Errorf(ctx, "getBohrUser parse jwt token err")
+		return nil, USERKEY
 	}
 
-	baseStr, err := base64.StdEncoding.DecodeString(baseSplit[1])
+	return &model.UserData{
+		Owner: strconv.FormatUint(user.Identity.OrgID, 10),
+		ID:    strconv.FormatUint(user.Identity.UserID, 10),
+		Email: user.Identity.Email,
+	}, USERKEY
+}
+
+func (u *userAuth) getLabUser(ctx *gin.Context, authHeader string) (*model.UserData, string) {
+	baseStr, err := base64.StdEncoding.DecodeString(authHeader)
 	if err != nil {
 		logger.Errorf(ctx, "getLabUser decode auth header err: %s", err.Error())
-		return nil
+		return nil, LABKEY
 	}
 
 	keys := strings.Split(string(baseStr), ":")
 	if len(keys) != 2 {
 		logger.Errorf(ctx, "getLabUser base formate err not 2")
-		return nil
+		return nil, LABKEY
 	}
-	userInfo, err := u.casDoorClient.GetLabUserInfo(ctx, &model.LabAkSk{
+
+	userInfo, err := u.client.GetLabUserInfo(ctx, &model.LabAkSk{
 		AccessKey:    keys[0],
 		AccessSecret: keys[1],
 	})
+
+	userInfo.AccessKey = keys[0]
+	userInfo.AccessSecret = keys[1]
+
 	if err != nil {
 		logger.Errorf(ctx, "getLabUser GetLabUserInfo err: %s", err.Error())
-		return nil
+		return nil, LABKEY
 	}
 
-	return userInfo
+	return userInfo, LABKEY
 }
 
-func (u *userAuth) getNormalUser(ctx *gin.Context, authHeader string) *model.UserData {
+func (u *userAuth) getNormalUser(ctx *gin.Context, authHeader string) (*model.UserData, string) {
 	// 检查格式是否为 "Bearer {token}"
 	bearerToken := strings.Split(authHeader, " ")
 	if len(bearerToken) != 2 || bearerToken[0] != "Bearer" {
 		logger.Errorf(ctx, "bearer format err: %s", authHeader)
-		return nil
+		return nil, USERKEY
 	}
 
 	// 验证令牌
 	userInfo, err := ValidateToken(ctx, bearerToken[0], bearerToken[1])
 	if err != nil {
 		logger.Errorf(ctx, "Token validation failed: %v", err)
-		return nil
+		return nil, USERKEY
 	}
-	return userInfo
+	return userInfo, USERKEY
 }
 
 // GetCurrentUser 从上下文中获取当前用户信息

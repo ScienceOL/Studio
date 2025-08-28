@@ -132,6 +132,7 @@ func (mc *MessageConsumer) RemoveUser(ctx context.Context, userUUID string) erro
 func (mc *MessageConsumer) DeleteUserSet(ctx context.Context) error {
 	err := mc.redisClient.Del(ctx, mc.scheduleUserSet).Err()
 	if err != nil {
+		logger.Errorf(ctx, "DeleteUserSet err: %+v", err)
 		return code.RedisRemoveSetErr.WithMsgf("failed to delete user set from redis: %+v", err)
 	}
 	return nil
