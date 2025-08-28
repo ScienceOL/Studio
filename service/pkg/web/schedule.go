@@ -27,7 +27,7 @@ func InstallScheduleURL(ctx context.Context, g *gin.Engine) context.CancelFunc {
 
 	{
 		v1 := api.Group("/v1")
-		v1.GET("/lab", auth.Auth(), handle.Connect)
+		v1.GET("/lab", auth.AuthLab(), handle.Connect)
 	}
 
 	return func() {

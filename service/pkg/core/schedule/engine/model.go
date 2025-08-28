@@ -43,6 +43,24 @@ type ServerInfo struct {
 	SendTimestamp float64 `json:"send_timestamp"`
 }
 
+type ActionKey string
+
+const (
+	// 云端下发
+	ActionKeyJobStart ActionKey = "job_start"
+	ActionKeyJobPong  ActionKey = "pong"
+
+	// edge 上报
+	ActionKeyDeviceStatus ActionKey = "device_status"
+	ActionKeyJobStatus    ActionKey = "job_status"
+	ActionKeyJobPing      ActionKey = "ping"
+)
+
+type SendAction[T any] struct {
+	Type ActionKey `json:"type"`
+	Data T         `json:"data"`
+}
+
 type SendActionData struct {
 	DeviceID   string         `json:"device_id"`
 	Action     string         `json:"action"`

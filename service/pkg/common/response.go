@@ -20,6 +20,12 @@ type Error struct {
 	Msg  string   `json:"msg"`
 	Info []string `json:"info,omitempty"`
 }
+type RespT[T any] struct {
+	Code      code.ErrCode `json:"code"`
+	Error     *Error       `json:"error,omitempty"`
+	Data      T            `json:"data,omitempty"`
+	Timestamp int64        `json:"timestamp,omitempty"`
+}
 
 type Resp struct {
 	Code      code.ErrCode `json:"code"`

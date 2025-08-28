@@ -51,8 +51,8 @@ const (
 type LaboratoryInvitation struct {
 	BaseModel
 	ExpiresAt time.Time      `gorm:"not null;default:CURRENT_TIMESTAMP" json:"expires_at"`
-	Type      InvitationType `gorm:"type:varchar(50);not null;uniqueIndex:idx_labinv_tt,priority:1" json:"type"`
-	ThirdID   string         `gorm:"type:varchar(50);not null;uniqueIndex:idx_labinv_tt,priority:2" json:"third_id"`
+	Type      InvitationType `gorm:"type:varchar(50);not null;index:idx_labinv_tt,priority:1" json:"type"`
+	ThirdID   string         `gorm:"type:varchar(50);not null;index:idx_labinv_tt,priority:2" json:"third_id"`
 	UserID    string         `gorm:"type:varchar(120);not null" json:"user_id"`
 }
 
