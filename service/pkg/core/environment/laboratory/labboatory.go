@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/scienceol/studio/service/internal/configs/webapp"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
@@ -71,19 +72,22 @@ func (l *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Laborato
 
 		ak := uuid.NewV4().String()
 		sk := uuid.NewV4().String()
-		err := l.accountClient.CreateLabUser(txCtx, &model.LabInfo{
-			AccessKey:         ak,
-			AccessSecret:      sk,
-			Name:              fmt.Sprintf("%s-%s", req.Name, ak),
-			DisplayName:       req.Name,
-			Avatar:            "https://cdn.casbin.org/img/casbin.svg",
-			Owner:             "scienceol",
-			Type:              model.LABTYPE,
-			Password:          "lab-user",
-			SignupApplication: "scienceol",
-		})
-		if err != nil {
-			return err
+		if webapp.Config().OAuth2.AuthSource == webapp.AuthCasdoor {
+			err := l.accountClient.CreateLabUser(txCtx, &model.LabInfo{
+				AccessKey:         ak,
+				AccessSecret:      sk,
+				Name:              fmt.Sprintf("%s-%s", req.Name, ak),
+				DisplayName:       req.Name,
+				Avatar:            "https://cdn.casbin.org/img/casbin.svg",
+				Owner:             "scienceol",
+				Type:              model.LABTYPE,
+				Password:          "lab-user",
+				SignupApplication: "scienceol",
+			})
+
+			if err != nil {
+				return err
+			}
 		}
 		data.AccessKey = ak
 		data.AccessSecret = sk

@@ -394,23 +394,24 @@ func (d *dagEngine) runNode(ctx context.Context, node *model.WorkflowNode, job *
 
 func (d *dagEngine) sendAction(_ context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
 	param := node.Param
-
 	if d.session.IsClosed() {
 		return code.EdgeConnectClosedErr
 	}
 	// 数据库插入数据
-
-	data := engine.SendActionData{
-		DeviceID: utils.SafeValue(func() string {
-			return *node.DeviceName
-		}, ""),
-		Action:     node.ActionName,
-		ActionType: node.ActionType,
-		ActionArgs: param,
-		JobID:      job.UUID.String(),
-		NodeID:     node.UUID.String(),
-		ServerInfo: engine.ServerInfo{
-			SendTimestamp: float64(time.Now().UnixNano()) / 1e9,
+	data := engine.SendAction[*engine.SendActionData]{
+		Type: engine.ActionKeyJobStart,
+		Data: &engine.SendActionData{
+			DeviceID: utils.SafeValue(func() string {
+				return *node.DeviceName
+			}, ""),
+			Action:     node.ActionName,
+			ActionType: node.ActionType,
+			ActionArgs: param,
+			JobID:      job.UUID.String(),
+			NodeID:     node.UUID.String(),
+			ServerInfo: engine.ServerInfo{
+				SendTimestamp: float64(time.Now().UnixNano()) / 1e9,
+			},
 		},
 	}
 

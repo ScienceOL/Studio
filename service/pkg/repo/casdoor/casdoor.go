@@ -25,6 +25,15 @@ func NewCasClient() repo.Account {
 	}
 }
 
+func NewLabAccess() repo.LabAccount {
+	conf := webapp.Config().OAuth2
+	return &casClient{
+		casDoorClient: resty.New().
+			EnableTrace().
+			SetBaseURL(conf.Addr),
+	}
+}
+
 func (c *casClient) CreateLabUser(ctx context.Context, user *model.LabInfo) error {
 	resData := &model.LabInfoResp{}
 	conf := webapp.Config().OAuth2
@@ -74,5 +83,13 @@ func (c *casClient) GetLabUserInfo(ctx context.Context, req *model.LabAkSk) (*mo
 }
 
 func (c *casClient) DelLabUserInfo(_ context.Context, _ *model.LabAkSk) error {
+	panic("not impl")
+}
+
+func (c *casClient) BatchGetUserInfo(ctx context.Context, uesrIDs []string) ([]*model.UserData, error) {
+	panic("not impl")
+}
+
+func (c *casClient) GetUserInfo(ctx context.Context, userID string) (*model.UserData, error) {
 	panic("not impl")
 }

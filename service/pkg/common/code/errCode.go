@@ -52,9 +52,10 @@ func (e ErrCode) Error() string {
 }
 
 const (
-	Success      ErrCode = iota // success
-	UnDefineErr                 // undefined
-	NoPermission                // no permission
+	Success       ErrCode = iota // success
+	UnDefineErr                  // undefined
+	NoPermission                 // no permission
+	InvalidateJWT                // invalidate jwt
 )
 
 // view layer errors
@@ -138,6 +139,7 @@ const (
 const (
 	CasDoorCreateLabUserErr ErrCode = iota + 26000 // create lab user error
 	CasDoorQueryLabUserErr                         // query lab user error
+	BohrBatchQueryErr                              // bhor batch query user error
 )
 
 // workflow module errors
