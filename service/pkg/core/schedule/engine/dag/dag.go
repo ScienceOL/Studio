@@ -114,6 +114,11 @@ func (d *dagEngine) loadData(ctx context.Context) error {
 		return node, true
 	})
 
+	// 运行前严格校验：确保当前实验室具备所有所需的节点模板
+	if err := d.validateTemplatesInLab(ctx, nodes, d.job.LabData.ID); err != nil {
+		return err
+	}
+
 	// 获取节点UUID用于查询边
 	nodeUUIDs := utils.FilterSlice(nodes, func(node *model.WorkflowNode) (uuid.UUID, bool) {
 		return node.UUID, true
@@ -126,6 +131,48 @@ func (d *dagEngine) loadData(ctx context.Context) error {
 
 	d.nodes = nodes
 	d.edges = edges
+	return nil
+}
+
+// validateTemplatesInLab 校验目标实验室是否包含所有必需模板（运行时严格校验）
+func (d *dagEngine) validateTemplatesInLab(ctx context.Context, nodes []*model.WorkflowNode, targetLabID int64) error {
+	// 收集需要的模板ID
+	templateIDs := make([]int64, 0)
+	for _, node := range nodes {
+		if node.WorkflowNodeID > 0 {
+			templateIDs = append(templateIDs, node.WorkflowNodeID)
+		}
+	}
+
+	if len(templateIDs) == 0 {
+		return nil
+	}
+
+	// 查询实验室内模板
+	templates, err := d.workflowStore.GetWorkflowNodeTemplate(ctx, map[string]any{
+		"id":     templateIDs,
+		"lab_id": targetLabID,
+	})
+	if err != nil {
+		return err
+	}
+
+	// 检查缺失
+	templateMap := utils.Slice2Map(templates, func(t *model.WorkflowNodeTemplate) (int64, *model.WorkflowNodeTemplate) {
+		return t.ID, t
+	})
+
+	missing := make([]int64, 0)
+	for _, id := range templateIDs {
+		if _, ok := templateMap[id]; !ok {
+			missing = append(missing, id)
+		}
+	}
+
+	if len(missing) > 0 {
+		return code.WorkflowTemplateNotFoundErr.WithMsgf("missing templates in target lab: %v", missing)
+	}
+
 	return nil
 }
 

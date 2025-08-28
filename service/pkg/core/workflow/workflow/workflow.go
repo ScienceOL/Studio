@@ -1589,5 +1589,206 @@ func (w *workflowImpl) WorkflowTemplateTags(ctx context.Context) ([]string, erro
 }
 
 func (w *workflowImpl) ForkWrokflow(ctx context.Context, req *workflow.ForkReq) error {
-	panic("not implemented") // TODO: Implement
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return code.UnLogin
+	}
+
+	// 1. 验证源工作流模板是否存在且已发布
+	sourceWorkflow, err := w.workflowStore.GetWorkflowByUUID(ctx, req.SourceWorkflowUUID)
+	if err != nil {
+		return err
+	}
+
+	// 检查工作流是否已发布（所有实验室可见）
+	if !sourceWorkflow.Published {
+		return code.NoPermission.WithMsg("source workflow is not published")
+	}
+
+	// 2. 验证目标实验室是否存在
+	targetLab, err := w.labStore.GetLabByUUID(ctx, req.TargetLabUUID)
+	if err != nil {
+		return err
+	}
+
+	// 3. 检查目标实验室是否已有同名工作流
+	existingWorkflow := &model.Workflow{}
+	err = w.workflowStore.GetData(ctx, existingWorkflow, map[string]any{
+		"lab_id":  targetLab.ID,
+		"name":    sourceWorkflow.Name,
+		"user_id": userInfo.ID,
+	})
+	if err == nil {
+		// 如果存在同名工作流，返回错误
+		return code.CreateDataErr.WithMsg("workflow with same name already exists in target lab")
+	}
+
+	// 4. 获取源工作流的所有节点
+	nodes, err := w.workflowStore.GetWorkflowNodes(ctx, map[string]any{
+		"workflow_id": sourceWorkflow.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	// 5. 验证目标实验室是否有所有必需的模板（非阻断）
+	if templateValidationErr := w.validateTemplatesInLab(ctx, nodes, targetLab.ID); templateValidationErr != nil {
+		logger.Warnf(ctx, "fork workflow validate templates warn: %v", templateValidationErr)
+	}
+
+	// 6. 获取节点UUIDs用于获取边
+	nodeUUIDs := utils.FilterSlice(nodes, func(node *model.WorkflowNode) (uuid.UUID, bool) {
+		return node.UUID, true
+	})
+
+	// 7. 获取工作流的边
+	edges, err := w.workflowStore.GetWorkflowEdges(ctx, nodeUUIDs)
+	if err != nil {
+		return err
+	}
+
+	// 8. 构建节点层次结构
+	preBuildNodes := utils.FilterSlice(nodes, func(node *model.WorkflowNode) (*utils.Node[int64, *model.WorkflowNode], bool) {
+		return &utils.Node[int64, *model.WorkflowNode]{
+			Name:   node.ID,
+			Parent: node.ParentID,
+			Data:   node,
+		}, true
+	})
+
+	buildNodes, err := utils.BuildHierarchy(preBuildNodes)
+	if err != nil {
+		return err
+	}
+
+	// 9. 创建新的工作流
+	newWorkflow := &model.Workflow{
+		UserID:      userInfo.ID,
+		Name:        sourceWorkflow.Name,
+		Description: sourceWorkflow.Description,
+		LabID:       targetLab.ID,
+		Published:   false, // fork的工作流默认未发布
+		Tags:        sourceWorkflow.Tags,
+	}
+
+	// 10. 执行事务：创建工作流并复制所有节点和边
+	err = w.workflowStore.ExecTx(ctx, func(txCtx context.Context) error {
+		// 创建新工作流
+		if err := w.workflowStore.Create(txCtx, newWorkflow); err != nil {
+			return err
+		}
+
+		old2NewIDMap := make(map[int64]int64)
+		old2NewUUIDMap := make(map[uuid.UUID]uuid.UUID)
+
+		// 复制所有节点
+		for _, nodes := range buildNodes {
+			newNodes := utils.FilterSlice(nodes, func(oldNode *model.WorkflowNode) (*model.WorkflowNode, bool) {
+				return &model.WorkflowNode{
+					WorkflowID:     newWorkflow.ID,
+					WorkflowNodeID: oldNode.WorkflowNodeID,
+					ParentID:       old2NewIDMap[oldNode.ParentID],
+					Name:           oldNode.Name,
+					UserID:         userInfo.ID,
+					Status:         oldNode.Status,
+					Type:           oldNode.Type,
+					LabNodeType:    oldNode.LabNodeType,
+					Icon:           oldNode.Icon,
+					Pose:           oldNode.Pose,
+					Param:          oldNode.Param,
+					Footer:         oldNode.Footer,
+					DeviceName:     oldNode.DeviceName,
+					ActionName:     oldNode.ActionName,
+					ActionType:     oldNode.ActionType,
+					Disabled:       oldNode.Disabled,
+					Minimized:      oldNode.Minimized,
+					OldNode:        oldNode,
+				}, true
+			})
+
+			if err := w.workflowStore.UpsertNodes(txCtx, newNodes); err != nil {
+				return err
+			}
+
+			// 更新ID映射
+			utils.Range(newNodes, func(_ int, newNode *model.WorkflowNode) bool {
+				old2NewIDMap[newNode.OldNode.ID] = newNode.ID
+				old2NewUUIDMap[newNode.OldNode.UUID] = newNode.UUID
+				return true
+			})
+		}
+
+		// 复制所有边
+		newEdges := utils.FilterSlice(edges, func(edge *model.WorkflowEdge) (*model.WorkflowEdge, bool) {
+			sourceNodeUUID, ok := old2NewUUIDMap[edge.SourceNodeUUID]
+			if !ok || sourceNodeUUID.IsNil() {
+				logger.Warnf(txCtx, "can not fork edge source node uuid: %s", edge.SourceNodeUUID)
+				return nil, false
+			}
+
+			targetNodeUUID, ok := old2NewUUIDMap[edge.TargetNodeUUID]
+			if !ok || targetNodeUUID.IsNil() {
+				logger.Warnf(txCtx, "can not fork edge target node uuid: %s", edge.TargetNodeUUID)
+				return nil, false
+			}
+
+			return &model.WorkflowEdge{
+				SourceNodeUUID:   sourceNodeUUID,
+				TargetNodeUUID:   targetNodeUUID,
+				SourceHandleUUID: edge.SourceHandleUUID,
+				TargetHandleUUID: edge.TargetHandleUUID,
+			}, true
+		})
+
+		return w.workflowStore.DuplicateEdge(txCtx, newEdges)
+	})
+
+	if err != nil {
+		return err
+	}
+
+	logger.Infof(ctx, "Successfully forked workflow %s to lab %s", sourceWorkflow.UUID, targetLab.UUID)
+	return nil
+}
+
+// validateTemplatesInLab 验证目标实验室是否包含所有必需的模板
+func (w *workflowImpl) validateTemplatesInLab(ctx context.Context, nodes []*model.WorkflowNode, targetLabID int64) error {
+	// 收集所有需要的模板ID
+	templateIDs := make([]int64, 0)
+	for _, node := range nodes {
+		if node.WorkflowNodeID > 0 {
+			templateIDs = append(templateIDs, node.WorkflowNodeID)
+		}
+	}
+
+	if len(templateIDs) == 0 {
+		return nil // 没有模板依赖
+	}
+
+	// 查询目标实验室中的模板
+	templates, err := w.workflowStore.GetWorkflowNodeTemplate(ctx, map[string]any{
+		"id":     templateIDs,
+		"lab_id": targetLabID,
+	})
+	if err != nil {
+		return err
+	}
+
+	// 检查是否所有模板都存在
+	templateMap := utils.Slice2Map(templates, func(t *model.WorkflowNodeTemplate) (int64, *model.WorkflowNodeTemplate) {
+		return t.ID, t
+	})
+
+	missingTemplates := make([]int64, 0)
+	for _, templateID := range templateIDs {
+		if _, exists := templateMap[templateID]; !exists {
+			missingTemplates = append(missingTemplates, templateID)
+		}
+	}
+
+	if len(missingTemplates) > 0 {
+		return code.WorkflowTemplateNotFoundErr.WithMsgf("missing templates in target lab: %v", missingTemplates)
+	}
+
+	return nil
 }
