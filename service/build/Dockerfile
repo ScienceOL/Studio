@@ -1,15 +1,17 @@
 # 多阶段构建 Dockerfile
 ARG BUILD_ENV=production
-ARG GO_VERSION=1.24.2
+ARG GO_VERSION=1.24.6
 
 # 构建阶段
-FROM golang:${GO_VERSION}-alpine AS builder
+FROM registry.sciol.ac.cn/library/golang:${GO_VERSION}-alpine AS builder
 
 # 设置工作目录
 WORKDIR /app
 
 # 安装必要的包
 RUN apk add --no-cache git ca-certificates tzdata
+
+ENV GOPROXY=https://goproxy.cn,direct
 
 # 复制 go mod 文件
 COPY go.mod go.sum ./
@@ -38,4 +40,3 @@ COPY --from=builder /app/backend .
 EXPOSE 48197
 
 CMD ["./backend apiserver"]
-

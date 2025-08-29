@@ -48,7 +48,7 @@ dev: ## 开发模式启动 (热重载)
 	@echo "🚀 启动开发服务器..."
 	@if ! command -v air > /dev/null; then \
 		echo "📦 安装 air (热重载工具)..."; \
-		$(GO) install github.com/cosmtrek/air@latest; \
+		$(GO) install github.com/air-verse/air@latest; \
 	fi
 	air -c .air.toml
 
@@ -209,7 +209,7 @@ stringer-install:
 generate: stringer-install
 	go generate ./pkg/...
 
-# 运行 migrate 
+# 运行 migrate
 migrate:
 	go run main.go migrate
 
@@ -238,6 +238,5 @@ lint-go: fmt-go lint-install-go
 	golangci-lint run -v --max-same-issues=0 --timeout=5m --tests=false -c .golangci.yaml  ./...
 
 
-build-web: fmt 
+build-web: fmt
 	go build -o ./bin/web main.go
-
