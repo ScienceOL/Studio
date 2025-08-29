@@ -224,7 +224,7 @@ services:
       - ../infra/casdoor/init_data.json:/init_data.json
 
   service:
-    image: registry.sciol.ac.cn/library/studio-service
+    image: registry.sciol.ac.cn/sciol/studio-service
     pull_policy: if_not_present
     network_mode: 'service:network-service'
     restart: unless-stopped
@@ -247,7 +247,7 @@ services:
       replicas: ${SERVICE_REPLICAS:-1}
 
   web:
-    image: registry.sciol.ac.cn/library/studio-web
+    image: registry.sciol.ac.cn/sciol/studio-web
     pull_policy: if_not_present
     container_name: sciol-web
     network_mode: 'service:network-service'
