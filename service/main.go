@@ -13,8 +13,8 @@ func main() {
 	rootCtx := utils.SetupSignalContext()
 	root := &cobra.Command{
 		SilenceUsage: true,
-		Short:        "unilab",
-		Long:         "unilab 智能实验室后端服务",
+		Short:        "studio-service",
+		Long:         "ScienceOL Service 后端服务",
 		Run: func(cmd *cobra.Command, _ []string) {
 			_ = cmd.Help()
 		},

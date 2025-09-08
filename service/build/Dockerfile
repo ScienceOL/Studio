@@ -30,13 +30,13 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     main.go
 
 # 生产环境镜像
-FROM alpine:latest AS production
+FROM registry.sciol.ac.cn/library/golang:${GO_VERSION}-alpine AS production
 
-RUN apk --no-cache add ca-certificates tzdata
-WORKDIR /root/
+RUN apk --no-cache add ca-certificates tzdata make
+WORKDIR /app
 
 COPY --from=builder /app/backend .
 
 EXPOSE 48197
 
-CMD ["./backend apiserver"]
+CMD ["./backend", "apiserver"]

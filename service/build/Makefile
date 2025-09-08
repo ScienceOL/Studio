@@ -48,7 +48,7 @@ dev: ## 开发模式启动 (热重载)
 	@echo "🚀 启动开发服务器..."
 	@if ! command -v air > /dev/null; then \
 		echo "📦 安装 air (热重载工具)..."; \
-		$(GO) install github.com/air-verse/air@latest; \
+		$(GO) install github.com/air-verse/air@v1.62.0; \
 	fi
 	air -c .air.toml
 

@@ -1,12 +1,12 @@
 name: sciol-studio
 services:
   network-service:
-    image: alpine
+    image: registry.sciol.ac.cn/library/alpine:3.22
     container_name: studio-network
     ports:
       - '${WEB_PORT:-32234}:32234'
       - '${SERVICE_PORT:-48197}:48197'
-      # - '${POSTGRES_PORT:-5432}:5432'
+      - '${POSTGRES_PORT:-5432}:5432'
       # - '${MINIO_PORT:-9000}:9000'
       # - '${MINIO_CONSOLE_PORT:-9001}:9001'
       # - '${REDIS_PORT:-6379}:6379'
@@ -15,9 +15,9 @@ services:
       # - '${MQTT_PORT:-1883}:1883'
       # - '${MQTT_TLS_PORT:-8883}:8883'
       # - '${MQTT_WEBSOCKET_PORT:-9002}:9002'
-      # - '${NACOS_PORT:-8848}:8848'
-      # - '${NACOS_GRPC_PORT:-9848}:9848'
-      # - '${NACOS_WEB_PORT:-7848}:8080'
+      - '${NACOS_PORT:-8848}:8848'
+      - '${NACOS_GRPC_PORT:-9848}:9848'
+      - '${NACOS_WEB_PORT:-7848}:8080'
     command: tail -f /dev/null
     networks:
       - studio-network
@@ -67,7 +67,7 @@ services:
       retries: 3
 
   postgresql:
-    image: postgres:16.8-alpine
+    image: registry.sciol.ac.cn/library/postgres:16.8-alpine
     pull_policy: if_not_present
     container_name: sciol-db
     network_mode: 'service:network-service'
@@ -148,7 +148,7 @@ services:
       "
 
   redis:
-    image: redis:7.4.2-alpine
+    image: registry.sciol.ac.cn/library/redis:7.4.2-alpine
     container_name: sciol-redis
     network_mode: 'service:network-service'
     restart: always
@@ -163,52 +163,8 @@ services:
     deploy:
       replicas: ${REDIS_REPLICAS:-1}
 
-  # elasticsearch:
-  #   image: elasticsearch:8.18.2
-  #   container_name: sciol-elasticsearch
-  #   network_mode: 'service:network-service'
-  #   restart: unless-stopped
-  #   environment:
-  #     - discovery.type=single-node
-  #     - ELASTIC_USERNAME=${ELASTICSEARCH_USERNAME:-elastic}
-  #     - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD:-please_change_me}
-  #     - xpack.security.http.ssl.enabled=false
-  #     - xpack.license.self_generated.type=trial
-  #     - logger.level=ERROR
-  #   healthcheck:
-  #     test:
-  #       [
-  #         'CMD-SHELL',
-  #         'curl --fail --silent --max-time 3 http://localhost:9200/',
-  #       ]
-  #     interval: 30s
-  #     timeout: 5s
-  #     retries: 3
-  #     start_period: 15s
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         cpus: '1.0'
-  #         memory: '2G'
-  #       reservations:
-  #         cpus: '1.0'
-  #         memory: '1G'
-  #     replicas: ${ELASTICSEARCH_REPLICAS:-1}
-
-  # mosquitto:
-  #   image: eclipse-mosquitto:2.0.21
-  #   container_name: sciol-mosquitto
-  #   restart: unless-stopped
-  #   network_mode: 'service:network-service'
-  #   volumes:
-  #     - ../infra/mosquitto/config:/mosquitto/config
-  #     - ../infra/mosquitto/data:/mosquitto/data
-  #     - ../infra/mosquitto/log:/mosquitto/log
-  #   deploy:
-  #     replicas: ${MQTT_REPLICAS:-1}
-
   casdoor:
-    image: casbin/casdoor:v2.6.0
+    image: registry.sciol.ac.cn/library/casdoor:v2.43.0
     entrypoint: /bin/sh -c './server --createDatabase=true'
     network_mode: 'service:network-service'
     # attach: false
@@ -218,7 +174,7 @@ services:
     environment:
       RUNNING_IN_DOCKER: 'true'
       driverName: 'postgres'
-      dataSourceName: 'user=${DATABASE_USER:-postgres} password=${DATABASE_PASSWORD:-studio} host=localhost port=5432 sslmode=disable dbname=casdoor'
+      dataSourceName: 'user=${DATABASE_USER:-postgres} password=${DATABASE_PASSWORD:-studio} host=127.0.0.1 port=5432 sslmode=disable dbname=casdoor'
       runmode: 'dev'
     volumes:
       - ../infra/casdoor/init_data.json:/init_data.json
@@ -228,6 +184,10 @@ services:
     pull_policy: if_not_present
     network_mode: 'service:network-service'
     restart: unless-stopped
+    working_dir: /app
+    build:
+      context: ../service
+      dockerfile: build/Dockerfile
     depends_on:
       postgresql:
         condition: service_healthy
@@ -237,26 +197,26 @@ services:
       test:
         [
           'CMD-SHELL',
-          'curl --fail --silent --max-time 3 http://localhost:48197/api/health/',
+          'curl --fail --silent --max-time 3 http://localhost:48197/api/health',
         ]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 15s
     deploy:
-      replicas: ${SERVICE_REPLICAS:-1}
+      replicas: 1
 
-  web:
-    image: registry.sciol.ac.cn/sciol/studio-web
-    pull_policy: if_not_present
-    container_name: sciol-web
-    network_mode: 'service:network-service'
-    restart: unless-stopped
-    depends_on:
-      service:
-        condition: service_healthy
-    deploy:
-      replicas: ${WEB_REPLICAS:-1}
+  # web:
+  #   image: registry.sciol.ac.cn/sciol/studio-web
+  #   pull_policy: if_not_present
+  #   container_name: sciol-web
+  #   network_mode: 'service:network-service'
+  #   restart: unless-stopped
+  #   depends_on:
+  #     service:
+  #       condition: service_healthy
+  #   deploy:
+  #     replicas: ${WEB_REPLICAS:-1}
 
 volumes:
   db-data:
