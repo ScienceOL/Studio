@@ -239,8 +239,8 @@
       "clientId": "a387a4892ee19b1a2249",
       "clientSecret": "f3167664b2c58bca53b04c61807a97db",
       "redirectUris": [
-        "http://localhost:8080/api/auth/callback/casdoor",
-        "https://localhost:8080/api/auth/callback/casdoor"
+        "http://localhost:48197/api/auth/callback/casdoor",
+        "https://localhost:48197/api/auth/callback/casdoor"
       ],
       "tokenFormat": "JWT",
       "tokenSigningMethod": "",
@@ -624,7 +624,7 @@
       "websiteUrl": "",
       "logo": "",
       "logoDark": "",
-      "favicon": "",
+      "favicon": "https://storage.sciol.ac.cn/library/BLogo-normal.svg",
       "passwordType": "plain",
       "passwordSalt": "",
       "passwordOptions": ["AtLeast6"],
@@ -642,7 +642,7 @@
         "SG",
         "IN"
       ],
-      "defaultAvatar": "https://cdn.casbin.org/img/casbin.svg",
+      "defaultAvatar": "https://storage.sciol.ac.cn/library/BLogo-normal.svg",
       "defaultApplication": "",
       "tags": [],
       "languages": [

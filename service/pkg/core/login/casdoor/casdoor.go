@@ -84,6 +84,8 @@ func (c *casdoorLogin) Callback(ctx context.Context, req *login.CallbackReq) (*l
 		return nil, code.ExchangeTokenErr
 	}
 
+	logger.Infof(ctx, "Successfully exchanged code for token. Access Token: %s", token.AccessToken)
+
 	// 检查是否收到刷新令牌
 	if token.RefreshToken == "" {
 		logger.Warnf(ctx, "No refresh token received from Casdoor")
@@ -103,7 +105,7 @@ func (c *casdoorLogin) Callback(ctx context.Context, req *login.CallbackReq) (*l
 
 	defer resp.Body.Close()
 
-	// 解析用户信息
+	// resolve user info
 	result := &model.UserInfo{}
 	if err := json.NewDecoder(resp.Body).Decode(result); err != nil || result.Status != "ok" {
 		logger.Errorf(ctx, "Failed to parse user info: %v", err)

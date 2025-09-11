@@ -7,35 +7,27 @@ services:
       dockerfile: build/Dockerfile
     environment:
       - GOPROXY=https://goproxy.cn,direct
+      - GIN_MODE=debug
     env_file:
       - .env.dev
     volumes:
       - ../service:/app
+      - go-mod-cache:/go/pkg/mod
     command: sh -c "go mod download && make dev"
 
-  # mcps:
-  #   image: registry.aissquare.com/web/service:dev
-  #   pull_policy: if_not_present
-  #   container_name: sciol-mcps
-  #   restart: on-failure:5
-  #   depends_on:
-  #     service:
-  #       condition: service_healthy
-  #   env_file:
-  #     - .env.dev
-  #   volumes:
-  #     - ../service:/app
-  #   ports:
-  #     - '48200:8000'
-  #   command: sh -c "bash entrymcps.sh"
+  web:
+    image: registry.sciol.ac.cn/sciol/studio-web
+    build:
+      context: ../web
+      dockerfile: Dockerfile
+    env_file:
+      - .env.dev
+    volumes:
+      - ../web:/app
+      - /app/node_modules
+      - /app/.yarn
+    user: '0:0' # Run as root to avoid permission issues with corepack
+    command: sh -c "corepack enable && yarn install && yarn dev"
 
-  # web:
-  #   image: registry.aissquare.com/base/web:dev
-  #   build:
-  #     context: ../web
-  #     dockerfile: Dockerfile
-  #   env_file:
-  #     - .env.dev
-  #   volumes:
-  #     - ../web:/app
-  #   command: sh -c "if [ ! -d 'node_modules' ]; then yarn install; fi && yarn dev"
+volumes:
+  go-mod-cache:

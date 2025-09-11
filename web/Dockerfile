@@ -3,27 +3,27 @@ FROM node:23-alpine AS base
 FROM base AS deps
 WORKDIR /app
 
+# Enable corepack first (as root)
+RUN corepack enable
+
 # Copy package manager files
 COPY package.json yarn.lock* .yarnrc.yml* ./
 COPY tsconfig.json ./
 
 # Install dependencies
-RUN corepack enable
-
 RUN yarn install --frozen-lockfile
 
 # Stage 1: Build the application
 FROM base AS builder
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
 # Enable corepack to use the correct yarn version
 RUN corepack enable
 
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build the application
-# The build script in package.json is "rimraf site && tsc -b && vite build"
 RUN \
   if [ -f yarn.lock ]; then yarn run build; \
   else echo "Lockfile not found." && exit 1; \

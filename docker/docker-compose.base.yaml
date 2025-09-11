@@ -6,12 +6,12 @@ services:
     ports:
       - '${WEB_PORT:-32234}:32234'
       - '${SERVICE_PORT:-48197}:48197'
-      - '${POSTGRES_PORT:-5432}:5432'
+      # - '${POSTGRES_PORT:-5432}:5432'
       # - '${MINIO_PORT:-9000}:9000'
       # - '${MINIO_CONSOLE_PORT:-9001}:9001'
       # - '${REDIS_PORT:-6379}:6379'
       # - '${ELASTICSEARCH_PORT:-9200}:9200'
-      # - '${CASDOOR_PORT:-8000}:8000'
+      - '${CASDOOR_PORT:-8000}:8000'
       # - '${MQTT_PORT:-1883}:1883'
       # - '${MQTT_TLS_PORT:-8883}:8883'
       # - '${MQTT_WEBSOCKET_PORT:-9002}:9002'
@@ -65,6 +65,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    attach: false
 
   postgresql:
     image: registry.sciol.ac.cn/library/postgres:16.8-alpine
@@ -146,6 +147,7 @@ services:
 
         wait $$pid
       "
+    attach: false
 
   redis:
     image: registry.sciol.ac.cn/library/redis:7.4.2-alpine
@@ -167,7 +169,6 @@ services:
     image: registry.sciol.ac.cn/library/casdoor:v2.43.0
     entrypoint: /bin/sh -c './server --createDatabase=true'
     network_mode: 'service:network-service'
-    # attach: false
     depends_on:
       postgresql:
         condition: service_healthy
@@ -178,6 +179,7 @@ services:
       runmode: 'dev'
     volumes:
       - ../infra/casdoor/init_data.json:/init_data.json
+    attach: false
 
   service:
     image: registry.sciol.ac.cn/sciol/studio-service
@@ -197,7 +199,7 @@ services:
       test:
         [
           'CMD-SHELL',
-          'curl --fail --silent --max-time 3 http://localhost:48197/api/health',
+          'wget --quiet --tries=1 --timeout=3 --spider http://localhost:48197/api/health',
         ]
       interval: 30s
       timeout: 5s
@@ -206,17 +208,17 @@ services:
     deploy:
       replicas: 1
 
-  # web:
-  #   image: registry.sciol.ac.cn/sciol/studio-web
-  #   pull_policy: if_not_present
-  #   container_name: sciol-web
-  #   network_mode: 'service:network-service'
-  #   restart: unless-stopped
-  #   depends_on:
-  #     service:
-  #       condition: service_healthy
-  #   deploy:
-  #     replicas: ${WEB_REPLICAS:-1}
+  web:
+    image: registry.sciol.ac.cn/sciol/studio-web
+    pull_policy: if_not_present
+    container_name: sciol-web
+    network_mode: 'service:network-service'
+    restart: unless-stopped
+    depends_on:
+      service:
+        condition: service_healthy
+    deploy:
+      replicas: ${WEB_REPLICAS:-1}
 
 volumes:
   db-data:

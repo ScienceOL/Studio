@@ -1,7 +1,11 @@
 package login
 
 import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 	"github.com/scienceol/studio/service/pkg/common"
@@ -77,21 +81,50 @@ func (l *Login) Refresh(ctx *gin.Context) {
 // @Produce json
 // @Param code query string true "授权码"
 // @Param state query string true "防CSRF攻击的状态码"
-// @Success 200 {object} common.Resp "回调成功"
-// @Failure 200 {object} common.Resp "服务器内部错误"
+// @Success 302 {string} string "重定向到前端"
+// @Failure 302 {string} string "重定向到前端错误页面"
 // @Router /api/auth/callback/casdoor [get]
 func (l *Login) Callback(ctx *gin.Context) {
 	req := &ls.CallbackReq{}
 	if err := ctx.ShouldBindQuery(req); err != nil {
 		logger.Errorf(ctx, "callback param err: %+v", err)
-		common.ReplyErr(ctx, code.CallbackParamErr)
-		return
-	}
-	resp, err := l.lService.Callback(ctx, req)
-	if err != nil {
-		common.ReplyErr(ctx, err)
+		// 重定向到前端错误页面
+		errorURL := fmt.Sprintf("http://localhost:32234/login/callback?error=%s",
+			url.QueryEscape("参数解析错误"))
+		ctx.Redirect(http.StatusFound, errorURL)
 		return
 	}
 
-	common.ReplyOk(ctx, resp)
+	resp, err := l.lService.Callback(ctx, req)
+	if err != nil {
+		logger.Errorf(ctx, "callback service err: %+v", err)
+		// 重定向到前端错误页面
+		errorMsg := "登录处理失败"
+		if err.Error() != "" {
+			errorMsg = err.Error()
+		}
+		errorURL := fmt.Sprintf("http://localhost:32234/login/callback?error=%s",
+			url.QueryEscape(errorMsg))
+		ctx.Redirect(http.StatusFound, errorURL)
+		return
+	}
+
+	// OAuth2最佳实践: 后端处理完成后重定向到前端，并通过URL参数传递token和用户信息
+	params := url.Values{}
+	params.Set("token", resp.Token)
+	params.Set("refresh_token", resp.RefreshToken)
+	params.Set("expires_in", fmt.Sprintf("%d", resp.ExpiresIn))
+
+	// 如果有用户信息，也传递给前端
+	if resp.User != nil {
+		userJSON, err := json.Marshal(resp.User)
+		if err == nil {
+			// 使用 base64 编码用户信息，避免 URL 长度限制
+			userEncoded := base64.URLEncoding.EncodeToString(userJSON)
+			params.Set("user", userEncoded)
+		}
+	}
+
+	frontendURL := fmt.Sprintf("http://localhost:32234/login/callback?%s", params.Encode())
+	ctx.Redirect(http.StatusFound, frontendURL)
 }
