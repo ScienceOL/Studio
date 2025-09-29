@@ -160,27 +160,56 @@ check_precommit
 # echo -e "${YELLOW}══════════════════════════════════════════${RESET}"
 
 # -------------------------------
-# 服务启动
+# 服务启动与管理
 # -------------------------------
-echo -e "${BRIGHT_BLUE}\n🚀 启动开发容器服务...${RESET}"
+# 开发服务 Docker Compose 参数
 CMD_ARGS=(
   -f "${PROJECT_DIR}/docker/docker-compose.base.yaml"
   -f "${PROJECT_DIR}/docker/docker-compose.dev.yaml"
   --env-file "${ENV_FILE}"
 )
+# 中间件服务 Docker Compose 参数
+MID_CMD_ARGS=(
+  -p "sciol-infra"
+  -f "${PROJECT_DIR}/docker/docker-compose.infra.yaml"
+  --env-file "${ENV_FILE}"
+)
 
+# 处理关闭并移除容器的命令
 if [ "${EXIT_COMMAND}" -eq 1 ]; then
-  echo -e "${BRIGHT_YELLOW}▶  退出进程 ${RESET}"
+  echo -e "${BRIGHT_YELLOW}▶  关闭并移除开发服务容器...${RESET}"
   docker compose "${CMD_ARGS[@]}" down
+  echo -e "${BRIGHT_YELLOW}▶  关闭并移除中间件服务容器...${RESET}"
+  docker compose "${MID_CMD_ARGS[@]}" down
   exit
 fi
 
+# 处理停止容器的命令
 if [ "${STOP_COMMAND}" -eq 1 ]; then
-  echo -e "${BRIGHT_YELLOW}▶  停止容器 ${RESET}"
+  echo -e "${BRIGHT_YELLOW}▶  停止开发服务容器...${RESET}"
   docker compose "${CMD_ARGS[@]}" stop
+  echo -e "${BRIGHT_YELLOW}▶  停止中间件服务容器...${RESET}"
+  docker compose "${MID_CMD_ARGS[@]}" stop
   exit
 fi
 
+# 检查并启动中间件服务
+echo -e "${BRIGHT_CYAN}\n🔧 检查基础设施服务状态...${RESET}"
+RUNNING_MID_SERVICES=$(docker compose "${MID_CMD_ARGS[@]}" ps --status=running -q)
+if [ -n "$RUNNING_MID_SERVICES" ]; then
+  echo -e "${BRIGHT_GREEN}✓ 基础设施服务已在运行中。${RESET}"
+else
+  echo -e "${BRIGHT_YELLOW}▶ 基础设施服务未运行，正在后台启动...${RESET}"
+  docker compose "${MID_CMD_ARGS[@]}" up -d
+  if [ $? -ne 0 ]; then
+    echo -e "${BRIGHT_RED}❌ 基础设施服务启动失败。${RESET}"
+    exit 1
+  fi
+  echo -e "${BRIGHT_GREEN}✓ 基础设施服务启动成功。${RESET}"
+fi
+
+# 启动开发服务
+echo -e "${BRIGHT_BLUE}\n🚀 启动开发容器服务...${RESET}"
 if [ "${BACKGROUND_MODE}" -eq 1 ]; then
   echo -e "${BRIGHT_YELLOW}▶ 以守护进程模式启动${RESET}"
   docker compose "${CMD_ARGS[@]}" up -d

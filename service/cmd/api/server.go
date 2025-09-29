@@ -15,12 +15,10 @@ import (
 	"github.com/scienceol/studio/service/pkg/core/notify/events"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
-	"github.com/scienceol/studio/service/pkg/middleware/nacos"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
 	"github.com/scienceol/studio/service/pkg/middleware/trace"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"github.com/scienceol/studio/service/pkg/web"
-	"gopkg.in/yaml.v2"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -93,38 +91,38 @@ func initMigrate(cmd *cobra.Command, _ []string) error {
 func initWeb(cmd *cobra.Command, _ []string) error {
 	config := webapp.Config()
 	// 初始化 nacos , 注意初始化时序，请勿在动态配置未初始化时候使用配置
-	nacos.MustInit(cmd.Context(), &nacos.Conf{
-		Endpoint:  config.Nacos.Endpoint,
-		User:      config.Nacos.User,
-		Password:  config.Nacos.Password,
-		Port:      config.Nacos.Port,
-		DataID:    config.Nacos.DataID,
-		Group:     config.Nacos.Group,
-		NeedWatch: config.Nacos.NeedWatch,
-	},
-		func(content []byte) error {
-			d := &webapp.DynamicConfig{}
-			if err := yaml.Unmarshal(content, d); err != nil {
-				logger.Errorf(cmd.Context(),
-					"Unmarshal nacos config fail dataID: %s, Group: %s, err: %+v",
-					config.Nacos.DataID, config.Nacos.Group, err)
-			}
+	// nacos.MustInit(cmd.Context(), &nacos.Conf{
+	// 	Endpoint:  config.Nacos.Endpoint,
+	// 	User:      config.Nacos.User,
+	// 	Password:  config.Nacos.Password,
+	// 	Port:      config.Nacos.Port,
+	// 	DataID:    config.Nacos.DataID,
+	// 	Group:     config.Nacos.Group,
+	// 	NeedWatch: config.Nacos.NeedWatch,
+	// },
+	// 	func(content []byte) error {
+	// 		d := &webapp.DynamicConfig{}
+	// 		if err := yaml.Unmarshal(content, d); err != nil {
+	// 			logger.Errorf(cmd.Context(),
+	// 				"Unmarshal nacos config fail dataID: %s, Group: %s, err: %+v",
+	// 				config.Nacos.DataID, config.Nacos.Group, err)
+	// 		}
 
-			config.DynamicConfig = d
-			return nil
-		})
+	// 		config.DynamicConfig = d
+	// 		return nil
+	// 	})
 
-	// 初始化 trace
-	trace.InitTrace(cmd.Context(), &trace.InitConfig{
-		ServiceName:     fmt.Sprintf("%s-%s", config.Server.Service, config.Server.Platform),
-		Version:         config.Trace.Version,
-		TraceEndpoint:   config.Trace.TraceEndpoint,
-		MetricEndpoint:  config.Trace.MetricEndpoint,
-		TraceProject:    config.Trace.TraceProject,
-		TraceInstanceID: config.Trace.TraceInstanceID,
-		TraceAK:         config.Trace.TraceAK,
-		TraceSK:         config.Trace.TraceSK,
-	})
+	// // 初始化 trace
+	// trace.InitTrace(cmd.Context(), &trace.InitConfig{
+	// 	ServiceName:     fmt.Sprintf("%s-%s", config.Server.Service, config.Server.Platform),
+	// 	Version:         config.Trace.Version,
+	// 	TraceEndpoint:   config.Trace.TraceEndpoint,
+	// 	MetricEndpoint:  config.Trace.MetricEndpoint,
+	// 	TraceProject:    config.Trace.TraceProject,
+	// 	TraceInstanceID: config.Trace.TraceInstanceID,
+	// 	TraceAK:         config.Trace.TraceAK,
+	// 	TraceSK:         config.Trace.TraceSK,
+	// })
 
 	// 初始化数据库
 	db.InitPostgres(cmd.Context(), &db.Config{
