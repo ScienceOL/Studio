@@ -46,9 +46,12 @@ init: ## 初始化项目依赖
 .PHONY: dev
 dev: ## 开发模式启动 (热重载)
 	@echo "🚀 启动开发服务器..."
-	@if ! command -v air > /dev/null; then \
+	@if ! command -v air > /dev/null 2>&1; then \
 		echo "📦 安装 air (热重载工具)..."; \
 		$(GO) install github.com/air-verse/air@v1.62.0; \
+		echo "✅ air 安装完成"; \
+	else \
+		echo "✅ air 已存在，跳过安装"; \
 	fi
 	air -c .air.toml
 

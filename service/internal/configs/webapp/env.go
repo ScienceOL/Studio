@@ -10,7 +10,7 @@ type Database struct {
 }
 
 type Redis struct {
-	Host     string `mapstructure:"REDIS_HOST" default:"127.0.0.1"`
+	Host     string `mapstructure:"REDIS_HOST" default:"localhost"`
 	Port     int    `mapstructure:"REDIS_PORT" default:"6379"`
 	User     string `mapstructure:"REDIS_USER" `
 	Password string `mapstructure:"REDIS_PASSWORD"`

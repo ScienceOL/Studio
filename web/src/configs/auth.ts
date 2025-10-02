@@ -1,11 +1,11 @@
 // 应用配置
 export const config = {
   // API 基础地址
-  apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:48197',
+  apiBaseUrl: import.meta.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:48197',
 
   // 前端基础地址
   frontendBaseUrl:
-    process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'http://localhost:32234',
+    import.meta.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'http://localhost:32234',
 
   // OAuth2 相关配置
   oauth2: {
@@ -19,10 +19,10 @@ export const config = {
 
   // 本地存储 key
   storage: {
-    accessToken: 'studio_access_token',
-    refreshToken: 'studio_refresh_token',
-    tokenExpiry: 'studio_token_expiry',
-    userInfo: 'studio_user_info',
+    accessToken: 'access_token',
+    refreshToken: 'refresh_token',
+    tokenExpiry: 'token_expiry',
+    userInfo: 'user_info',
   },
 } as const;
 

@@ -8,11 +8,13 @@ services:
     environment:
       - GOPROXY=https://goproxy.cn,direct
       - GIN_MODE=debug
+      - PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     env_file:
       - .env.dev
     volumes:
       - ../service:/app
       - go-mod-cache:/go/pkg/mod
+      - go-bin-cache:/go/bin
     command: sh -c "go mod download && make dev"
 
   web:
@@ -31,3 +33,4 @@ services:
 
 volumes:
   go-mod-cache:
+  go-bin-cache:

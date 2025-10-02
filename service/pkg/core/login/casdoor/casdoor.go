@@ -33,13 +33,20 @@ func (c *casdoorLogin) Login(ctx context.Context) (*login.Resp, error) {
 	state := fmt.Sprintf("%d", time.Now().UnixNano())
 	// 将state保存到Redis中，设置5分钟过期时间
 	stateKey := fmt.Sprintf("oauth_state:%s", state)
+	
+	logger.Infof(ctx, "Saving state to Redis: key=%s, value=valid", stateKey)
+	
 	if err := c.Set(ctx, stateKey, "valid", 5*time.Minute).Err(); err != nil {
 		logger.Errorf(ctx, "Failed to save state to Redis: %v", err)
 		return nil, code.LoginSetStateErr
 	}
-
+	
+	logger.Infof(ctx, "State saved successfully to Redis")
+	
 	// 构建授权URL并重定向用户到OAuth2提供商登录页面
 	authURL := c.oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	
+	logger.Infof(ctx, "Generated auth URL: %s", authURL)
 
 	return &login.Resp{RedirectURL: authURL}, nil
 }
@@ -70,10 +77,17 @@ func (c *casdoorLogin) Refresh(ctx context.Context, req *login.RefreshTokenReq) 
 func (c *casdoorLogin) Callback(ctx context.Context, req *login.CallbackReq) (*login.CallbackResp, error) {
 	// 验证state是否存在于Redis中
 	stateKey := fmt.Sprintf("oauth_state:%s", req.State)
+	
+	logger.Infof(ctx, "Verifying state from Redis: key=%s", stateKey)
+	
 	redisResult := redis.GetClient().Get(ctx, stateKey)
 	if redisResult.Err() != nil {
+		logger.Errorf(ctx, "State verification failed: key=%s, error=%v", stateKey, redisResult.Err())
 		return nil, code.LoginStateErr
 	}
+	
+	stateValue, _ := redisResult.Result()
+	logger.Infof(ctx, "State found in Redis: key=%s, value=%s", stateKey, stateValue)
 
 	// 删除使用过的state
 	redis.GetClient().Del(ctx, stateKey)

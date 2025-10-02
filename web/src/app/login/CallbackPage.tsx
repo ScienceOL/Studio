@@ -1,12 +1,10 @@
-'use client';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { AuthUtils } from '@/lib/auth';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
-import { AuthUtils } from '../../../lib/auth';
-
-function LoginCallbackContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+export default function LoginCallback() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>(
     'processing'
   );
@@ -22,10 +20,21 @@ function LoginCallbackContent() {
         const userEncoded = searchParams.get('user');
         const error = searchParams.get('error');
 
+        console.log('Callback params:', { token, refreshToken, expiresIn, userEncoded, error });
+
         // 检查是否有错误
         if (error) {
+          const errorMsg = decodeURIComponent(error);
           setStatus('error');
-          setMessage(`登录失败: ${decodeURIComponent(error)}`);
+          
+          // 提供更友好的错误提示
+          if (errorMsg.includes('state verification failed')) {
+            setMessage('登录验证失败：State 验证失败。这通常是因为 Casdoor 回调地址配置不正确，请检查 Casdoor 应用的 Redirect URL 是否设置为后端地址。');
+          } else {
+            setMessage(`登录失败: ${errorMsg}`);
+          }
+          
+          console.error('OAuth2 callback error:', errorMsg);
           return;
         }
 
@@ -33,6 +42,7 @@ function LoginCallbackContent() {
         if (!token || !refreshToken || !expiresIn) {
           setStatus('error');
           setMessage('登录参数不完整，请重新登录');
+          console.error('Missing required params:', { token: !!token, refreshToken: !!refreshToken, expiresIn: !!expiresIn });
           return;
         }
 
@@ -42,6 +52,7 @@ function LoginCallbackContent() {
           try {
             const userJSON = atob(userEncoded);
             userInfo = JSON.parse(userJSON);
+            console.log('Parsed user info:', userInfo);
           } catch (parseError) {
             console.warn('Failed to parse user info from URL:', parseError);
           }
@@ -58,45 +69,15 @@ function LoginCallbackContent() {
           userInfo
         );
 
-        // 如果没有从URL获取到用户信息，尝试通过API获取
-        if (!userInfo) {
-          try {
-            const response = await fetch(
-              `${window.location.protocol}//${window.location.host}/api/user/info`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-
-            if (response.ok) {
-              const userData = await response.json();
-              if (userData.code === 0 && userData.data) {
-                // 更新用户信息
-                AuthUtils.saveAuthInfo(
-                  {
-                    accessToken: token,
-                    refreshToken: refreshToken,
-                    expiresIn: parseInt(expiresIn, 10),
-                    tokenType: 'Bearer',
-                  },
-                  userData.data
-                );
-              }
-            }
-          } catch (userInfoError) {
-            console.warn('Failed to fetch user info:', userInfoError);
-            // 不阻止登录流程，用户信息可以后续获取
-          }
-        }
+        console.log('Auth info saved successfully');
+        console.log('Stored access_token:', localStorage.getItem('access_token'));
 
         setStatus('success');
         setMessage('登录成功，正在跳转...');
 
         // 延迟跳转到首页
         setTimeout(() => {
-          router.push('/');
+          navigate('/');
         }, 1500);
       } catch (error) {
         console.error('Login callback error:', error);
@@ -106,14 +87,14 @@ function LoginCallbackContent() {
     };
 
     handleCallback();
-  }, [searchParams, router]);
+  }, [searchParams, navigate]);
 
   const handleRetry = () => {
     AuthUtils.redirectToLogin();
   };
 
   const handleGoHome = () => {
-    router.push('/');
+    navigate('/');
   };
 
   return (
@@ -220,33 +201,5 @@ function LoginCallbackContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-function LoadingFallback() {
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
-            OAuth2 登录回调
-          </h2>
-        </div>
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg px-8 py-6">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600 dark:text-gray-400">正在加载...</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function LoginCallback() {
-  return (
-    <Suspense fallback={<LoadingFallback />}>
-      <LoginCallbackContent />
-    </Suspense>
   );
 }

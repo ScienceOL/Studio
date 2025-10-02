@@ -1,12 +1,21 @@
 import { config } from '@/configs/auth';
 
-// 用户信息类型
+// 用户信息类型（匹配后端 UserData 结构）
 export interface UserInfo {
   id: string;
+  name: string;
+  owner: string;
   email: string;
   displayName: string;
-  avatar?: string;
-  owner?: string;
+  avatar: string;
+  type: string;
+  signupApplication: string;
+  accessToken?: string;
+  accessKey?: string;
+  accessSecret?: string;
+  phone?: string;
+  status?: number;
+  user_no?: string;
 }
 
 // Token 信息类型

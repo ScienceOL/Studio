@@ -37,6 +37,7 @@ services:
       "
     volumes:
       - db-data:/var/lib/postgresql/data
+    attach: false
 
   redis:
     image: registry.sciol.ac.cn/library/redis:7.4.2-alpine
@@ -52,6 +53,7 @@ services:
       retries: 5
     deploy:
       replicas: ${REDIS_REPLICAS:-1}
+    attach: false
 
   service:
     image: registry.sciol.ac.cn/sciol/studio-service
