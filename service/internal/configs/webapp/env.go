@@ -35,11 +35,11 @@ type OAuth2 struct {
 	ClientID     string     `mapstructure:"OAUTH2_CLIENT_ID" default:"a387a4892ee19b1a2249"`
 	ClientSecret string     `mapstructure:"OAUTH2_CLIENT_SECRET" default:"f3167664b2c58bca53b04c61807a97db"`
 	Scopes       []string   `mapstructure:"OAUTH2_SCOPES" default:"[\"read\",\"write\",\"offline_access\"]"`
-	Addr         string     `mapstructure:"ADDR" default:"http://localhost:8000"`
-	TokenURL     string     `mapstructure:"OAUTH2_TOKEN_URL" default:"http://localhost:8000/api/login/oauth/access_token"`
+	Addr         string     `mapstructure:"ADDR" default:"http://host.docker.internal:8000"`
+	TokenURL     string     `mapstructure:"OAUTH2_TOKEN_URL" default:"http://host.docker.internal:8000/api/login/oauth/access_token"`
+	UserInfoURL  string     `mapstructure:"OAUTH2_USERINFO_URL" default:"http://host.docker.internal:8000/api/get-account"`
 	AuthURL      string     `mapstructure:"OAUTH2_AUTH_URL" default:"http://localhost:8000/login/oauth/authorize"`
 	RedirectURL  string     `mapstructure:"OAUTH2_REDIRECT_URL" default:"http://localhost:48197/api/auth/callback/casdoor"`
-	UserInfoURL  string     `mapstructure:"OAUTH2_USERINFO_URL" default:"http://localhost:8000/api/get-account"`
 	AuthSource   AuthSource `mapstructure:"OAUTH2_SOURCE" default:"casdoor"`
 }
 
