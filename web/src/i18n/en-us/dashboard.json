@@ -1,0 +1,15 @@
+{
+  "bottomLine": "I've got a bottom line, literally.",
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "space": "Space",
+    "environment": "Environment",
+    "chat": "Chat",
+    "knowledge": "Knowledge",
+    "discussion": "Discussion",
+    "manuscript": "Manuscript",
+    "workflow": "Workflow",
+    "flociety": "Flociety",
+    "settings": "Settings"
+  }
+}

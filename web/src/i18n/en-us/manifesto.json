@@ -1,0 +1,35 @@
+{
+  "title": "Science OL Manifesto",
+  "topic1": {
+    "title": "What is Science OL?",
+    "content": "Science OL is a dual-function platform revolutionizing how scientific research is conducted globally. Our platform consists of two complementary components: Science Online, which provides accessible virtual laboratories for remote experimentation, and OpenLab, which delivers open-source standards and intelligent solutions for physical laboratory modernization. Together, they create an ecosystem where researchers can collaborate across disciplines and geographical boundaries. Science OL empowers scientists by democratizing access to advanced research tools and promoting open standards that make both virtual and physical laboratories more efficient, connected, and innovative."
+  },
+  "topic2": {
+    "title": "Why choose open source?",
+    "content": "Open source is fundamental to Science OL's mission of democratizing scientific research. By making our laboratory specifications, protocols, and software freely available, we enable institutions worldwide to implement standardized, interoperable systems. This open approach allows scientists and engineers to contribute improvements that benefit the entire community, ensuring both our virtual laboratories and physical lab standards remain cutting-edge. Open source fosters transparency in scientific methods, enhances reproducibility of experiments, and enables collaborative problem-solving that transcends institutional boundaries. Rather than restricting innovation through proprietary systems, Science OL builds a community where knowledge sharing accelerates scientific discovery and laboratory advancement."
+  },
+  "topic3": {
+    "title": "Science OL Community History",
+    "content": "Science OL began with the vision to bridge the gap between advanced laboratory technologies and researchers worldwide. Initially focused on developing Science Online, our virtual laboratory platform, we recognized that many institutions still relied on physical labs that lacked standardization and modern capabilities. This led to the creation of OpenLab, our framework for open-source laboratory standards and intelligent solutions. By integrating these complementary approaches, Science OL emerged as a comprehensive platform serving researchers across various disciplines and settings. Our community has grown to include contributors from diverse backgrounds, all united by the goal of making scientific experimentation more accessible, efficient, and collaborative through both virtual access and physical modernization."
+  },
+  "topic4": {
+    "title": "Science OL Community Vision",
+    "content1": "Science Online aims to democratize access to scientific experimentation by providing virtual laboratories that can be accessed from anywhere. These online labs simulate real experimental environments, allowing researchers to conduct experiments without geographical or resource constraints.",
+    "content2": "OpenLab focuses on establishing open-source standards for laboratory design, automation, and intelligence. By sharing specifications, software, and implementation guides, we help institutions transform traditional laboratories into connected, efficient research spaces.",
+    "content3": "In the long term, Science OL envisions a global ecosystem where virtual and physical laboratories seamlessly interact, breaking down barriers between disciplines and institutions. Our platform will support reproducible research, efficient resource utilization, and accelerated scientific discovery through intelligent laboratory systems that span both the digital and physical worlds."
+  },
+  "topic5": {
+    "title": "How to contribute?",
+    "content1": "If you want to contribute to an existing project in the Science OL community, please just do so or contact the corresponding developer directly; if you want to open a new project in the Science OL community, or if you want the Science OL community to help develop your project, just contact contact@Science OL.org.",
+    "content2": "If you are a programmer who loves science and is attracted by the future scientific computing platform built by the Science OL community, you can contribute not only through new algorithms, but also code development specifications, document writing specifications, community databases, task scheduling, workflow management and other tools. In addition, you can contribute to code architecture design and high-performance optimization tasks in the Science OL community. People in the field of scientific computing will greatly appreciate your expertise and contribution.",
+    "content3": "If you are a hardcore developer familiar with topics such as electronic structure calculations, molecular dynamics, and finite element methods, the Science OL community will be your place to showcase your talents. The addition of machine learning components requires us to rethink about architecture design, each specific implementation for the tasks mentioned above and high-performance optimization. You will become important bridges that connect other developers, contributors, and users in different areas.",
+    "content4": "If you have only used some basic scientific software and have worked on some post-processing scripts, the Science OL community also needs you. Try to ask questions and communicate on github/gitee and other communication platforms, try to give opinions, and try to fork, commit, pr… Your little by little contribution will make the Science OL community better and better, and the Science OL community will be very grateful for such contributions.",
+    "content5": "Even if you are just a bystander, if you support the concept of the Science OL community, your recognition and dissemination will also be a great encouragement and support for the Science OL community."
+  },
+  "topic6": {
+    "title": "Final remarks",
+    "content1": "Despite tremendous advances in technology, scientific research remains hampered by limited access to laboratory equipment and inconsistent standards across facilities. Many institutions operate in isolation, using proprietary systems that restrict collaboration and reproducibility.",
+    "content2": "The Science OL platform promises to change all that.",
+    "content3": "By providing both virtual laboratory access through Science Online and open standards for physical laboratories through OpenLab, Science OL creates a new paradigm for scientific research. This integrated approach democratizes access to experimental tools while establishing common frameworks that facilitate collaboration across institutional boundaries. For researchers with limited resources, Science Online provides immediate access to sophisticated virtual environments. For institutions looking to modernize their facilities, OpenLab offers proven standards and intelligent solutions. Together, they form an ecosystem that makes scientific research more open, efficient, and collaborative. This is an exciting opportunity to transform how science is conducted globally—this is the future of scientific experimentation!"
+  }
+}

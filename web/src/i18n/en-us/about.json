@@ -1,0 +1,43 @@
+{
+  "hero": {
+    "title": "Science OL combines online laboratories and open-source standards to transform scientific research globally.",
+    "description": "Science OL offers a dual-function platform: Science Online provides accessible virtual laboratories for remote experimentation, while OpenLab delivers open-source standards and intelligent solutions for laboratory modernization. Together, they democratize scientific tools and promote collaborative innovation across disciplines."
+  },
+  "history": {
+    "title1": "Science Online Inception",
+    "description1": "The Science OL journey began with Science Online, our virtual laboratory platform designed to make scientific experimentation accessible to researchers worldwide. This platform addresses the challenge of limited access to advanced laboratory equipment.",
+    "title2": "OpenLab Initiative",
+    "description2": "Building on our success, we launched OpenLab—an open-source framework for laboratory standardization and intelligent solutions. OpenLab empowers institutions to modernize their facilities using our community-developed specifications and tools.",
+    "title3": "Integrated Platform Launch",
+    "description3": "Science OL emerged as a comprehensive platform integrating both Science Online and OpenLab. This unified approach connects researchers globally through online laboratories while enabling physical labs to implement our open standards for greater efficiency and collaboration."
+  },
+  "vision": {
+    "title": "Community Vision",
+    "description1": "Science Online aims to democratize access to scientific experimentation by providing virtual laboratories that can be accessed from anywhere. These online labs simulate real experimental environments, allowing researchers to conduct experiments without geographical or resource constraints.",
+    "description2": "OpenLab focuses on establishing open-source standards for laboratory design, automation, and intelligence. By sharing specifications, software, and implementation guides, we help institutions transform traditional laboratories into connected, efficient research spaces.",
+    "description3": "In the long term, Science OL envisions a global ecosystem where virtual and physical laboratories seamlessly interact, breaking down barriers between disciplines and institutions. Our platform will support reproducible research, efficient resource utilization, and accelerated scientific discovery through intelligent laboratory systems."
+  },
+  "openSource": {
+    "title": "Why Choose OpenSource?",
+    "description": "Science OL embraces open source as the foundation for both our online laboratories and laboratory standards. By making our platform specifications, protocols, and software freely available, we foster collaboration across institutional boundaries. Open source enables scientists and engineers worldwide to contribute improvements, customizations, and innovations to our platform. This collective approach ensures that laboratory technologies remain cutting-edge and adaptable to diverse research needs. Rather than restricting access through proprietary systems, Science OL builds a community where knowledge sharing accelerates scientific discovery and laboratory advancement."
+  },
+  "joinUs": {
+    "title": "We love Creators",
+    "subtitle": "If you want to contribute to an existing project in the Science OL community, please just do so or contact the corresponding developer directly; if you want to open a new project in the Science OL community, or if you want the Science OL community to help develop your project, just contact",
+    "email": "contact@Science OL.org.",
+    "description1": "If you are a hardcore developer familiar with topics such as electronic structure calculations, molecular dynamics, and finite element methods, the Science OL community will be your place to showcase your talents. The addition of machine learning components requires us to rethink about architecture design, each specific implementation for the tasks mentioned above and high-performance optimization. You will become important bridges that connect other developers, contributors, and users in different areas.",
+    "description2": "If you have only used some basic scientific software and have worked on some post-processing scripts, the Science OL community also needs you. Try to ask questions and communicate on github/gitee and other communication platforms, try to give opinions, and try to fork, commit, pr… Your little by little contribution will make the Science OL community better and better, and the Science OL community will be very grateful for such contributions.",
+    "description3": "If you are a programmer who loves science and is attracted by the future scientific computing platform built by the Science OL community, you can contribute not only through new algorithms, but also code development specifications, document writing specifications, community databases, task scheduling, workflow management and other tools. In addition, you can contribute to code architecture design and high-performance optimization tasks in the Science OL community. People in the field of scientific computing will greatly appreciate your expertise and contribution.",
+    "description4": "Even if you are just a bystander, if you support the concept of the Science OL community, your recognition and dissemination will also be a great encouragement and support for the Science OL community."
+  },
+  "GithubAd": {
+    "title1": "If you have questions?",
+    "title2": "We'are here to help",
+    "description1": "If you have some questions, we recommend you first go to our discussion board on github. (Our users come from different countries, so please discuss in English). Our developers will check the discussion board every day.",
+    "description2": "Also, you can join our wechat group, After filling in your information, we will give you our group QR CODE. Hundreds of our users discuss in this group.",
+    "button": {
+      "primary": "View Github",
+      "secondary": "Join Wechat Group"
+    }
+  }
+}

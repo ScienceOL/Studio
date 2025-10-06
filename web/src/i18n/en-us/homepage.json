@@ -1,0 +1,43 @@
+{
+  "Find our latest feature update.": "Find our latest feature update. ",
+  "hero": {
+    "title": "Transforming Scientific Research Through Virtual Labs and Open Standards",
+    "description": "Science OL unites researchers worldwide through our dual platform: Science Online delivers accessible virtual laboratories, while OpenLab provides open-source standards for laboratory modernization.",
+    "button": {
+      "primary": "Get Started",
+      "secondary": "Learn More"
+    }
+  },
+  "about": {
+    "title": "Science OL: Bridging Digital and Physical Laboratories",
+    "button": {
+      "primary": "Read More"
+    },
+    "description": "Our dual-function platform democratizes access to scientific tools through online experimentation and intelligent laboratory frameworks. By combining Science Online's virtual laboratories with OpenLab's open-source standards, we're creating a global ecosystem where researchers collaborate effortlessly across institutional and geographical boundaries."
+  },
+  "article": {
+    "intro": "Reimagining scientific research through virtual access and open standards."
+  },
+  "sponsor": "Suported by",
+  "navbar": {
+    "community": "Community",
+    "project": "Project",
+    "publication": "Publication",
+    "tutorial": "Tutorial",
+    "docs": "Docs",
+    "certification": "Certification",
+    "about": {
+      "title": "About",
+      "Introduction": "Introduction",
+      "Manifesto": "Manifesto",
+      "Join us": "Join us",
+      "Follow in Github": "Follow in Github",
+      "Contact us": "Contact us"
+    }
+  },
+  "login": {
+    "description": {
+      "13": "Welcome to our online chatroom! Join us for an exciting discussion on space exploration. Explore topics like spacecraft technology and the search for extraterrestrial life with our panel of experts and enthusiasts."
+    }
+  }
+}

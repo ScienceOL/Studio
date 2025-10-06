@@ -98,8 +98,19 @@ export class AuthUtils {
   }
 
   // 重定向到登录页
-  static redirectToLogin(): void {
+  static redirectToLogin(returnUrl?: string): void {
     if (typeof window === 'undefined') return;
+
+    // 保存登录前的页面路径到 sessionStorage
+    if (returnUrl) {
+      console.log('💾 Saving to sessionStorage - login_return_url:', returnUrl);
+      sessionStorage.setItem('login_return_url', returnUrl);
+      console.log(
+        '✅ Saved. Verifying:',
+        sessionStorage.getItem('login_return_url')
+      );
+    }
+
     window.location.href = config.oauth2.loginUrl;
   }
 

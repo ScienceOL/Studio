@@ -1,16 +1,24 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthUtils } from '@/lib/auth';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 export default function LoginCallback() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>(
     'processing'
   );
   const [message, setMessage] = useState('正在处理登录...');
+  const hasProcessed = useRef(false);
 
   useEffect(() => {
+    // 防止重复执行
+    if (hasProcessed.current) {
+      return;
+    }
+    hasProcessed.current = true;
+
     const handleCallback = async () => {
       try {
         // 从 URL 参数中获取 token 信息
@@ -20,20 +28,28 @@ export default function LoginCallback() {
         const userEncoded = searchParams.get('user');
         const error = searchParams.get('error');
 
-        console.log('Callback params:', { token, refreshToken, expiresIn, userEncoded, error });
+        console.log('Callback params:', {
+          token,
+          refreshToken,
+          expiresIn,
+          userEncoded,
+          error,
+        });
 
         // 检查是否有错误
         if (error) {
           const errorMsg = decodeURIComponent(error);
           setStatus('error');
-          
+
           // 提供更友好的错误提示
           if (errorMsg.includes('state verification failed')) {
-            setMessage('登录验证失败：State 验证失败。这通常是因为 Casdoor 回调地址配置不正确，请检查 Casdoor 应用的 Redirect URL 是否设置为后端地址。');
+            setMessage(
+              '登录验证失败：State 验证失败。这通常是因为 Casdoor 回调地址配置不正确，请检查 Casdoor 应用的 Redirect URL 是否设置为后端地址。'
+            );
           } else {
             setMessage(`登录失败: ${errorMsg}`);
           }
-          
+
           console.error('OAuth2 callback error:', errorMsg);
           return;
         }
@@ -42,7 +58,11 @@ export default function LoginCallback() {
         if (!token || !refreshToken || !expiresIn) {
           setStatus('error');
           setMessage('登录参数不完整，请重新登录');
-          console.error('Missing required params:', { token: !!token, refreshToken: !!refreshToken, expiresIn: !!expiresIn });
+          console.error('Missing required params:', {
+            token: !!token,
+            refreshToken: !!refreshToken,
+            expiresIn: !!expiresIn,
+          });
           return;
         }
 
@@ -70,14 +90,34 @@ export default function LoginCallback() {
         );
 
         console.log('Auth info saved successfully');
-        console.log('Stored access_token:', localStorage.getItem('access_token'));
+        console.log(
+          'Stored access_token:',
+          localStorage.getItem('access_token')
+        );
 
         setStatus('success');
         setMessage('登录成功，正在跳转...');
 
-        // 延迟跳转到首页
+        // 获取登录前的页面路径
+        const returnUrl = sessionStorage.getItem('login_return_url');
+        console.log(
+          '📖 Reading from sessionStorage - login_return_url:',
+          returnUrl
+        );
+        console.log('📖 location.state:', location.state);
+
+        const from =
+          returnUrl || (location.state as { from?: string })?.from || '/';
+        console.log('🎯 Final redirect target:', from);
+
+        // 清除保存的返回 URL
+        sessionStorage.removeItem('login_return_url');
+        console.log('🗑️ Cleared sessionStorage');
+
+        // 延迟跳转
         setTimeout(() => {
-          navigate('/');
+          console.log('🚀 Navigating to:', from);
+          navigate(from, { replace: true });
         }, 1500);
       } catch (error) {
         console.error('Login callback error:', error);
@@ -87,7 +127,8 @@ export default function LoginCallback() {
     };
 
     handleCallback();
-  }, [searchParams, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 只在组件挂载时执行一次
 
   const handleRetry = () => {
     AuthUtils.redirectToLogin();

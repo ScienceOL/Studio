@@ -1,31 +1,19 @@
-import { useXyzen, Xyzen } from '@sciol/xyzen';
-import { useNavigate } from 'react-router-dom';
+import LogoLoading from '@/components/basic/loading';
+import { useAuthStore } from '@/store/authStore';
+import DashboardLayout from './dashboard';
+import LandscapePage from './landscape';
 
 export default function App() {
-  const { panelWidth } = useXyzen();
-  const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
 
-  const handleGoLogin = () => {
-    navigate('/login');
-  };
+  // 初始化已在 main.tsx 中完成，这里只负责渲染
+  console.log('🔄 App render:', { isAuthenticated, isLoading });
 
-  return (
-    <main className="flex h-full">
-      <div
-        style={{ width: `calc(100% - ${panelWidth}px)` }}
-        className="h-full mt-20 flex flex-col items-center justify-center gap-6"
-      >
-        <div className="font-bold bg-black text-white p-4 rounded">
-          Studio 简易主页
-        </div>
-        <button
-          className="px-4 py-2 bg-blue-600 text-white rounded shadow"
-          onClick={handleGoLogin}
-        >
-          跳转到登录页
-        </button>
-      </div>
-      <Xyzen />
-    </main>
-  );
+  if (isLoading) {
+    return <LogoLoading variant="large" animationType="galaxy" />;
+  }
+
+  // 根据认证状态分流：已登录显示 Dashboard，未登录显示 Landscape
+  return isAuthenticated ? <DashboardLayout /> : <LandscapePage />;
 }

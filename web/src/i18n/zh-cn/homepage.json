@@ -1,0 +1,40 @@
+{
+  "Find our latest feature update.": "查看我们最近的功能更新。",
+  "Read more": "阅读更多",
+  "navbar": {
+    "community": "社区",
+    "project": "项目",
+    "tutorial": "教程",
+    "docs": "文档",
+    "publication": "出版物",
+    "certification": "证书",
+    "about": {
+      "title": "关于",
+      "Introduction": "介绍",
+      "Manifesto": "宣言",
+      "Join us": "加入我们",
+      "Follow in Github": "关注 GitHub",
+      "Contact us": "联系我们"
+    }
+  },
+  "hero": {
+    "title": "通过在线实验室和开放标准变革科学研究",
+    "description": "Science OL 通过双平台功能连接全球研究人员：Science Online 提供可访问的虚拟实验室，而 OpenLab 则为实验室现代化提供开源标准。",
+    "button": {
+      "primary": "立即开始",
+      "secondary": "了解更多"
+    }
+  },
+
+  "about": {
+    "title": "Science OL：连接数字与物理实验室",
+    "button": {
+      "primary": "了解更多"
+    },
+    "description": "我们的双功能平台通过在线实验和智能实验室框架，使科学工具的使用变得民主化。通过将 Science Online 的虚拟实验室与 OpenLab 的开源标准相结合，我们正在创建一个全球生态系统，让研究人员能够跨越机构和地理边界无缝协作。"
+  },
+  "sponsor": "支持机构",
+  "article": {
+    "intro": "我们正在改变科学实践。"
+  }
+}
