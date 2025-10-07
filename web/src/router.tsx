@@ -20,10 +20,11 @@ export default function Router() {
 
         {/* 所有需要侧边栏和登录保护的页面 */}
         <Route element={<ProtectedDashboardLayout />}>
-          <Route index element={<DashboardHome />} />
-          <Route path="/space" element={<div>Space Page</div>} />
-          <Route path="/discussion" element={<div>Discussion Page</div>} />
-          <Route path="/manuscript" element={<div>Manuscript Page</div>} />
+          <Route path="/dashboard" element={<DashboardHome />} />
+          <Route
+            path="/dashboard/environment"
+            element={<div>Environment Page</div>}
+          />
         </Route>
       </Routes>
     </BrowserRouter>

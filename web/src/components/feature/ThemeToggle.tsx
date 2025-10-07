@@ -17,7 +17,7 @@ export const ThemeToggle = ({
   const { theme, cycleTheme } = useTheme();
 
   const baseClass =
-    'rounded-md p-1.5 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800';
+    'rounded-md text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800';
 
   return (
     <button

@@ -15,8 +15,6 @@ import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
 import { MenuButton } from '@headlessui/react';
 import {
   ArrowTopRightOnSquareIcon,
-  ChatBubbleLeftRightIcon,
-  DocumentTextIcon,
   HomeIcon,
   Square3Stack3DIcon,
 } from '@heroicons/react/24/outline';
@@ -39,26 +37,14 @@ interface NavigationItem {
 const defaultNavigation: NavigationItem[] = [
   {
     name: 'sidebar.dashboard',
-    href: '/',
+    href: '/dashboard',
     icon: HomeIcon,
     current: true,
   },
   {
-    name: 'sidebar.space',
-    href: '/space',
+    name: 'sidebar.environment',
+    href: '/dashboard/environment',
     icon: Square3Stack3DIcon,
-    current: false,
-  },
-  {
-    name: 'sidebar.discussion',
-    href: '/discussion',
-    icon: ChatBubbleLeftRightIcon,
-    current: false,
-  },
-  {
-    name: 'sidebar.manuscript',
-    href: '/manuscript',
-    icon: DocumentTextIcon,
     current: false,
   },
 ];
@@ -123,22 +109,18 @@ export default function ResizableSidebar() {
 
   // Update navigation current state based on route
   useEffect(() => {
-    const urlParts = location.pathname.split('/').filter(Boolean);
-
     setNavigation((prevNavigation) =>
       prevNavigation.map((navItem: NavigationItem) => {
         const itemHref = navItem.href;
-        const isDashboard = navItem.name === 'sidebar.dashboard';
+        const currentPath = location.pathname;
 
         let isCurrent = false;
 
-        if (isDashboard) {
-          // Dashboard 在根路径 /
-          isCurrent = urlParts.length === 0;
+        if (itemHref === '/dashboard') {
+          isCurrent = currentPath === '/dashboard';
         } else {
-          // 其他路由匹配第一层路径
-          const navPath = itemHref.split('/').filter(Boolean)[0];
-          isCurrent = urlParts.length > 0 && urlParts[0] === navPath;
+          isCurrent =
+            currentPath === itemHref || currentPath.startsWith(`${itemHref}/`);
         }
 
         return {

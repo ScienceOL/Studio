@@ -116,7 +116,7 @@ export function DropdownMenu({
             >
               <MenuItems
                 anchor={{
-                  to: 'top',
+                  to: 'start top' as any, //eslint-disable-line @typescript-eslint/no-explicit-any
                   gap: -3,
                   padding: -2,
                 }}
