@@ -26,11 +26,13 @@ services:
       - .env.dev
     volumes:
       - ../web:/app
-      - /app/node_modules
-      - /app/.yarn
+      - web-modules-cache:/app/node_modules
+      - web-yarn-cache:/app/.yarn
     user: '0:0' # Run as root to avoid permission issues with corepack
     command: sh -c "corepack enable && yarn install && yarn dev"
 
 volumes:
+  web-modules-cache:
+  web-yarn-cache:
   go-mod-cache:
   go-bin-cache:

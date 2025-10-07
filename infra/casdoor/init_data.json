@@ -53,7 +53,18 @@
       "enableLinkWithEmail": true,
       "orgChoiceMode": "",
       "samlReplyUrl": "",
-      "providers": [],
+      "providers": [
+        {
+          "name": "provider-storage-built-in",
+          "canSignUp": false,
+          "canSignIn": false,
+          "canUnlink": false,
+          "prompted": false,
+          "alertType": "",
+          "rule": "None",
+          "provider": null
+        }
+      ],
       "signinMethods": [
         {
           "name": "Password",
@@ -367,7 +378,7 @@
         "SG",
         "IN"
       ],
-      "defaultAvatar": "https://sciol-public.oss-cn-shanghai.aliyuncs.com/BLogo-normal.svg",
+      "defaultAvatar": "https://storage.sciol.ac.cn/library/default_avatar.png",
       "defaultApplication": "app-built-in",
       "tags": [],
       "languages": [
@@ -642,7 +653,46 @@
   "plans": [],
   "pricings": [],
   "products": [],
-  "providers": [],
+  "providers": [
+    {
+      "owner": "admin",
+      "name": "provider-storage-built-in",
+      "createdTime": "2024-09-09T09:26:12Z",
+      "displayName": "MinIO Storage",
+      "category": "Storage",
+      "type": "MinIO",
+      "subType": "",
+      "method": "",
+      "clientId": "minioadmin",
+      "clientSecret": "minioadmin",
+      "clientId2": "",
+      "clientSecret2": "",
+      "cert": "",
+      "customAuthUrl": "",
+      "customTokenUrl": "",
+      "customUserInfoUrl": "",
+      "customLogo": "",
+      "host": "",
+      "port": 0,
+      "title": "",
+      "content": "",
+      "receiver": "",
+      "regionId": "us-east-1",
+      "signName": "",
+      "templateCode": "",
+      "appId": "",
+      "endpoint": "http://localhost:9000",
+      "intranetEndpoint": "",
+      "domain": "http://localhost:9000",
+      "bucket": "casdoor",
+      "pathPrefix": "casdoor",
+      "metadata": "",
+      "idP": "",
+      "issuerUrl": "",
+      "enableSignAuthnRequest": false,
+      "providerUrl": ""
+    }
+  ],
   "records": [],
   "resources": [],
   "roles": [],

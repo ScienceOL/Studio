@@ -116,8 +116,7 @@ export function DropdownMenu({
             >
               <MenuItems
                 anchor={{
-                  // Let TS infer types from headlessui, avoid internal type imports
-                  to: 'top start',
+                  to: 'top',
                   gap: -3,
                   padding: -2,
                 }}
