@@ -6,7 +6,7 @@ type Database struct {
 	Port     int    `mapstructure:"DATABASE_PORT" default:"5432"`
 	Name     string `mapstructure:"DATABASE_NAME" default:"studio"`
 	User     string `mapstructure:"DATABASE_USER" default:"postgres"`
-	Password string `mapstructure:"DATABASE_PASSWORD" default:"studio"`
+	Password string `mapstructure:"DATABASE_PASSWORD" default:"postgres"`
 }
 
 type Redis struct {
