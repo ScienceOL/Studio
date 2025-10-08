@@ -12,7 +12,7 @@ COPY tsconfig.json tsconfig.app.json tsconfig.node.json ./
 RUN corepack enable
 
 # Use --immutable instead of --frozen-lockfile and add retry logic
-RUN yarn install --immutable --network-timeout 300000
+RUN yarn install --immutable
 
 # Stage 1: Build the application
 FROM base AS builder

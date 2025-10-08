@@ -17,8 +17,8 @@ export default function NavbarFullWidthPreview({
   open,
   setOpen,
   numberOfCallsToAction = 3,
-  numberOfSolutions = 3,
-}: NavbarFullWidthPreviewProps) {
+}: // numberOfSolutions = 3,
+NavbarFullWidthPreviewProps) {
   const { t } = useTranslation();
 
   const [categories] = useState(options);

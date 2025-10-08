@@ -4,7 +4,7 @@ const NavbarFullWidthFooter = ({
   callsToAction,
   numberOfCallsToAction = 3,
 }: {
-  callsToAction: { name: string; href: string; icon: any }[];
+  callsToAction: { name: string; href: string; icon: React.ElementType }[];
   numberOfCallsToAction: number;
 }) => {
   return (
