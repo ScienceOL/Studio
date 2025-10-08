@@ -1,5 +1,4 @@
 import { GitHubIcon } from '@/assets/SocialIcons';
-import { type NavbarFullWidthProps } from '@/types/navbar';
 import {
   EnvelopeIcon,
   InformationCircleIcon,

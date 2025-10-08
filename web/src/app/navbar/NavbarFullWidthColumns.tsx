@@ -1,4 +1,3 @@
-import { type NavbarFullWidthColumnsProps } from '@/types/navbar';
 import { Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import clsx from 'clsx';

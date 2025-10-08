@@ -1,23 +1,23 @@
-export interface solutionsProps {
+interface solutionsProps {
   name: string;
   description: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
-export interface callsToActionProps {
+interface callsToActionProps {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
-export interface resourcesProps {
+interface resourcesProps {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
-export interface recentPostsProps {
+interface recentPostsProps {
   id: number;
   title: string;
   href: string;
@@ -28,11 +28,11 @@ export interface recentPostsProps {
   description: string;
 }
 
-export interface OptionsProps {
+interface OptionsProps {
   [key: string]: solutionsProps[];
 }
 
-export interface NavbarFullWidthProps {
+interface NavbarFullWidthProps {
   buttonName: string;
 
   solutions: solutionsProps[];
@@ -46,7 +46,7 @@ export interface NavbarFullWidthProps {
   numberOfSolutions?: number;
 }
 
-export interface NavbarFullWidthColumnsProps {
+interface NavbarFullWidthColumnsProps {
   buttonName: string;
   resources: resourcesProps[];
   engagements?: resourcesProps[];
@@ -61,7 +61,7 @@ export interface NavbarFullWidthColumnsProps {
   numberOfCallsToAction?: number;
 }
 
-export interface NavbarFullWidthPreviewProps {
+interface NavbarFullWidthPreviewProps {
   buttonName: string;
   options: OptionsProps;
   callsToAction: callsToActionProps[];

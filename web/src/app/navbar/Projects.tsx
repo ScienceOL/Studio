@@ -1,5 +1,4 @@
 import { GitHubIcon } from '@/assets/SocialIcons';
-import { type NavbarFullWidthPreviewProps } from '@/types/navbar';
 import { EnvelopeIcon, RocketLaunchIcon } from '@heroicons/react/24/outline';
 
 import {

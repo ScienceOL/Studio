@@ -1,4 +1,3 @@
-import { type NavbarFullWidthProps } from '@/types/navbar';
 import {
   BookmarkSquareIcon,
   EnvelopeIcon,

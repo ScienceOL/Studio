@@ -1,5 +1,4 @@
 import { GitHubIcon } from '@/assets/SocialIcons';
-import { type NavbarFullWidthColumnsProps } from '@/types/navbar';
 import {
   AdjustmentsHorizontalIcon,
   DocumentTextIcon,
