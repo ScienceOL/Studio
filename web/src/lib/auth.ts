@@ -1,4 +1,20 @@
-import { config } from '@/configs/auth';
+import { config } from '@/configs';
+
+// OAuth2 相关配置
+const oauth2 = {
+  // 后端登录地址
+  loginUrl: `${config.apiBaseUrl}/api/auth/login`,
+  // 后端刷新token地址
+  refreshUrl: `${config.apiBaseUrl}/api/auth/refresh`,
+};
+
+// 本地存储 key
+const storage = {
+  accessToken: 'access_token',
+  refreshToken: 'refresh_token',
+  tokenExpiry: 'token_expiry',
+  userInfo: 'user_info',
+};
 
 // 用户信息类型（匹配后端 UserData 结构）
 export interface UserInfo {
@@ -32,8 +48,8 @@ export class AuthUtils {
   static isAuthenticated(): boolean {
     if (typeof window === 'undefined') return false;
 
-    const token = localStorage.getItem(config.storage.accessToken);
-    const expiry = localStorage.getItem(config.storage.tokenExpiry);
+    const token = localStorage.getItem(storage.accessToken);
+    const expiry = localStorage.getItem(storage.tokenExpiry);
 
     if (!token || !expiry) return false;
 
@@ -48,35 +64,35 @@ export class AuthUtils {
   static saveAuthInfo(tokenInfo: TokenInfo, userInfo?: UserInfo): void {
     if (typeof window === 'undefined') return;
 
-    localStorage.setItem(config.storage.accessToken, tokenInfo.accessToken);
-    localStorage.setItem(config.storage.refreshToken, tokenInfo.refreshToken);
+    localStorage.setItem(storage.accessToken, tokenInfo.accessToken);
+    localStorage.setItem(storage.refreshToken, tokenInfo.refreshToken);
 
     // 计算过期时间（提前5分钟过期，避免边界情况）
     const expiryTime = Date.now() + tokenInfo.expiresIn * 1000 - 5 * 60 * 1000;
-    localStorage.setItem(config.storage.tokenExpiry, expiryTime.toString());
+    localStorage.setItem(storage.tokenExpiry, expiryTime.toString());
 
     if (userInfo) {
-      localStorage.setItem(config.storage.userInfo, JSON.stringify(userInfo));
+      localStorage.setItem(storage.userInfo, JSON.stringify(userInfo));
     }
   }
 
   // 获取存储的访问令牌
   static getAccessToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(config.storage.accessToken);
+    return localStorage.getItem(storage.accessToken);
   }
 
   // 获取存储的刷新令牌
   static getRefreshToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(config.storage.refreshToken);
+    return localStorage.getItem(storage.refreshToken);
   }
 
   // 获取用户信息
   static getUserInfo(): UserInfo | null {
     if (typeof window === 'undefined') return null;
 
-    const userInfoStr = localStorage.getItem(config.storage.userInfo);
+    const userInfoStr = localStorage.getItem(storage.userInfo);
     if (!userInfoStr) return null;
 
     try {
@@ -91,10 +107,10 @@ export class AuthUtils {
   static clearAuthInfo(): void {
     if (typeof window === 'undefined') return;
 
-    localStorage.removeItem(config.storage.accessToken);
-    localStorage.removeItem(config.storage.refreshToken);
-    localStorage.removeItem(config.storage.tokenExpiry);
-    localStorage.removeItem(config.storage.userInfo);
+    localStorage.removeItem(storage.accessToken);
+    localStorage.removeItem(storage.refreshToken);
+    localStorage.removeItem(storage.tokenExpiry);
+    localStorage.removeItem(storage.userInfo);
   }
 
   // 重定向到登录页
@@ -111,7 +127,7 @@ export class AuthUtils {
       );
     }
 
-    window.location.href = config.oauth2.loginUrl;
+    window.location.href = oauth2.loginUrl;
   }
 
   // 刷新 token
@@ -125,7 +141,7 @@ export class AuthUtils {
     }
 
     try {
-      const response = await fetch(config.oauth2.refreshUrl, {
+      const response = await fetch(oauth2.refreshUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
