@@ -26,8 +26,13 @@ COPY . .
 
 # Set build-time environment variables
 ARG VITE_BACKEND_URL
+ARG VITE_API_BASE_URL
+ARG VITE_FRONTEND_BASE_URL
+
 ENV NODE_ENV=production
 ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_FRONTEND_BASE_URL=${VITE_FRONTEND_BASE_URL}
 
 # Build the application
 # The build script in package.json is "rimraf site && tsc -b && vite build"

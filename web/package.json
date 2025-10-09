@@ -8,6 +8,8 @@
     "dev": "vite --host --port 32234 --strictPort",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "imagex": "docker buildx build . --platform linux/amd64 -t registry.sciol.ac.cn/sciol/studio-web:latest --push",
+    "image": "docker build . -t registry.sciol.ac.cn/sciol/studio-web:latest --push",
     "preview": "vite preview"
   },
   "dependencies": {
