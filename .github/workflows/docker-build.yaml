@@ -24,7 +24,7 @@ jobs:
 
       - name: Build and push Service Docker image
         run: |
-          docker build service -t registry.sciol.ac.cn/sciol/studio-service:latest --push
+          docker build service -t registry.sciol.ac.cn/sciol/studio-service:latest --push -f build/Dockerfile
 
       - name: Build and push Web Docker image
         run: |
