@@ -183,14 +183,14 @@ export default function ResizableSidebar() {
           {/* Header with user dropdown */}
           <div className="flex h-16 shrink-0 items-center justify-between overflow-hidden">
             <DropdownMenu
-              avatar={user?.avatar || '/default-avatar.png'}
+              avatar={user?.avatar || '/default_avatar.png'}
               username={user?.name || 'User'}
               onOpenChange={(open) => setIsDropdownOpen(open)}
             >
               <MenuButton className="flex h-10 w-10 fill-indigo-800 transition-opacity duration-150 ease-in-out hover:opacity-75 dark:fill-white">
                 <img
                   className="h-9 w-9 rounded-full bg-neutral-50"
-                  src={user?.avatar || '/default-avatar.png'}
+                  src={user?.avatar || '/default_avatar.png'}
                   alt="avatar"
                 />
                 {effectiveWidth > SIDEBAR_CONFIG.MIN_WIDTH && (
