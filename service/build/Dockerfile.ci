@@ -1,7 +1,7 @@
 ARG BUILD_ENV=production
 ARG GO_VERSION=1.24.6
 
-FROM registry.sciol.ac.cn/library/golang:${GO_VERSION}-alpine AS base
+FROM golang:${GO_VERSION}-alpine AS base
 
 FROM base AS builder
 
@@ -9,8 +9,8 @@ WORKDIR /app
 
 RUN apk add --no-cache git ca-certificates tzdata
 
-# 使用国内 GOPROXY，加速依赖下载
-ENV GOPROXY=https://goproxy.cn,direct
+# 使用国际通用 GOPROXY，适用于 Github CI
+ENV GOPROXY=https://proxy.golang.org,direct
 
 COPY go.mod go.sum ./
 COPY . .
