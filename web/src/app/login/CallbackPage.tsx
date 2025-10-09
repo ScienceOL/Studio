@@ -2,6 +2,16 @@ import { AuthUtils } from '@/lib/auth';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
+// 辅助函数：从 Cookie 中读取指定名称的值
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(';').shift() || null;
+  }
+  return null;
+}
+
 export default function LoginCallback() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -21,18 +31,12 @@ export default function LoginCallback() {
 
     const handleCallback = async () => {
       try {
-        // 从 URL 参数中获取 token 信息
-        const token = searchParams.get('token');
-        const refreshToken = searchParams.get('refresh_token');
-        const expiresIn = searchParams.get('expires_in');
-        const userEncoded = searchParams.get('user');
+        // 检查 URL 参数中是否有错误
         const error = searchParams.get('error');
+        const status = searchParams.get('status');
 
         console.log('Callback params:', {
-          token,
-          refreshToken,
-          expiresIn,
-          userEncoded,
+          status,
           error,
         });
 
@@ -54,36 +58,62 @@ export default function LoginCallback() {
           return;
         }
 
-        // 检查必要的参数
-        if (!token || !refreshToken || !expiresIn) {
+        // 检查登录状态
+        if (status !== 'success') {
           setStatus('error');
-          setMessage('登录参数不完整，请重新登录');
-          console.error('Missing required params:', {
-            token: !!token,
-            refreshToken: !!refreshToken,
-            expiresIn: !!expiresIn,
-          });
+          setMessage('登录状态异常，请重新登录');
+          return;
+        }
+
+        // 从 Cookie 中读取 token 和用户信息
+        console.log('📝 All cookies:', document.cookie);
+
+        const token = getCookie('access_token');
+        const refreshToken = getCookie('refresh_token');
+        const userInfoEncoded = getCookie('user_info');
+
+        console.log('Reading from cookies:', {
+          hasToken: !!token,
+          hasRefreshToken: !!refreshToken,
+          hasUserInfo: !!userInfoEncoded,
+          tokenLength: token?.length || 0,
+          refreshTokenLength: refreshToken?.length || 0,
+        });
+
+        // 检查必要的参数
+        if (!token || !refreshToken) {
+          setStatus('error');
+          setMessage('未能从 Cookie 中获取登录信息，请重新登录');
+          console.error('Missing token in cookies');
           return;
         }
 
         // 解析用户信息
         let userInfo = null;
-        if (userEncoded) {
+        if (userInfoEncoded) {
           try {
-            const userJSON = atob(userEncoded);
+            const userJSON = atob(userInfoEncoded);
             userInfo = JSON.parse(userJSON);
-            console.log('Parsed user info:', userInfo);
+            console.log('Parsed user info from cookie:', userInfo);
           } catch (parseError) {
-            console.warn('Failed to parse user info from URL:', parseError);
+            console.warn('Failed to parse user info from cookie:', parseError);
           }
         }
+
+        // 注意：由于 token 已经在 HTTP-Only Cookie 中，我们不需要再存储到 localStorage
+        // 但为了兼容现有的 AuthUtils，我们还是将 token 保存到 localStorage
+        // 未来可以考虑完全使用 Cookie 方式
+
+        // 从 Cookie 中读取过期时间（如果后端设置了）
+        // 这里我们假设 token 的有效期，可以后续从后端 API 获取
+        const expiresIn = 3600; // 默认1小时
 
         // 保存认证信息和用户信息
         AuthUtils.saveAuthInfo(
           {
             accessToken: token,
             refreshToken: refreshToken,
-            expiresIn: parseInt(expiresIn, 10),
+            expiresIn: expiresIn,
             tokenType: 'Bearer',
           },
           userInfo

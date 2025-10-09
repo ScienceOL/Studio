@@ -2,6 +2,11 @@ package login
 
 import "github.com/scienceol/studio/service/pkg/repo/model"
 
+type LoginReq struct {
+	// 前端回调地址（可选）
+	FrontendCallbackURL string `json:"frontend_callback_url" form:"frontend_callback_url"`
+}
+
 type Resp struct {
 	RedirectURL string `json:"redirect_url"`
 }
@@ -23,8 +28,9 @@ type CallbackReq struct {
 }
 
 type CallbackResp struct {
-	User         *model.UserData `json:"user"`
-	Token        string          `json:"token"`
-	RefreshToken string          `json:"refresh_token"`
-	ExpiresIn    int64           `json:"expires_in"`
+	User                *model.UserData `json:"user"`
+	Token               string          `json:"token"`
+	RefreshToken        string          `json:"refresh_token"`
+	ExpiresIn           int64           `json:"expires_in"`
+	FrontendCallbackURL string          `json:"frontend_callback_url"` // 前端回调地址
 }

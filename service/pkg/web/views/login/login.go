@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/scienceol/studio/service/pkg/common"
@@ -34,11 +35,18 @@ func NewLogin() *Login {
 // @Tags 登录模块
 // @Accept json
 // @Produce json
+// @Param frontend_callback_url query string false "前端回调地址"
 // @Success 302 {string} string "重定向到OAuth2授权页面"
 // @Header 302 {string} Location "重定向的授权URL地址"
 // @Router /api/auth/login [get]
 func (l *Login) Login(ctx *gin.Context) {
-	resp, err := l.lService.Login(ctx)
+	req := &ls.LoginReq{}
+	// 从查询参数获取前端回调地址（可选）
+	if err := ctx.ShouldBindQuery(req); err != nil {
+		logger.Errorf(ctx, "Invalid login request: %v", err)
+	}
+
+	resp, err := l.lService.Login(ctx, req)
 	if err != nil {
 		common.ReplyErr(ctx, err)
 		return
@@ -88,9 +96,11 @@ func (l *Login) Callback(ctx *gin.Context) {
 	req := &ls.CallbackReq{}
 	if err := ctx.ShouldBindQuery(req); err != nil {
 		logger.Errorf(ctx, "callback param err: %+v", err)
+		// 获取默认前端地址
+		frontendBaseURL := getDefaultFrontendURL()
 		// 重定向到前端错误页面
-		errorURL := fmt.Sprintf("http://localhost:32234/login/callback?error=%s",
-			url.QueryEscape("参数解析错误"))
+		errorURL := fmt.Sprintf("%s/login/callback?error=%s",
+			frontendBaseURL, url.QueryEscape("参数解析错误"))
 		ctx.Redirect(http.StatusFound, errorURL)
 		return
 	}
@@ -98,33 +108,79 @@ func (l *Login) Callback(ctx *gin.Context) {
 	resp, err := l.lService.Callback(ctx, req)
 	if err != nil {
 		logger.Errorf(ctx, "callback service err: %+v", err)
+		// 获取默认前端地址
+		frontendBaseURL := getDefaultFrontendURL()
 		// 重定向到前端错误页面
 		errorMsg := "登录处理失败"
 		if err.Error() != "" {
 			errorMsg = err.Error()
 		}
-		errorURL := fmt.Sprintf("http://localhost:32234/login/callback?error=%s",
-			url.QueryEscape(errorMsg))
+		errorURL := fmt.Sprintf("%s/login/callback?error=%s",
+			frontendBaseURL, url.QueryEscape(errorMsg))
 		ctx.Redirect(http.StatusFound, errorURL)
 		return
 	}
 
-	// OAuth2最佳实践: 后端处理完成后重定向到前端，并通过URL参数传递token和用户信息
-	params := url.Values{}
-	params.Set("token", resp.Token)
-	params.Set("refresh_token", resp.RefreshToken)
-	params.Set("expires_in", fmt.Sprintf("%d", resp.ExpiresIn))
+	// OAuth2最佳实践: 使用 Cookie 存储 token，避免 URL 过长问题
 
-	// 如果有用户信息，也传递给前端
+	// 判断是否为 HTTPS（生产环境）
+	isSecure := ctx.Request.TLS != nil || ctx.GetHeader("X-Forwarded-Proto") == "https"
+
+	// 设置 access_token cookie
+	// 注意：为了让前端 JavaScript 能读取，httpOnly 设为 false
+	// 在生产环境建议使用 httpOnly=true，并通过后端 API 来验证 token
+	ctx.SetCookie(
+		"access_token",      // name
+		resp.Token,          // value
+		int(resp.ExpiresIn), // maxAge (seconds)
+		"/",                 // path
+		"",                  // domain (empty = current domain)
+		isSecure,            // secure (HTTPS 时为 true)
+		false,               // httpOnly = false，允许 JavaScript 读取
+	)
+
+	// 设置 refresh_token cookie
+	ctx.SetCookie(
+		"refresh_token",   // name
+		resp.RefreshToken, // value
+		30*24*60*60,       // maxAge: 30天
+		"/",               // path
+		"",                // domain
+		isSecure,          // secure
+		false,             // httpOnly = false，允许 JavaScript 读取
+	)
+
+	// 将用户信息以 JSON 格式存储在 cookie 中
 	if resp.User != nil {
 		userJSON, err := json.Marshal(resp.User)
 		if err == nil {
-			// 使用 base64 编码用户信息，避免 URL 长度限制
-			userEncoded := base64.URLEncoding.EncodeToString(userJSON)
-			params.Set("user", userEncoded)
+			ctx.SetCookie(
+				"user_info",
+				base64.URLEncoding.EncodeToString(userJSON),
+				int(resp.ExpiresIn),
+				"/",
+				"",
+				isSecure, // secure
+				false,    // httpOnly = false，允许前端读取
+			)
 		}
 	}
 
-	frontendURL := fmt.Sprintf("http://localhost:32234/login/callback?%s", params.Encode())
+	logger.Infof(ctx, "Set cookies: access_token, refresh_token, user_info (secure=%v)", isSecure)
+
+	// 重定向到前端，只传递简单的状态参数
+	params := url.Values{}
+	params.Set("status", "success")
+
+	frontendURL := fmt.Sprintf("%s?%s", resp.FrontendCallbackURL, params.Encode())
 	ctx.Redirect(http.StatusFound, frontendURL)
+}
+
+// getDefaultFrontendURL 获取默认的前端地址
+func getDefaultFrontendURL() string {
+	frontendURL := os.Getenv("FRONTEND_BASE_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:32234"
+	}
+	return frontendURL
 }

@@ -39,4 +39,6 @@ export const config = {
   frontendBaseUrl: getFrontendBaseUrl(),
 } as const;
 
+console.log('Config:', config);
+
 export type Config = typeof config;

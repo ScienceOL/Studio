@@ -2,8 +2,10 @@ package casdoor
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	r "github.com/redis/go-redis/v9"
@@ -17,6 +19,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// OAuth State 结构
+type oauthState struct {
+	Timestamp           int64  `json:"timestamp"`
+	FrontendCallbackURL string `json:"frontend_callback_url,omitempty"`
+}
+
 type casdoorLogin struct {
 	*r.Client
 	oauthConfig *oauth2.Config
@@ -29,23 +37,37 @@ func NewCasDoorLogin() login.Service {
 	}
 }
 
-func (c *casdoorLogin) Login(ctx context.Context) (*login.Resp, error) {
-	state := fmt.Sprintf("%d", time.Now().UnixNano())
+func (c *casdoorLogin) Login(ctx context.Context, req *login.LoginReq) (*login.Resp, error) {
+	// 构建 state 对象
+	stateObj := oauthState{
+		Timestamp:           time.Now().UnixNano(),
+		FrontendCallbackURL: req.FrontendCallbackURL,
+	}
+
+	// 将 state 对象序列化为 JSON 并进行 base64 编码
+	stateJSON, err := json.Marshal(stateObj)
+	if err != nil {
+		logger.Errorf(ctx, "Failed to marshal state: %v", err)
+		return nil, code.LoginSetStateErr
+	}
+
+	state := base64.URLEncoding.EncodeToString(stateJSON)
+
 	// 将state保存到Redis中，设置5分钟过期时间
 	stateKey := fmt.Sprintf("oauth_state:%s", state)
-	
-	logger.Infof(ctx, "Saving state to Redis: key=%s, value=valid", stateKey)
-	
+
+	logger.Infof(ctx, "Saving state to Redis: key=%s, frontend_callback_url=%s", stateKey, req.FrontendCallbackURL)
+
 	if err := c.Set(ctx, stateKey, "valid", 5*time.Minute).Err(); err != nil {
 		logger.Errorf(ctx, "Failed to save state to Redis: %v", err)
 		return nil, code.LoginSetStateErr
 	}
-	
+
 	logger.Infof(ctx, "State saved successfully to Redis")
-	
+
 	// 构建授权URL并重定向用户到OAuth2提供商登录页面
 	authURL := c.oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
-	
+
 	logger.Infof(ctx, "Generated auth URL: %s", authURL)
 
 	return &login.Resp{RedirectURL: authURL}, nil
@@ -77,20 +99,46 @@ func (c *casdoorLogin) Refresh(ctx context.Context, req *login.RefreshTokenReq) 
 func (c *casdoorLogin) Callback(ctx context.Context, req *login.CallbackReq) (*login.CallbackResp, error) {
 	// 验证state是否存在于Redis中
 	stateKey := fmt.Sprintf("oauth_state:%s", req.State)
-	
+
 	logger.Infof(ctx, "Verifying state from Redis: key=%s", stateKey)
-	
+
 	redisResult := redis.GetClient().Get(ctx, stateKey)
 	if redisResult.Err() != nil {
 		logger.Errorf(ctx, "State verification failed: key=%s, error=%v", stateKey, redisResult.Err())
 		return nil, code.LoginStateErr
 	}
-	
+
 	stateValue, _ := redisResult.Result()
 	logger.Infof(ctx, "State found in Redis: key=%s, value=%s", stateKey, stateValue)
 
 	// 删除使用过的state
 	redis.GetClient().Del(ctx, stateKey)
+
+	// 解析 state 获取前端回调地址
+	stateJSON, err := base64.URLEncoding.DecodeString(req.State)
+	if err != nil {
+		logger.Errorf(ctx, "Failed to decode state: %v", err)
+		return nil, code.LoginStateErr
+	}
+
+	var stateObj oauthState
+	if err := json.Unmarshal(stateJSON, &stateObj); err != nil {
+		logger.Errorf(ctx, "Failed to unmarshal state: %v", err)
+		return nil, code.LoginStateErr
+	}
+
+	// 获取前端回调地址，如果没有则使用环境变量中的默认值
+	frontendCallbackURL := stateObj.FrontendCallbackURL
+	if frontendCallbackURL == "" {
+		frontendCallbackURL = os.Getenv("FRONTEND_BASE_URL")
+		if frontendCallbackURL == "" {
+			frontendCallbackURL = "http://localhost:32234"
+		}
+		frontendCallbackURL += "/login/callback"
+	}
+
+	logger.Infof(ctx, "Frontend callback URL: %s", frontendCallbackURL)
+
 	// 用授权码交换token
 	token, err := c.oauthConfig.Exchange(ctx, req.Code, oauth2.AccessTypeOffline)
 	if err != nil {
@@ -126,9 +174,10 @@ func (c *casdoorLogin) Callback(ctx context.Context, req *login.CallbackReq) (*l
 		return nil, code.LoginCallbackErr
 	}
 	return &login.CallbackResp{
-		User:         result.Data,
-		Token:        token.AccessToken,
-		RefreshToken: token.RefreshToken,
-		ExpiresIn:    token.Expiry.Unix() - time.Now().Unix(),
+		User:                result.Data,
+		Token:               token.AccessToken,
+		RefreshToken:        token.RefreshToken,
+		ExpiresIn:           token.Expiry.Unix() - time.Now().Unix(),
+		FrontendCallbackURL: frontendCallbackURL,
 	}, nil
 }

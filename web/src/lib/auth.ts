@@ -127,7 +127,21 @@ export class AuthUtils {
       );
     }
 
-    window.location.href = oauth2.loginUrl;
+    // 构建前端回调地址，使用配置中的 frontendBaseUrl
+    const frontendCallbackURL = `${config.frontendBaseUrl}/login/callback`;
+
+    // 将前端回调地址作为查询参数传递给后端登录接口
+    const loginUrlWithCallback = `${
+      oauth2.loginUrl
+    }?frontend_callback_url=${encodeURIComponent(frontendCallbackURL)}`;
+
+    console.log(
+      '🔄 Redirecting to login with callback URL:',
+      frontendCallbackURL
+    );
+    console.log('🔗 Login URL:', loginUrlWithCallback);
+
+    window.location.href = loginUrlWithCallback;
   }
 
   // 刷新 token
