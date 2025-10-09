@@ -432,7 +432,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@headlessui/react@npm:^2.2.4":
+"@headlessui/react@npm:^2.2.4, @headlessui/react@npm:^2.2.9":
   version: 2.2.9
   resolution: "@headlessui/react@npm:2.2.9"
   dependencies:
@@ -872,9 +872,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sciol/xyzen@npm:^0.2.5":
-  version: 0.2.5
-  resolution: "@sciol/xyzen@npm:0.2.5"
+"@sciol/xyzen@npm:^0.2.6":
+  version: 0.2.6
+  resolution: "@sciol/xyzen@npm:0.2.6"
   dependencies:
     "@dnd-kit/core": "npm:^6.3.1"
     "@dnd-kit/modifiers": "npm:^9.0.0"
@@ -883,6 +883,8 @@ __metadata:
     "@heroicons/react": "npm:^2.2.0"
     "@tailwindcss/vite": "npm:^4.1.11"
     "@tanstack/react-query": "npm:^5.83.0"
+    "@types/react": "npm:^19.1.8"
+    "@types/react-dom": "npm:^19.1.6"
     "@types/react-syntax-highlighter": "npm:^15.5.13"
     clsx: "npm:^2.1.1"
     date-fns: "npm:^4.1.0"
@@ -902,8 +904,9 @@ __metadata:
     remark-math: "npm:^6.0.0"
     tailwindcss: "npm:^4.1.11"
     uuid: "npm:^11.1.0"
+    vite: "npm:^7.1.7"
     zustand: "npm:^5.0.6"
-  checksum: 10c0/d3221edcaf569498b500f3583413214c0ba557bb9758cbdf48e7d814c8e36a98021567c9d74107f75373027d91e14c9955fa2f5337a16a39a34c1b0cafda7d1e
+  checksum: 10c0/85cd5500e19776a1f879fc5341a324d0c1cb0008a44072e926813202fc67fff0212604e335d53b617a1e77b052a28a33696d2d23eee002a7fac0a2b522d52117
   languageName: node
   linkType: hard
 
@@ -1362,6 +1365,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/react-dom@npm:^19.1.6":
+  version: 19.2.1
+  resolution: "@types/react-dom@npm:19.2.1"
+  peerDependencies:
+    "@types/react": ^19.2.0
+  checksum: 10c0/0dbbc5b7ecd74681bfac95a413133b26118a70b8840748277abafa47e5c7a037beae6a660e6a21fb53f5cbdb0b2d33e117ea7bbd976a888c298392a8a96bc68f
+  languageName: node
+  linkType: hard
+
 "@types/react-dom@npm:^19.2.0":
   version: 19.2.0
   resolution: "@types/react-dom@npm:19.2.0"
@@ -1407,6 +1419,15 @@ __metadata:
   dependencies:
     csstype: "npm:^3.0.2"
   checksum: 10c0/a280e146df2abd3b06eaa2f5332dade9f7ebe916334a40699ee11139c5f22aeb49b5b78b6de8c55b53ef2fa94285e1bc2feaf4fbce6fe259a7de92dc1bf67b17
+  languageName: node
+  linkType: hard
+
+"@types/react@npm:^19.1.8":
+  version: 19.2.2
+  resolution: "@types/react@npm:19.2.2"
+  dependencies:
+    csstype: "npm:^3.0.2"
+  checksum: 10c0/f830b1204aca4634ce3c6cb3477b5d3d066b80a4dd832a4ee0069acb504b6debd2416548a43a11c1407c12bc60e2dc6cf362934a18fe75fe06a69c0a98cba8ab
   languageName: node
   linkType: hard
 
@@ -5399,9 +5420,12 @@ __metadata:
   resolution: "vite-project@workspace:."
   dependencies:
     "@dnd-kit/core": "npm:^6.3.1"
+    "@dnd-kit/modifiers": "npm:^9.0.0"
     "@dnd-kit/utilities": "npm:^3.2.2"
     "@eslint/js": "npm:^9.36.0"
-    "@sciol/xyzen": "npm:^0.2.5"
+    "@headlessui/react": "npm:^2.2.9"
+    "@heroicons/react": "npm:^2.2.0"
+    "@sciol/xyzen": "npm:^0.2.6"
     "@tailwindcss/postcss": "npm:^4.1.14"
     "@tailwindcss/vite": "npm:^4.1.14"
     "@types/node": "npm:^24.6.2"
