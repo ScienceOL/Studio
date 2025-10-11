@@ -1,7 +1,7 @@
 export default function GridBackground() {
   return (
     <svg
-      className="absolute inset-x-0 top-0 -z-10 h-[32rem] w-full stroke-neutral-200 [mask-image:radial-gradient(32rem_32rem_at_center,white,transparent)] dark:stroke-neutral-800"
+      className="absolute inset-x-0 top-0 -z-10 h-[64rem] w-full stroke-neutral-200 [mask-image:radial-gradient(32rem_32rem_at_center,white,transparent)] dark:stroke-neutral-800"
       aria-hidden="true"
     >
       <defs>
