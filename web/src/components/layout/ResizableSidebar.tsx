@@ -188,6 +188,7 @@ export default function ResizableSidebar() {
             <AuthUserMenu
               avatar={user?.avatar || '/default_avatar.png'}
               username={user?.name || 'User'}
+              email={user?.email}
               onOpenChange={(open) => setIsDropdownOpen(open)}
             >
               <MenuButton

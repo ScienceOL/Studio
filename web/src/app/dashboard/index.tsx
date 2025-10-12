@@ -24,7 +24,10 @@ export default function DashboardLayout() {
       <ResizableSidebar />
 
       {/* Xyzen 面板 */}
-      <Xyzen showThemeToggle={false} />
+      <Xyzen
+        showThemeToggle={false}
+        backendUrl={import.meta.env.DEV ? 'http://localhost:48196' : undefined}
+      />
 
       {/* 主内容区域 */}
       <main className="relative min-h-screen dark:bg-neutral-900">

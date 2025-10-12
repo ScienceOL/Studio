@@ -18,6 +18,9 @@ export interface UiState {
   // 主题状态
   theme: Theme;
 
+  // 内部状态
+  _hasHydrated: boolean;
+
   // 侧边栏动作
   setSidebarWidth: (width: number) => void;
   toggleSidebarCollapsed: () => void;
@@ -28,6 +31,9 @@ export interface UiState {
   setTheme: (theme: Theme) => void;
   cycleTheme: () => void;
   applyTheme: (theme?: Theme) => void;
+
+  // 内部动作
+  setHasHydrated: (hasHydrated: boolean) => void;
 
   // 计算属性
   getEffectiveSidebarWidth: () => number;
@@ -42,6 +48,7 @@ export const useUiStore = create<UiState>()(
         isSidebarCollapsed: false,
         isSidebarHovered: false,
         theme: 'system',
+        _hasHydrated: false,
 
         // 设置侧边栏宽度（带约束）
         setSidebarWidth: (width) => {
@@ -93,6 +100,11 @@ export const useUiStore = create<UiState>()(
           get().setTheme(nextTheme);
         },
 
+        // 设置恢复状态
+        setHasHydrated: (hasHydrated) => {
+          set({ _hasHydrated: hasHydrated });
+        },
+
         // 应用主题到 DOM
         applyTheme: (selectedTheme) => {
           const theme = selectedTheme ?? get().theme;
@@ -126,6 +138,14 @@ export const useUiStore = create<UiState>()(
           isSidebarCollapsed: state.isSidebarCollapsed,
           theme: state.theme,
         }),
+        // 恢复完成后的回调
+        onRehydrateStorage: () => (state) => {
+          if (state) {
+            state.setHasHydrated(true);
+            // 恢复完成后立即应用主题
+            state.applyTheme();
+          }
+        },
       }
     ),
     {

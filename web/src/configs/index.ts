@@ -1,6 +1,6 @@
 // 应用配置
 
-const isProduction = import.meta.env.PROD;
+export const isProduction = import.meta.env.PROD;
 
 console.log('Current Mode (NODE_ENV):', import.meta.env.MODE);
 console.log('Is Production:', isProduction);

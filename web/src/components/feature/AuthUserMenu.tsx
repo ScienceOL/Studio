@@ -29,6 +29,7 @@ interface AuthUserMenuProps<T> {
   children: React.ReactNode;
   avatar: string;
   username: string;
+  email?: string;
   onOpenChange?: (isOpen: boolean) => void;
 }
 
@@ -50,6 +51,7 @@ export function AuthUserMenu({
   children,
   avatar,
   username,
+  email,
   onOpenChange,
 }: AuthUserMenuProps<NavigationProps>) {
   const logout = useAuthStore((s) => s.logout);
@@ -140,12 +142,12 @@ export function AuthUserMenu({
                         src={avatar}
                         alt="User Avatar"
                       />
-                      <div className="ml-3">
-                        <p className="text-base font-semibold text-neutral-900 dark:text-white">
+                      <div className="ml-3 min-w-0 flex-1">
+                        <p className="text-base font-semibold text-neutral-900 dark:text-white truncate">
                           {username}
                         </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          Community
+                        <p className="text-[12px] text-neutral-500 dark:text-neutral-400 truncate">
+                          {email || 'Community'}
                         </p>
                       </div>
                     </div>
