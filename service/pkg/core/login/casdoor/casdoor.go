@@ -165,6 +165,7 @@ func (c *casdoorLogin) Callback(ctx context.Context, req *login.CallbackReq) (*l
 		return nil, code.LoginGetUserInfoErr
 	}
 
+	// Ensure the response body is closed after reading
 	defer resp.Body.Close()
 
 	// resolve user info
@@ -173,6 +174,19 @@ func (c *casdoorLogin) Callback(ctx context.Context, req *login.CallbackReq) (*l
 		logger.Errorf(ctx, "Failed to parse user info: %v", err)
 		return nil, code.LoginCallbackErr
 	}
+
+	logger.Infof(ctx, "Parsed user info: %+v, Data: %+v", result, result.Data)
+
+	// 检查 result.Data 是否为 nil
+	if result.Data == nil {
+		logger.Errorf(ctx, "result.Data is nil! UserInfo status: %s, msg: %s", result.Status, result.Msg)
+		return nil, code.LoginCallbackErr
+	}
+
+	// 打印即将返回给前端的用户数据关键字段
+	logger.Infof(ctx, "Returning user data - Name: %s, DisplayName: %s, Email: %s, ID: %s, Avatar: %s",
+		result.Data.Name, result.Data.DisplayName, result.Data.Email, result.Data.ID, result.Data.Avatar)
+
 	return &login.CallbackResp{
 		User:                result.Data,
 		Token:               token.AccessToken,

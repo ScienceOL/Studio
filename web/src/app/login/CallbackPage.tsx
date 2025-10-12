@@ -7,7 +7,9 @@ function getCookie(name: string): string | null {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) {
-    return parts.pop()?.split(';').shift() || null;
+    const cookieValue = parts.pop()?.split(';').shift() || null;
+    // 自动进行 URL 解码
+    return cookieValue ? decodeURIComponent(cookieValue) : null;
   }
   return null;
 }
@@ -67,10 +69,24 @@ export default function LoginCallback() {
 
         // 从 Cookie 中读取 token 和用户信息
         console.log('📝 All cookies:', document.cookie);
+        console.log(
+          '📝 Cookie keys:',
+          document.cookie.split(';').map((c) => c.trim().split('=')[0])
+        );
 
         const token = getCookie('access_token');
         const refreshToken = getCookie('refresh_token');
         const userInfoEncoded = getCookie('user_info');
+
+        // 调试 getCookie 函数
+        console.log('🔍 Debug getCookie for user_info:');
+        console.log('  - Raw cookie string:', document.cookie);
+        console.log('  - Looking for user_info...');
+        console.log('  - getCookie result:', userInfoEncoded);
+        console.log(
+          '  - getCookie result length:',
+          userInfoEncoded?.length || 0
+        );
 
         console.log('Reading from cookies:', {
           hasToken: !!token,
@@ -94,9 +110,9 @@ export default function LoginCallback() {
           try {
             const userJSON = atob(userInfoEncoded);
             userInfo = JSON.parse(userJSON);
-            console.log('Parsed user info from cookie:', userInfo);
+            console.log('✅ Successfully parsed user info:', userInfo);
           } catch (parseError) {
-            console.warn('Failed to parse user info from cookie:', parseError);
+            console.error('Failed to parse user info from cookie:', parseError);
           }
         }
 
@@ -120,10 +136,6 @@ export default function LoginCallback() {
         );
 
         console.log('Auth info saved successfully');
-        console.log(
-          'Stored access_token:',
-          localStorage.getItem('access_token')
-        );
 
         setStatus('success');
         setMessage('登录成功，正在跳转...');

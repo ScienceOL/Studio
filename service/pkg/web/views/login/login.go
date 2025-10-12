@@ -152,8 +152,23 @@ func (l *Login) Callback(ctx *gin.Context) {
 
 	// 将用户信息以 JSON 格式存储在 cookie 中
 	if resp.User != nil {
-		userJSON, err := json.Marshal(resp.User)
+		logger.Infof(ctx, "Marshaling user data to cookie: %+v", resp.User)
+
+		// 只存储核心用户信息，避免 Cookie 过大
+		userInfo := map[string]interface{}{
+			"id":          resp.User.ID,
+			"name":        resp.User.Name,
+			"displayName": resp.User.DisplayName,
+			"email":       resp.User.Email,
+			"avatar":      resp.User.Avatar,
+			"type":        resp.User.Type,
+			"owner":       resp.User.Owner,
+			"phone":       resp.User.Phone,
+		}
+
+		userJSON, err := json.Marshal(userInfo)
 		if err == nil {
+			logger.Infof(ctx, "User JSON for cookie: %s", string(userJSON))
 			ctx.SetCookie(
 				"user_info",
 				base64.URLEncoding.EncodeToString(userJSON),
@@ -163,7 +178,12 @@ func (l *Login) Callback(ctx *gin.Context) {
 				isSecure, // secure
 				false,    // httpOnly = false，允许前端读取
 			)
+			logger.Infof(ctx, "Successfully set user_info cookie")
+		} else {
+			logger.Errorf(ctx, "Failed to marshal user data: %v", err)
 		}
+	} else {
+		logger.Errorf(ctx, "resp.User is nil, cannot set user_info cookie")
 	}
 
 	logger.Infof(ctx, "Set cookies: access_token, refresh_token, user_info (secure=%v)", isSecure)
