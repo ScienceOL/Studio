@@ -1,6 +1,6 @@
 import Logo from '@/assets/Logo';
 import { GitHubIconOutline } from '@/assets/SocialIcons';
-import { DropdownMenu } from '@/components/layout/DropdownMenu';
+import { AuthUserMenu } from '@/components/feature/AuthUserMenu';
 import { useAuthStore } from '@/store/authStore';
 import { SIDEBAR_CONFIG, useUiStore } from '@/store/uiStore';
 import type { DragMoveEvent } from '@dnd-kit/core';
@@ -179,15 +179,21 @@ export default function ResizableSidebar() {
         onMouseLeave={() => setSidebarHovered(false)}
       >
         {/* Main content */}
-        <div className="flex grow flex-col overflow-y-auto border-r border-neutral-200 bg-white px-3 pb-4 dark:border-neutral-700 dark:bg-neutral-900">
+        <div
+          className="flex grow flex-col overflow-y-auto border-r border-neutral-200 bg-white px-3 pb-4
+         dark:border-neutral-700 dark:bg-neutral-900"
+        >
           {/* Header with user dropdown */}
           <div className="flex h-16 shrink-0 items-center justify-between overflow-hidden">
-            <DropdownMenu
+            <AuthUserMenu
               avatar={user?.avatar || '/default_avatar.png'}
               username={user?.name || 'User'}
               onOpenChange={(open) => setIsDropdownOpen(open)}
             >
-              <MenuButton className="flex h-10 w-10 fill-indigo-800 transition-opacity duration-150 ease-in-out hover:opacity-75 dark:fill-white">
+              <MenuButton
+                className="flex h-10 w-10 cursor-pointer fill-indigo-800 transition-opacity
+              duration-150 ease-in-out hover:opacity-75 focus:outline-none dark:fill-white"
+              >
                 <img
                   className="h-9 w-9 rounded-full bg-neutral-50"
                   src={user?.avatar || '/default_avatar.png'}
@@ -199,7 +205,7 @@ export default function ResizableSidebar() {
                   </span>
                 )}
               </MenuButton>
-            </DropdownMenu>
+            </AuthUserMenu>
           </div>
 
           {/* Navigation */}

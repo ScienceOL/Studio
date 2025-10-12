@@ -40,8 +40,7 @@ function EnLanguageIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 function LangSwitch({ className }: { className?: string }) {
   const { i18n } = useTranslation('translation');
 
-  const handleLanguageChange = (lang: string) => {
-    console.log('Switch language to:', lang);
+  const handleLanguageChange = () => {
     i18n.changeLanguage(i18n.language === 'en' ? 'zh' : 'en');
   };
 
@@ -51,14 +50,40 @@ function LangSwitch({ className }: { className?: string }) {
       aria-label={
         i18n.language === 'en' ? 'Switch to 中文' : 'Switch to English'
       }
-      className={clsx('group h-fit w-fit', className)}
-      onClick={() => handleLanguageChange(i18n.language)}
-    >
-      {i18n.language === 'en' ? (
-        <EnLanguageIcon className="h-5 w-5 fill-neutral-400 transition-colors duration-300 ease-in-out hover:fill-neutral-600 dark:fill-neutral-400 dark:hover:fill-neutral-50" />
-      ) : (
-        <ZhLanguageIcon className="h-5 w-5 fill-neutral-400 transition-colors duration-300 ease-in-out hover:fill-neutral-600 dark:fill-neutral-400 dark:hover:fill-neutral-50" />
+      className={clsx(
+        'group relative flex items-center justify-center',
+        'rounded-lg p-2',
+        'text-neutral-500 dark:text-neutral-400',
+        'transition-all duration-200 ease-in-out',
+        'hover:bg-neutral-100 hover:text-neutral-700',
+        'dark:hover:bg-neutral-700 dark:hover:text-neutral-200',
+        'focus:outline-none focus:ring-2 focus:ring-indigo-500/20',
+        'active:scale-95',
+        className
       )}
+      onClick={handleLanguageChange}
+    >
+      {/* 图标容器，添加翻转动画 */}
+      <div className="relative h-5 w-5">
+        {i18n.language === 'en' ? (
+          <EnLanguageIcon
+            key="en"
+            className="absolute inset-0 h-5 w-5 fill-current animate-in flip-in-y fade-in duration-300"
+          />
+        ) : (
+          <ZhLanguageIcon
+            key="zh"
+            className="absolute inset-0 h-5 w-5 fill-current animate-in flip-in-y fade-in duration-300"
+          />
+        )}
+      </div>
+
+      {/* Hover 效果光晕 */}
+      <div
+        className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-500/0
+        via-purple-500/0 to-pink-500/0 opacity-0 transition-opacity duration-300
+        group-hover:opacity-10"
+      />
     </button>
   );
 }

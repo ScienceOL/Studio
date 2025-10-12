@@ -16,7 +16,6 @@ import { ThemeToggle } from '@/components/feature/ThemeToggle';
 import XyzenButton from '@/components/feature/XyzenButton';
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-// Removed invalid internal type import from headlessui; rely on library types
 
 function classNames(...classes: string[]) {
   if (classes === undefined) {
@@ -25,7 +24,7 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-interface DropdownMenuProps<T> {
+interface AuthUserMenuProps<T> {
   customNavi?: T[];
   children: React.ReactNode;
   avatar: string;
@@ -41,13 +40,18 @@ interface NavigationProps {
   icon?: React.ReactNode;
 }
 
-export function DropdownMenu({
+/**
+ * AuthUserMenu - 用户认证头像下拉菜单
+ * 这是一个专门为已登录用户设计的下拉菜单组件
+ * 包含用户信息、导航链接、主题切换、语言切换等功能
+ */
+export function AuthUserMenu({
   customNavi,
   children,
   avatar,
   username,
   onOpenChange,
-}: DropdownMenuProps<NavigationProps>) {
+}: AuthUserMenuProps<NavigationProps>) {
   const logout = useAuthStore((s) => s.logout);
   const { t } = useTranslation('userPanel');
   const [isOpen, setIsOpen] = useState(false);
@@ -121,7 +125,7 @@ export function DropdownMenu({
                   padding: -2,
                 }}
                 className="z-50 w-72 overflow-hidden rounded-xl bg-white shadow-lg
-                  ring-1 ring-black ring-opacity-5 focus:outline-none
+                  ring-1 ring-black/5 focus:outline-none
                   dark:border dark:border-neutral-700 dark:bg-neutral-800 dark:shadow-2xl"
               >
                 {/* User Profile Section */}
@@ -237,9 +241,9 @@ export function DropdownMenu({
                       </button>
 
                       {/* Theme and Language Controls on the right */}
-                      <div className="flex items-center space-x-3">
-                        <LangSwitch className="h-4 w-4" />
-                        <ThemeToggle className="h-4 w-4" />
+                      <div className="flex items-center gap-1">
+                        <LangSwitch />
+                        <ThemeToggle />
                       </div>
                     </div>
                   </div>
@@ -253,4 +257,4 @@ export function DropdownMenu({
   );
 }
 
-export default DropdownMenu;
+export default AuthUserMenu;
