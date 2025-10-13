@@ -4,7 +4,6 @@
     "ms-python.vscode-pylance",
     "ms-python.black-formatter",
     "ms-python.flake8",
-    "batisteo.vscode-django",
 
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",

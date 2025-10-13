@@ -10,6 +10,9 @@
 SCRIPT_DIR=$(dirname "$0")
 PROJECT_DIR=$(dirname "${SCRIPT_DIR}")
 ENV_FILE="${PROJECT_DIR}/docker/.env.dev"
+# 定义 sciol 全局虚拟虚拟环境的路径
+SCIOL_VENV_PATH="${HOME}/.sciol/venv"
+PYTHON_VERSION="3.14"
 
 # -------------------------------
 # 颜色配置
@@ -51,41 +54,91 @@ print_help() {
 }
 
 # -------------------------------
-# 检查 pre-commit 是否安装并启用
+# 开发环境配置
 # -------------------------------
-check_precommit() {
-  echo -e "${BRIGHT_MAGENTA}\n🔍 检查 pre-commit 钩子...${RESET}"
 
-  # 检查 pre-commit 命令是否存在
-  if ! command -v pre-commit &> /dev/null; then
-    echo -e "${BRIGHT_YELLOW}⚠️  未检测到 pre-commit 安装${RESET}"
+# 步骤 1: 检查 Docker 和 .env 文件
+check_basics() {
+  echo -e "${BRIGHT_MAGENTA}\n[1/3] ⚙️  检查基础环境...${RESET}"
+  # Docker check
+  if ! command -v docker &> /dev/null; then
+    echo -e "${BRIGHT_RED}❌ 错误：未检测到 Docker 安装${RESET}"
+    exit 1
+  fi
+
+  # .env.dev check
+  if [ ! -f "${ENV_FILE}" ]; then
+    echo -e "${BRIGHT_YELLOW}未找到 .env.dev 文件，正在从 .env.example 创建...${RESET}"
+    cp "${PROJECT_DIR}/docker/.env.example" "${ENV_FILE}"
+  fi
+  echo -e "${BRIGHT_GREEN}✓ Docker 和 .env 文件已就绪。${RESET}"
+}
+
+# 步骤 2: 配置 Sciol 虚拟环境和 pre-commit
+setup_sciol_env() {
+  # 检查 uv 是否安装
+  if ! command -v uv &> /dev/null; then
+    echo -e "${BRIGHT_RED}❌ 错误：本项目使用 uv 管理 pre-commit，但未检测到 uv 安装。${RESET}"
+    echo -e "${YELLOW}请参考 https://github.com/astral-sh/uv 进行安装。${RESET}"
+    exit 1
+  fi
+
+  # 首次运行检测
+  if [ ! -f "${SCIOL_VENV_PATH}/bin/python" ]; then
+    echo -e "${BRIGHT_MAGENTA}\n[2/3] 🚀 首次配置 Sciol 虚拟环境...${RESET}"
+    echo -e "${BRIGHT_CYAN}▶ 正在创建 Python ${PYTHON_VERSION} 虚拟环境于 ${SCIOL_VENV_PATH}...${RESET}"
+    mkdir -p "$(dirname "${SCIOL_VENV_PATH}")"
+    uv venv "${SCIOL_VENV_PATH}" --python ${PYTHON_VERSION}
+    if [ $? -ne 0 ]; then
+      echo -e "${BRIGHT_RED}❌ 虚拟环境创建失败。${RESET}"
+      exit 1
+    fi
+
     echo -e "${BRIGHT_CYAN}▶ 正在安装 pre-commit...${RESET}"
-    pip install pre-commit
+    uv pip install --python "${SCIOL_VENV_PATH}/bin/python" pre-commit
     if [ $? -ne 0 ]; then
-      echo -e "${BRIGHT_RED}❌ pre-commit 安装失败${RESET}"
-      echo -e "${YELLOW}请手动安装: pip install pre-commit${RESET}"
-      return 1
+      echo -e "${BRIGHT_RED}❌ pre-commit 安装失败。${RESET}"
+      exit 1
     fi
-    echo -e "${BRIGHT_GREEN}✓ pre-commit 安装成功${RESET}"
-  else
-    echo -e "${BRIGHT_GREEN}✓ pre-commit 已安装${RESET}"
-  fi
 
-  # 检查 pre-commit 钩子是否已安装在当前项目
-  if [ ! -f "${PROJECT_DIR}/.git/hooks/pre-commit" ] || ! grep -q "pre-commit" "${PROJECT_DIR}/.git/hooks/pre-commit"; then
-    echo -e "${BRIGHT_YELLOW}⚠️  pre-commit 钩子未安装在本项目${RESET}"
-    echo -e "${BRIGHT_CYAN}▶ 正在安装 pre-commit 钩子...${RESET}"
-    (cd "${PROJECT_DIR}" && uv run --frozen pre-commit install)
-    if [ $? -ne 0 ]; then
-      echo -e "${BRIGHT_RED}❌ pre-commit 钩子安装失败${RESET}"
-      return 1
+    echo -e "${BRIGHT_CYAN}▶ 正在安装 Git 钩子...${RESET}"
+    (cd "${PROJECT_DIR}" && "${SCIOL_VENV_PATH}/bin/pre-commit" install)
+    echo -e "${BRIGHT_GREEN}✓ Sciol 虚拟环境配置完成。${RESET}"
+  else
+    echo -e "${BRIGHT_MAGENTA}\n[2/3] 🚀 验证 Sciol 虚拟环境...${RESET}"
+    # 后续运行时，静默确保 pre-commit 和钩子都已安装
+    if [ ! -f "${SCIOL_VENV_PATH}/bin/pre-commit" ]; then
+      uv pip install --python "${SCIOL_VENV_PATH}/bin/python" pre-commit > /dev/null 2>&1
     fi
-    echo -e "${BRIGHT_GREEN}✓ pre-commit 钩子安装成功${RESET}"
-  else
-    echo -e "${BRIGHT_GREEN}✓ pre-commit 钩子已启用${RESET}"
+    (cd "${PROJECT_DIR}" && "${SCIOL_VENV_PATH}/bin/pre-commit" install) > /dev/null 2>&1
+    echo -e "${BRIGHT_GREEN}✓ Sciol 环境 (${CYAN}${SCIOL_VENV_PATH}${BRIGHT_GREEN}) 已配置。${RESET}"
   fi
+}
 
-  return 0
+# 步骤 3: 配置 VS Code 工作区
+setup_vscode_workspace() {
+  # 首次运行检测 (只要有一个配置文件缺失就认为是首次)
+  if [ ! -f "${PROJECT_DIR}/.vscode/settings.json" ] || [ ! -f "${PROJECT_DIR}/.vscode/extensions.json" ]; then
+    echo -e "${BRIGHT_MAGENTA}\n[3/3] 📝 首次配置 VS Code 工作区...${RESET}"
+    mkdir -p "${PROJECT_DIR}/.vscode"
+
+    # 处理 settings.json
+    if [ ! -f "${PROJECT_DIR}/.vscode/settings.json" ] && [ -f "${PROJECT_DIR}/.vscode/settings.example.json" ]; then
+      echo -e "${BRIGHT_CYAN}▶ 正在从 settings.example.json 创建 settings.json...${RESET}"
+      cp "${PROJECT_DIR}/.vscode/settings.example.json" "${PROJECT_DIR}/.vscode/settings.json"
+    fi
+
+    # 处理 extensions.json
+    if [ ! -f "${PROJECT_DIR}/.vscode/extensions.json" ] && [ -f "${PROJECT_DIR}/.vscode/extensions.example.json" ]; then
+      echo -e "${BRIGHT_CYAN}▶ 正在从 extensions.example.json 创建 extensions.json...${RESET}"
+      cp "${PROJECT_DIR}/.vscode/extensions.example.json" "${PROJECT_DIR}/.vscode/extensions.json"
+      echo -e "${BRIGHT_YELLOW}   请在 VS Code 中安装推荐的插件。${RESET}"
+    fi
+    echo -e "${BRIGHT_GREEN}✓ VS Code 工作区配置完成。${RESET}"
+  else
+    echo -e "${BRIGHT_MAGENTA}\n[3/3] 📝 验证 VS Code 工作区...${RESET}"
+    echo -e "${BRIGHT_GREEN}✓ VS Code 配置文件已就绪。${RESET}"
+  fi
 }
 
 # =============================================
@@ -126,38 +179,12 @@ done
 print_icon
 
 # -------------------------------
-# 环境预检
+# 开发环境配置
 # -------------------------------
-echo -e "${BRIGHT_MAGENTA}\n⚙  检查 Docker 环境...${RESET}"
-if ! command -v docker &> /dev/null; then
-  echo -e "${BRIGHT_RED}❌ 错误：未检测到 Docker 安装${RESET}"
-  exit 1
-fi
-echo -e "${BRIGHT_GREEN}✓ Docker 已就绪${RESET}"
-
-# 检查 .env.dev 文件是否存在，不存在则从 .env.example 创建
-if [ ! -f "${ENV_FILE}" ]; then
-  echo -e "${BRIGHT_YELLOW}⚠️  未找到 .env.dev 文件，将从 .env.example 创建...${RESET}"
-  cp "${PROJECT_DIR}/docker/.env.example" "${ENV_FILE}"
-  echo -e "${BRIGHT_GREEN}✓ .env.dev 文件已创建${RESET}"
-fi
-
-# 检查并安装 pre-commit 钩子
-check_precommit
-
-# -------------------------------
-# 配置预览
-# -------------------------------
-# echo -e "${BRIGHT_CYAN}\n🔧 合并 Docker Compose 配置...${RESET}"
-# echo -e "${YELLOW}══════════════════════════════════════════${RESET}"
-# if [ ! -d "${PROJECT_DIR}/.temp" ]; then
-#   mkdir "${PROJECT_DIR}/.temp"
-# fi
-# docker compose -f "${PROJECT_DIR}/docker/docker-compose.base.yaml" \
-#                -f "${PROJECT_DIR}/docker/docker-compose.dev.yaml" \
-#                --env-file "${ENV_FILE}" config > "${PROJECT_DIR}/.temp/docker-compose.dev.config.yaml"
-# echo -e "配置文件保存至临时文件路径：${BRIGHT_BLUE}${PROJECT_DIR}/.temp/docker-compose.dev.config.yaml${RESET}"
-# echo -e "${YELLOW}══════════════════════════════════════════${RESET}"
+echo -e "${BRIGHT_BLUE}\n🔧 配置开发环境...${RESET}"
+check_basics
+setup_sciol_env
+setup_vscode_workspace
 
 # -------------------------------
 # 服务启动与管理

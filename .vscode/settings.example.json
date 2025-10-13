@@ -1,4 +1,6 @@
 {
+  "python.defaultInterpreterPath": "${env:HOME}/.sciol/venv/bin/python",
+  "python.terminal.activateEnvironment": true,
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
 
