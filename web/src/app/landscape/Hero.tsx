@@ -89,7 +89,7 @@ export default function Hero() {
                   <div className="ml-auto w-44 flex-none space-y-8 pt-32 sm:ml-0 sm:pt-80 lg:order-last lg:pt-36 xl:order-none xl:pt-80">
                     <div className="relative">
                       <img
-                        src="/hero5.png"
+                        src="https://storage.sciol.ac.cn/library/hero/hero22.png"
                         alt=""
                         className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover shadow-lg"
                       />
@@ -101,7 +101,7 @@ export default function Hero() {
                       <Suspense
                         fallback={
                           <img
-                            src="/hero10.png"
+                            src="https://storage.sciol.ac.cn/library/hero/hero10.png"
                             alt=""
                             className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover shadow-lg"
                           />
@@ -109,12 +109,12 @@ export default function Hero() {
                       >
                         <video
                           ref={videoRef}
-                          src="/hero10.mp4"
+                          src="https://storage.sciol.ac.cn/library/hero/hero10.mp4"
                           autoPlay
                           muted
                           loop
                           playsInline
-                          poster="/hero10.png"
+                          poster="https://storage.sciol.ac.cn/library/hero/hero10.png"
                           className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover  shadow-lg"
                         />
                       </Suspense>
@@ -122,7 +122,7 @@ export default function Hero() {
                     </div>
                     <div className="relative">
                       <img
-                        src="/hero4.png"
+                        src="https://storage.sciol.ac.cn/library/hero/hero20.png"
                         alt=""
                         className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover shadow-lg"
                       />
@@ -132,7 +132,7 @@ export default function Hero() {
                   <div className="w-44 flex-none space-y-8 pt-32 sm:pt-0">
                     <div className="relative">
                       <img
-                        src="/hero2.png"
+                        src="https://storage.sciol.ac.cn/library/hero/hero2.png"
                         alt=""
                         className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover shadow-lg"
                       />
@@ -142,7 +142,7 @@ export default function Hero() {
                       <Suspense
                         fallback={
                           <img
-                            src="/hero8.png"
+                            src="https://storage.sciol.ac.cn/library/hero/hero8.png"
                             alt=""
                             className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover shadow-lg"
                           />
@@ -150,12 +150,12 @@ export default function Hero() {
                       >
                         <video
                           ref={videoRef}
-                          src="/hero8.mp4"
+                          src="https://storage.sciol.ac.cn/library/hero/hero8.mp4"
                           autoPlay
                           muted
                           loop
                           playsInline
-                          poster="/hero8.png"
+                          poster="https://storage.sciol.ac.cn/library/hero/hero8.png"
                           className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover  shadow-lg"
                         />
                       </Suspense>

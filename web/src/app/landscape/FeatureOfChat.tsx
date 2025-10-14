@@ -1,31 +1,30 @@
+import { GitHubIcon } from '@/assets/SocialIcons';
 import {
   BookOpenIcon,
   CloudArrowUpIcon,
   ServerIcon,
 } from '@heroicons/react/20/solid';
-
-const features = [
-  {
-    name: 'inclusiveness Discussions.',
-    description:
-      'Engage in open conversations with diverse members, fostering intellectual growth.',
-    icon: CloudArrowUpIcon,
-  },
-  {
-    name: 'Expert Insights.',
-    description:
-      'Access valuable knowledge from industry professionals and thought leaders.',
-    icon: BookOpenIcon,
-  },
-  {
-    name: 'Collaborative Learning.',
-    description:
-      "Tackle complex subjects, share resources, and support each other's quest for understanding.",
-    icon: ServerIcon,
-  },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function FeatureOfChat() {
+  const { t } = useTranslation();
+  const features = [
+    {
+      name: t('chat.features.discover.name'),
+      description: t('chat.features.discover.description'),
+      icon: CloudArrowUpIcon,
+    },
+    {
+      name: t('chat.features.connect.name'),
+      description: t('chat.features.connect.description'),
+      icon: BookOpenIcon,
+    },
+    {
+      name: t('chat.features.accelerate.name'),
+      description: t('chat.features.accelerate.description'),
+      icon: ServerIcon,
+    },
+  ];
   return (
     <div className="overflow-hidden bg-white py-24 dark:bg-neutral-950 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -33,16 +32,13 @@ export default function FeatureOfChat() {
           <div className="lg:pr-8 lg:pt-4">
             <div className="lg:max-w-lg">
               <h2 className="text-base font-semibold leading-7 text-indigo-600">
-                Discussion to Research
+                {t('chat.subtitle')}
               </h2>
               <p className="mt-2 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 sm:text-4xl">
-                Join Freedom Space
+                {t('chat.title')}
               </p>
               <p className="mt-6 text-lg leading-8 text-neutral-600 dark:text-neutral-300">
-                Embark on an intellectual journey with like-minded individuals
-                in Freedom Space. Engage in stimulating discussions, exchange
-                insights, and discover groundbreaking ideas in this vibrant
-                community.
+                {t('chat.description')}
               </p>
               <dl className="mt-10 max-w-xl space-y-8 text-base leading-7 text-neutral-600 dark:text-neutral-300 lg:max-w-none">
                 {features.map((feature) => (
@@ -59,9 +55,26 @@ export default function FeatureOfChat() {
                 ))}
               </dl>
             </div>
+            <div className="group inline-block mt-16 cursor-pointer">
+              <button
+                type="button"
+                name="Github"
+                title="Github"
+                onClick={() => {
+                  window.open('https://github.com/ScienceOL');
+                }}
+                className="text-sm font-semibold flex items-center leading-6 text-neutral-900 duration-300 dark:text-neutral-100"
+              >
+                <GitHubIcon className="size-4 mr-4" />
+                <span className="" aria-hidden="true">
+                  Github →
+                </span>
+              </button>
+              <span className="mt-1 block h-[0.1rem] w-full origin-left scale-x-0 transform bg-indigo-600 transition-all duration-200 ease-in-out group-hover:scale-x-100 dark:bg-white"></span>
+            </div>
           </div>
           <img
-            src="/Feature1.png"
+            src="https://storage.sciol.ac.cn/library/hero/ScienceOLGithub.png"
             alt="Product screenshot"
             className="w-[48rem] max-w-none rounded-xl shadow-xl ring-1 ring-neutral-400/10 dark:ring-neutral-600/50 sm:w-[57rem] md:-ml-4 lg:-ml-0"
             width={2432}

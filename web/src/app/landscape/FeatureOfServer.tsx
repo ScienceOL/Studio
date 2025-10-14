@@ -1,80 +1,81 @@
+import LogoLoading from '@/components/basic/loading';
 import {
-  ArrowPathIcon,
-  CloudArrowUpIcon,
-  Cog6ToothIcon,
-  FingerPrintIcon,
-  LockClosedIcon,
-  ServerIcon,
+  BeakerIcon,
+  CircleStackIcon,
+  ComputerDesktopIcon,
+  CpuChipIcon,
+  CubeTransparentIcon,
+  PuzzlePieceIcon,
 } from '@heroicons/react/20/solid';
+import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 
-const features = [
-  {
-    name: 'Push to deploy.',
-    description:
-      'Lorem ipsum, dolor sit amet consectetur adipisicing elit aute id magna.',
-    icon: CloudArrowUpIcon,
-  },
-  {
-    name: 'SSL certificates.',
-    description:
-      'Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui lorem cupidatat commodo.',
-    icon: LockClosedIcon,
-  },
-  {
-    name: 'Simple queues.',
-    description:
-      'Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus.',
-    icon: ArrowPathIcon,
-  },
-  {
-    name: 'Advanced security.',
-    description:
-      'Lorem ipsum, dolor sit amet consectetur adipisicing elit aute id magna.',
-    icon: FingerPrintIcon,
-  },
-  {
-    name: 'Powerful API.',
-    description:
-      'Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui lorem cupidatat commodo.',
-    icon: Cog6ToothIcon,
-  },
-  {
-    name: 'Database backups.',
-    description:
-      'Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. ',
-    icon: ServerIcon,
-  },
-];
+// 懒加载 3D 组件以优化首屏性能
+const LabScene3D = lazy(() => import('./LabScene3D'));
 
 export default function FeatureOfServer() {
+  const { t } = useTranslation();
+  const features = [
+    {
+      name: t('server.features.robotics.name'),
+      description: t('server.features.robotics.description'),
+      icon: PuzzlePieceIcon,
+    },
+    {
+      name: t('server.features.ai.name'),
+      description: t('server.features.ai.description'),
+      icon: CpuChipIcon,
+    },
+    {
+      name: t('server.features.data.name'),
+      description: t('server.features.data.description'),
+      icon: CircleStackIcon,
+    },
+    {
+      name: t('server.features.digital-twin.name'),
+      description: t('server.features.digital-twin.description'),
+      icon: CubeTransparentIcon,
+    },
+    {
+      name: t('server.features.remote.name'),
+      description: t('server.features.remote.description'),
+      icon: ComputerDesktopIcon,
+    },
+    {
+      name: t('server.features.modular.name'),
+      description: t('server.features.modular.description'),
+      icon: BeakerIcon,
+    },
+  ];
   return (
     <div className="bg-white py-24 dark:bg-neutral-950 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl sm:text-center">
           <h2 className="text-base font-semibold leading-7 text-indigo-600 dark:text-indigo-400">
-            Everything you need
+            {t('server.subtitle')}
           </h2>
           <p className="mt-2 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 sm:text-4xl">
-            No server? No problem.
+            {t('server.title')}
           </p>
           <p className="mt-6 text-lg leading-8 text-neutral-600 dark:text-neutral-300">
-            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maiores
-            impedit perferendis suscipit eaque, iste dolor cupiditate
-            blanditiis.
+            {t('server.description')}
           </p>
         </div>
       </div>
       <div className="relative overflow-hidden pt-16">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <img
-            src={
-              'https://tailwindui.com/img/component-images/dark-project-app-screenshot.png'
-            }
-            alt="App screenshot"
-            className="mb-[-12%] rounded-xl shadow-2xl ring-1 ring-neutral-950/10 dark:ring-neutral-50/10"
-            width={2432}
-            height={1442}
-          />
+          {/* 3D 模型展示区域 */}
+          <div className="relative h-[500px] overflow-hidden rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 shadow-2xl ring-1 ring-neutral-950/10 dark:from-neutral-900 dark:to-neutral-800 dark:ring-neutral-50/10">
+            <Suspense
+              fallback={
+                <div className="flex h-full w-full items-center justify-center">
+                  <LogoLoading variant="large" animationType="galaxy" />
+                </div>
+              }
+            >
+              <LabScene3D />
+            </Suspense>
+          </div>
           <div className="relative" aria-hidden="true">
             <div className="absolute -inset-x-20 bottom-0 bg-gradient-to-t from-white pt-[7%] dark:from-neutral-950" />
           </div>

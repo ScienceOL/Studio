@@ -14,9 +14,10 @@ const navigation = {
   ],
   project: [
     // { name: 'Pricing', href: '#' },
-    { name: 'Molecule Dynamics', href: '#' },
-    { name: 'Density Functional Theory', href: '#' },
-    { name: 'FEM', href: '#' },
+    { name: 'Protium', href: '#' },
+    { name: 'Xyzen', href: '#' },
+    { name: 'Anti', href: '#' },
+    { name: 'LabOS', href: '#' },
   ],
   community: [
     { name: 'Articles', href: '/articles' },

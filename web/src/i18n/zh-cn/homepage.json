@@ -18,20 +18,91 @@
     }
   },
   "hero": {
-    "title": "通过在线实验室和开放标准变革科学研究",
-    "description": "Science OL 通过双平台功能连接全球研究人员：Science Online 提供可访问的虚拟实验室，而 OpenLab 则为实验室现代化提供开源标准。",
+    "title": "为 AI 驱动的实验室打造的开源操作系统",
+    "description": "ScienceOL 正在为自动化、人工智能驱动的未来科学研究构建开源操作系统。构建、自动化、协作。",
     "button": {
       "primary": "立即开始",
       "secondary": "了解更多"
     }
   },
-
   "about": {
-    "title": "Science OL：连接数字与物理实验室",
+    "title": "连接数字与物理实验室",
     "button": {
       "primary": "了解更多"
     },
-    "description": "我们的双功能平台通过在线实验和智能实验室框架，使科学工具的使用变得民主化。通过将 Science Online 的虚拟实验室与 OpenLab 的开源标准相结合，我们正在创建一个全球生态系统，让研究人员能够跨越机构和地理边界无缝协作。"
+    "description": "我们的双功能平台使科学工具的使用变得大众化。Science Online 提供虚拟实验室和云计算，而 OpenLab 则为模块化、自动化的硬件设立开源标准。两者共同创建了一个适用于现代研究的无缝生态系统。"
+  },
+  "chat": {
+    "subtitle": "社区驱动",
+    "title": "全球科学协作中心",
+    "description": "加入一个由科学家、工程师和创新者组成的充满活力的社区。分享可复现的工作流，发现新思想，并与专家联系，加速您从概念到发现的研究过程。",
+    "features": {
+      "discover": {
+        "name": "分享与发现工作流",
+        "description": "访问一个不断增长的、由社区贡献的、适用于各种科学领域的工作流库。"
+      },
+      "connect": {
+        "name": "与专家联系",
+        "description": "与同行和顶尖研究人员互动，共同解决复杂的挑战。"
+      },
+      "accelerate": {
+        "name": "加速研究",
+        "description": "利用集体智慧和预构建的模块，避免重复造轮子。"
+      }
+    }
+  },
+  "server": {
+    "subtitle": "自动化与智能化",
+    "title": "自动化探索的未来",
+    "description": "通过我们为机器人、人工智能和数据管理设计的开源框架，为您的实验室赋能。构建一个完全自主、自我驱动的实验室，加速科学发现的步伐。",
+    "features": {
+      "robotics": {
+        "name": "机器人集成",
+        "description": "无缝连接和控制各种实验室硬件及机器人系统。"
+      },
+      "ai": {
+        "name": "AI 驱动决策",
+        "description": "利用 AI 代理自主设计实验、分析数据并决定下一步行动。"
+      },
+      "data": {
+        "name": "统一数据管理",
+        "description": "以结构化和可复现的方式捕获、处理和分析实验数据。"
+      },
+      "digital-twin": {
+        "name": "数字孪生",
+        "description": "在真实世界中运行实验之前，在虚拟环境中进行模拟和优化。"
+      },
+      "remote": {
+        "name": "远程实验室访问",
+        "description": "从世界任何地方监控和控制您的实验。"
+      },
+      "modular": {
+        "name": "模块化与可扩展",
+        "description": "从小处着手，逐步扩展。我们的模块化设计能适应任何实验室的需求。"
+      }
+    }
+  },
+  "products": {
+    "studio": {
+      "name": "Studio",
+      "description": "所有 ScienceOL 服务和社区的门户。"
+    },
+    "protium": {
+      "name": "PROTIUM",
+      "description": "为科学计算设计的 AI 原生工作流引擎。"
+    },
+    "xyzen": {
+      "name": "Xyzen",
+      "description": "面向实验室场景的专用智能体。"
+    },
+    "anti": {
+      "name": "Anti",
+      "description": "用于实验室模拟的 3D 数字孪生平台。"
+    },
+    "labos": {
+      "name": "Lab-OS",
+      "description": "用于模块化实验室硬件的开源操作系统。"
+    }
   },
   "sponsor": "支持机构",
   "article": {

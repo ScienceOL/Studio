@@ -1,19 +1,91 @@
 {
   "Find our latest feature update.": "Find our latest feature update. ",
   "hero": {
-    "title": "Transforming Scientific Research Through Virtual Labs and Open Standards",
-    "description": "Science OL unites researchers worldwide through our dual platform: Science Online delivers accessible virtual laboratories, while OpenLab provides open-source standards for laboratory modernization.",
+    "title": "The OS for AI-Driven Labs",
+    "description": "ScienceOL is building the open-source operating system for the future of automated, AI-powered scientific research. Build, automate, and collaborate.",
     "button": {
       "primary": "Get Started",
       "secondary": "Learn More"
     }
   },
   "about": {
-    "title": "Science OL: Bridging Digital and Physical Laboratories",
+    "title": "Bridging Digital and Physical Laboratories",
     "button": {
       "primary": "Read More"
     },
-    "description": "Our dual-function platform democratizes access to scientific tools through online experimentation and intelligent laboratory frameworks. By combining Science Online's virtual laboratories with OpenLab's open-source standards, we're creating a global ecosystem where researchers collaborate effortlessly across institutional and geographical boundaries."
+    "description": "Our dual-function platform democratizes access to scientific tools. Science Online provides virtual laboratories and cloud computing, while OpenLab sets open-source standards for modular, automated hardware. Together, they create a seamless ecosystem for modern research."
+  },
+  "chat": {
+    "subtitle": "Community Driven",
+    "title": "A Global Hub for Scientific Collaboration",
+    "description": "Join a vibrant community of scientists, engineers, and innovators. Share reproducible workflows, discover new ideas, and connect with experts to accelerate your research from concept to discovery.",
+    "features": {
+      "discover": {
+        "name": "Share & Discover Workflows",
+        "description": "Access a growing library of community-contributed workflows for various scientific domains."
+      },
+      "connect": {
+        "name": "Connect with Experts",
+        "description": "Engage with peers and leading researchers to solve complex challenges together."
+      },
+      "accelerate": {
+        "name": "Accelerate Research",
+        "description": "Leverage collective knowledge and pre-built modules to avoid reinventing the wheel."
+      }
+    }
+  },
+  "server": {
+    "subtitle": "Automated & Intelligent",
+    "title": "The Future of Automated Discovery",
+    "description": "Empower your lab with our open-source framework for robotics, AI, and data management. Build a fully autonomous, self-driving laboratory that accelerates the pace of discovery.",
+    "features": {
+      "robotics": {
+        "name": "Robotic Integration",
+        "description": "Seamlessly connect and control a wide range of laboratory hardware and robotic systems."
+      },
+      "ai": {
+        "name": "AI-Powered Decisions",
+        "description": "Leverage AI agents to design experiments, analyze data, and decide the next steps autonomously."
+      },
+      "data": {
+        "name": "Unified Data Management",
+        "description": "Capture, process, and analyze experimental data in a structured and reproducible way."
+      },
+      "digital-twin": {
+        "name": "Digital Twin",
+        "description": "Simulate and optimize experiments in a virtual environment before running them in the real world."
+      },
+      "remote": {
+        "name": "Remote Lab Access",
+        "description": "Monitor and control your experiments from anywhere in the world."
+      },
+      "modular": {
+        "name": "Modular & Scalable",
+        "description": "Start small and scale up. Our modular design adapts to the needs of any laboratory."
+      }
+    }
+  },
+  "products": {
+    "studio": {
+      "name": "Studio",
+      "description": "The portal to all ScienceOL services and community."
+    },
+    "protium": {
+      "name": "PROTIUM",
+      "description": "AI-native workflow engine for scientific computing."
+    },
+    "xyzen": {
+      "name": "Xyzen",
+      "description": "The specialized agent for laboratory scenarios."
+    },
+    "anti": {
+      "name": "Anti",
+      "description": "3D digital twin platform for laboratory simulation."
+    },
+    "labos": {
+      "name": "Lab-OS",
+      "description": "Open-source OS for modular lab hardware."
+    }
   },
   "article": {
     "intro": "Reimagining scientific research through virtual access and open standards."

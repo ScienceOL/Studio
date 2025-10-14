@@ -6,6 +6,7 @@ import { Fragment } from 'react';
 
 import Logo from '@/assets/Logo';
 
+import LangSwitch from '@/components/feature/LangSwitch';
 import { ThemeToggle } from '@/components/feature/ThemeToggle';
 import { useAuthStore } from '@/store/authStore';
 import { Bars3Icon } from '@heroicons/react/24/outline';
@@ -38,6 +39,7 @@ export const RightSideStatus: React.FC<RightSideStatusProps> = () => {
     <div className="w-fit">
       {/* 桌面端 */}
       <div className="hidden items-center gap-x-3 lg:flex">
+        <LangSwitch />
         <ThemeToggle />
         {isLogged ? (
           <img

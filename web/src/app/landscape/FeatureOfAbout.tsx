@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import ProductMatrix from './ProductMatrix';
 
 export default function FeatureOfAbout() {
   const { t } = useTranslation();
@@ -16,17 +17,14 @@ export default function FeatureOfAbout() {
       />
       <div className="absolute inset-x-0 top-0 -z-10 h-24 bg-gradient-to-b from-white dark:from-black/10 sm:h-36" />
       <div className="mx-auto max-w-8xl px-6 py-24 sm:py-32 lg:px-8 2xl:max-w-9xl">
-        <div
-          className="mx-auto max-w-2xl lg:mx-0 lg:grid lg:max-w-none lg:grid-cols-2
-       lg:gap-x-16 lg:gap-y-6 xl:grid-cols-1 xl:grid-rows-1 xl:gap-x-8"
-        >
+        <div className="mx-auto flex max-w-2xl flex-col lg:mx-0 lg:max-w-none">
           <h1
             className="max-w-2xl text-4xl font-bold tracking-tight text-neutral-900
-         dark:text-white sm:text-6xl sm:leading-16 lg:col-span-2 xl:col-auto"
+         dark:text-white sm:text-6xl sm:leading-16"
           >
             {t('about.title')}
           </h1>
-          <div className="mt-6 max-w-xl lg:mt-0 xl:col-end-1 xl:row-start-1">
+          <div className="mt-6 max-w-xl">
             <p className="text-lg leading-8 text-neutral-600 dark:text-neutral-300">
               {t('about.description')}
             </p>
@@ -47,13 +45,7 @@ export default function FeatureOfAbout() {
               </div>
             </div>
           </div>
-
-          <img
-            src="/hero11.png"
-            alt=""
-            className="mt-10 aspect-[6/5] w-full max-w-lg rounded-2xl
-             object-cover sm:mt-16 lg:mt-0 lg:max-w-none xl:row-span-2 xl:row-end-2 xl:mt-36"
-          />
+          <ProductMatrix />
         </div>
       </div>
       <div className="absolute inset-x-0 bottom-0 -z-10 h-24 bg-gradient-to-t from-white dark:from-neutral-950 sm:h-28" />

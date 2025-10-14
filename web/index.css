@@ -1,16 +1,95 @@
 @import "tailwindcss";
+@source "node_modules/@sciol/xyzen/dist/xyzen.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@source "node_modules/@sciol/xyzen/dist/xyzen.css";
+/* 主题扩展 */
+@theme {
+  /* 行高扩展 */
+  --leading-12: 3rem;
+  --leading-16: 4rem;
+
+  /* 字体大小扩展 */
+  --text-2xs: 0.6875rem;
+
+  /* 宽度扩展 */
+  --width-8xl: 88rem;
+
+    --max-width-8xl: 88rem;
+    --max-width-9xl: 96rem;
+
+  /* 字体家族扩展 */
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-mona-sans);
+
+  /* 透明度扩展 */
+  --opacity-2_5: 0.025;
+  --opacity-7_5: 0.075;
+  --opacity-15: 0.15;
+
+  /* 断点扩展 */
+  --breakpoint-xl: 80rem;
+
+  /* 自定义动画 */
+  --animate-bounce-x: bounce-x 1.25s infinite;
+  --animate-gradient-flow: gradient-flow 12s linear infinite;
+  --animate-gradient-conic: gradient-conic 5s linear infinite;
+
+  /* 动画关键帧 */
+  @keyframes bounce-x {
+    0%,
+    100% {
+      transform: translateX(0%);
+    }
+    50% {
+      transform: translateX(20%);
+    }
+  }
+
+  @keyframes gradient-flow {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  @keyframes gradient-conic {
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+/* 自定义工具类 */
+@utility bg-gradient-flow {
+  background-image: linear-gradient(90deg, #895cff, #2970ff);
+}
+
+@utility bg-conic-gradient {
+  background-image: conic-gradient(
+    #eeeeee22,
+    rgba(253, 244, 271),
+    #eeeeee22 30%
+  );
+}
+
+@utility custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
 
 /* 全局背景色设置，防止滚动时出现白色 */
 html,
 body {
-    @apply bg-gray-50 dark:bg-neutral-900;
-    min-height: 100vh;
+  @apply bg-gray-50 dark:bg-neutral-900;
+  min-height: 100vh;
 }
 
 #root {
-    min-height: 100vh;
+  min-height: 100vh;
 }
