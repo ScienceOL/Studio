@@ -15,8 +15,8 @@
   /* 宽度扩展 */
   --width-8xl: 88rem;
 
-    --max-width-8xl: 88rem;
-    --max-width-9xl: 96rem;
+  --max-width-8xl: 88rem;
+  --max-width-9xl: 96rem;
 
   /* 字体家族扩展 */
   --font-sans: var(--font-inter);
@@ -32,15 +32,18 @@
 
   /* 自定义动画 */
   --animate-bounce-x: bounce-x 1.25s infinite;
-  --animate-gradient-flow: gradient-flow 12s linear infinite;
+  /* Slowed gradient animation (was 12s) */
+  --animate-gradient-flow: gradient-flow 28s linear infinite;
   --animate-gradient-conic: gradient-conic 5s linear infinite;
 
   /* 动画关键帧 */
   @keyframes bounce-x {
+
     0%,
     100% {
       transform: translateX(0%);
     }
+
     50% {
       transform: translateX(20%);
     }
@@ -50,9 +53,11 @@
     0% {
       background-position: 0% 50%;
     }
+
     50% {
       background-position: 100% 50%;
     }
+
     100% {
       background-position: 0% 50%;
     }
@@ -67,15 +72,29 @@
 
 /* 自定义工具类 */
 @utility bg-gradient-flow {
-  background-image: linear-gradient(90deg, #895cff, #2970ff);
+  /* Restored richer multi‑color animated gradient (full spectrum cycle) */
+  background-image: linear-gradient(90deg,
+      #4cc9f0 0%,
+      /* cyan */
+      #4361ee 18%,
+      /* indigo */
+      #7209b7 36%,
+      /* purple */
+      #f72585 54%,
+      /* magenta */
+      #ff8fa3 72%,
+      /* soft pink/orange */
+      #ffd166 90%,
+      /* warm amber */
+      #4cc9f0 100%
+      /* loop back */
+    );
 }
 
 @utility bg-conic-gradient {
-  background-image: conic-gradient(
-    #eeeeee22,
-    rgba(253, 244, 271),
-    #eeeeee22 30%
-  );
+  background-image: conic-gradient(#eeeeee22,
+      rgba(253, 244, 271),
+      #eeeeee22 30%);
 }
 
 @utility custom-scrollbar {
@@ -92,4 +111,95 @@ body {
 
 #root {
   min-height: 100vh;
+}
+
+/* DepthWordmark styles */
+.depth-wordmark {
+  --dw-depth: 12;
+  /* number of extrusion steps */
+  --dw-color-shadow: 28 25 56;
+  /* base shadow color (indigo-ish) */
+  --dw-tilt: 6deg;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.depth-wordmark:hover {
+  transform: rotateX(var(--dw-tilt)) rotateY(calc(var(--dw-tilt) * -0.6)) translateZ(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .depth-wordmark:hover {
+    transform: none;
+  }
+}
+
+/* Create layered extrusion with a data-text attribute duplication */
+.depth-wordmark .extrusion-layers::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  font: inherit;
+  color: transparent;
+  transform: translateZ(0);
+  text-shadow: 0 0 0 rgba(var(--dw-color-shadow) / 0.4);
+  /* Fallback single shadow if loop unsupported */
+}
+
+/* Progressive enhancement: multiple stacked shadows to simulate depth */
+@supports (text-shadow: 1px 1px 0 #000) {
+  .depth-wordmark .extrusion-layers::before {
+    text-shadow:
+      1px 1px 0 rgba(var(--dw-color-shadow) / 0.12),
+      2px 2px 0 rgba(var(--dw-color-shadow) / 0.13),
+      3px 3px 0 rgba(var(--dw-color-shadow) / 0.14),
+      4px 4px 0 rgba(var(--dw-color-shadow) / 0.15),
+      5px 5px 0 rgba(var(--dw-color-shadow) / 0.16),
+      6px 6px 0 rgba(var(--dw-color-shadow) / 0.17),
+      7px 7px 0 rgba(var(--dw-color-shadow) / 0.18),
+      8px 8px 0 rgba(var(--dw-color-shadow) / 0.19),
+      9px 9px 0 rgba(var(--dw-color-shadow) / 0.20),
+      10px 10px 0 rgba(var(--dw-color-shadow) / 0.21),
+      11px 11px 0 rgba(var(--dw-color-shadow) / 0.22),
+      12px 12px 0 rgba(var(--dw-color-shadow) / 0.23);
+  }
+
+  .dark .depth-wordmark .extrusion-layers::before {
+    text-shadow:
+      1px 1px 0 rgba(var(--dw-color-shadow) / 0.3),
+      2px 2px 0 rgba(var(--dw-color-shadow) / 0.32),
+      3px 3px 0 rgba(var(--dw-color-shadow) / 0.34),
+      4px 4px 0 rgba(var(--dw-color-shadow) / 0.36),
+      5px 5px 0 rgba(var(--dw-color-shadow) / 0.38),
+      6px 6px 0 rgba(var(--dw-color-shadow) / 0.40),
+      7px 7px 0 rgba(var(--dw-color-shadow) / 0.42),
+      8px 8px 0 rgba(var(--dw-color-shadow) / 0.44),
+      9px 9px 0 rgba(var(--dw-color-shadow) / 0.46),
+      10px 10px 0 rgba(var(--dw-color-shadow) / 0.48),
+      11px 11px 0 rgba(var(--dw-color-shadow) / 0.50),
+      12px 12px 0 rgba(var(--dw-color-shadow) / 0.52);
+  }
+
+  /* Light mode clarity override: drastically reduce depth shadows */
+  html:not(.dark) .depth-wordmark .extrusion-layers::before {
+    text-shadow:
+      1px 1px 0 rgba(var(--dw-color-shadow) / 0.08),
+      2px 2px 0 rgba(var(--dw-color-shadow) / 0.06),
+      3px 3px 0 rgba(var(--dw-color-shadow) / 0.05);
+  }
+}
+
+/* Optional focus style for accessibility */
+.depth-wordmark:focus-visible {
+  outline: 2px solid theme('colors.indigo.500');
+  outline-offset: 4px;
+  border-radius: 0.5rem;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheen {
+    animation: none;
+    opacity: .25;
+  }
 }

@@ -1,3 +1,4 @@
+import DepthWordmark from '@/components/basic/DepthWordmark';
 import ColorfulPattern from '@/components/basic/patterns/ColorfulPattern';
 import GridBackground from '@/components/basic/patterns/GridBackground';
 import { Suspense, useEffect, useRef } from 'react';
@@ -44,10 +45,10 @@ export default function Hero() {
                       </a>
                     </div>
                   </div>
-                  <h1 className="text-4xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-6xl">
+                  <h1 className="text-4xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-5xl">
                     {/* <LogoBanner className="sm:h-24 mb-8 h-16 w-auto max-w-[calc(100%-1rem)] fill-indigo-800 dark:fill-[#6f6be2] " /> */}
-                    <div className=" h-fit w-full animate-gradient-flow bg-gradient-flow bg-[length:400%_400%] bg-clip-text pb-8 text-transparent">
-                      <span className="text-7xl font-bold">Science OL</span>
+                    <div className="pb-8">
+                      <DepthWordmark />
                     </div>
                     {t('hero.title')}
                   </h1>
