@@ -1,12 +1,28 @@
 import clsx from 'clsx';
 
+interface CallToAction {
+  name: string;
+  href: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}
+
 const NavbarFullWidthFooter = ({
   callsToAction,
   numberOfCallsToAction = 3,
 }: {
-  callsToAction: { name: string; href: string; icon: React.ElementType }[];
-  numberOfCallsToAction: number;
+  callsToAction: CallToAction[];
+  numberOfCallsToAction?: number;
 }) => {
+  // 根据数量生成对应的grid类名
+  const gridColsClass =
+    numberOfCallsToAction === 2
+      ? 'sm:grid-cols-2'
+      : numberOfCallsToAction === 3
+      ? 'sm:grid-cols-3'
+      : numberOfCallsToAction === 4
+      ? 'sm:grid-cols-4'
+      : 'sm:grid-cols-3';
+
   return (
     <div className=" bg-neutral-50/50 dark:bg-neutral-800/50">
       <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -14,7 +30,8 @@ const NavbarFullWidthFooter = ({
           className={clsx(
             'sm:border-white/5` grid grid-cols-1 divide-y divide-neutral-900/5',
             'dark:divide-white/5 ',
-            `sm:grid-cols-${numberOfCallsToAction} sm:divide-x sm:divide-y-0 sm:border-x sm:border-neutral-900/5`
+            gridColsClass,
+            'sm:divide-x sm:divide-y-0 sm:border-x sm:border-neutral-900/5'
           )}
         >
           {callsToAction.map((item) => (
