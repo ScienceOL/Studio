@@ -53,24 +53,24 @@ export default function FeatureOfChat() {
                     <dd className="inline">{feature.description}</dd>
                   </div>
                 ))}
+                <div className="group inline-block pl-1 mt-16 cursor-pointer">
+                  <button
+                    type="button"
+                    name="Github"
+                    title="Github"
+                    onClick={() => {
+                      window.open('https://github.com/ScienceOL');
+                    }}
+                    className="font-semibold flex items-center leading-8 text-neutral-900 duration-300 dark:text-neutral-100 cursor-pointer"
+                  >
+                    <GitHubIcon className="size-6 mr-4" />
+                    <span className="" aria-hidden="true">
+                      Github →
+                    </span>
+                  </button>
+                  <span className="mt-1 block h-[0.1rem] w-full origin-left scale-x-0 transform bg-indigo-600 transition-all duration-200 ease-in-out group-hover:scale-x-100 dark:bg-white"></span>
+                </div>
               </dl>
-            </div>
-            <div className="group inline-block mt-16 cursor-pointer">
-              <button
-                type="button"
-                name="Github"
-                title="Github"
-                onClick={() => {
-                  window.open('https://github.com/ScienceOL');
-                }}
-                className="text-sm font-semibold flex items-center leading-6 text-neutral-900 duration-300 dark:text-neutral-100"
-              >
-                <GitHubIcon className="size-4 mr-4" />
-                <span className="" aria-hidden="true">
-                  Github →
-                </span>
-              </button>
-              <span className="mt-1 block h-[0.1rem] w-full origin-left scale-x-0 transform bg-indigo-600 transition-all duration-200 ease-in-out group-hover:scale-x-100 dark:bg-white"></span>
             </div>
           </div>
           <img

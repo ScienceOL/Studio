@@ -81,7 +81,17 @@ export const RightSideStatus: React.FC<RightSideStatusProps> = () => {
 
       <Transition.Root show={mobileMenuOpen} as={Fragment}>
         <Dialog as="div" className="lg:hidden" onClose={setMobileMenuOpen}>
-          <div className="fixed inset-0 z-50" />
+          <Transition.Child
+            as={Fragment}
+            enter="transition-opacity ease-out duration-200"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="transition-opacity ease-out duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 z-40 bg-neutral-950/40 backdrop-blur-sm" />
+          </Transition.Child>
 
           <Transition.Child
             as={Fragment}
@@ -92,17 +102,22 @@ export const RightSideStatus: React.FC<RightSideStatusProps> = () => {
             leaveFrom="translate-x-0 opacity-100"
             leaveTo="translate-x-6 opacity-0"
           >
-            <Dialog.Panel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 ring-neutral-900/10 dark:bg-neutral-900 dark:ring-neutral-50/10 sm:max-w-sm sm:ring-1">
+            <Dialog.Panel className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-white px-6 py-6 shadow-xl ring-neutral-900/10 dark:bg-neutral-900 dark:ring-neutral-50/10">
               <div className="flex items-center justify-between">
-                <a href="/" className="-m-1.5 p-1.5">
+                <a
+                  href="/"
+                  className="-m-1.5 rounded-md p-1.5"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   <span className="sr-only">Protium</span>
                   <Logo className="h-8 w-8 fill-indigo-800 dark:fill-white" />
                 </a>
-                <div>
-                  <ThemeToggle className="mr-2" />
+                <div className="flex items-center">
+                  <LangSwitch className="mr-1.5" />
+                  <ThemeToggle className="mr-1.5" />
                   <button
                     type="button"
-                    className="-m-2.5 rounded-md p-2.5 text-neutral-700 dark:text-neutral-200"
+                    className="-m-2.5 rounded-md p-2.5 text-neutral-700 transition hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:text-neutral-200 dark:hover:text-neutral-50"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <span className="sr-only">Close menu</span>
@@ -113,30 +128,41 @@ export const RightSideStatus: React.FC<RightSideStatusProps> = () => {
                   </button>
                 </div>
               </div>
-              <div className="mt-6 flow-root">
-                <div className="-my-6 divide-y divide-neutral-500/10 dark:divide-neutral-500/70">
-                  <div className="space-y-2 py-6">
-                    {navigation.map((item) => (
-                      <a
-                        key={item.name}
-                        href={item.href}
-                        className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-neutral-900 hover:bg-neutral-50 dark:text-neutral-50 dark:hover:bg-neutral-800"
-                      >
-                        {item.name}
-                      </a>
-                    ))}
+              <div className="mt-8 flex-1 overflow-y-auto">
+                <nav className="flex flex-col gap-4">
+                  {navigation.map((item) => (
+                    <a
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="rounded-2xl border border-neutral-200/0 bg-neutral-100/0 px-4 py-4 text-lg font-semibold leading-7 text-neutral-900 transition hover:border-neutral-200/80 hover:bg-neutral-50 hover:text-indigo-600 dark:border-neutral-700/0 dark:text-neutral-50 dark:hover:border-neutral-700 dark:hover:bg-neutral-800/60 dark:hover:text-indigo-400"
+                    >
+                      {item.name}
+                    </a>
+                  ))}
+                </nav>
+              </div>
+              <div className="mt-6 border-t border-neutral-200 pt-6 dark:border-neutral-800">
+                {isLogged ? (
+                  <div className="flex items-center gap-3 rounded-2xl bg-neutral-50 px-4 py-3 dark:bg-neutral-800/60">
+                    <img
+                      className="h-10 w-10 rounded-full object-cover"
+                      src={userInfo?.avatar || ''}
+                      alt="avatar"
+                    />
+                    <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                      {userInfo?.displayName || userInfo?.name || 'Explorer'}
+                    </div>
                   </div>
-                  <div className="py-6">
-                    {!isLogged && (
-                      <a
-                        href="/login"
-                        className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-neutral-900 hover:bg-neutral-50 dark:text-neutral-50 dark:hover:bg-neutral-800"
-                      >
-                        Log in
-                      </a>
-                    )}
-                  </div>
-                </div>
+                ) : (
+                  <a
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-base font-semibold text-white transition hover:bg-indigo-500"
+                  >
+                    Log in
+                  </a>
+                )}
               </div>
             </Dialog.Panel>
           </Transition.Child>

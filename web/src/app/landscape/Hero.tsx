@@ -90,7 +90,7 @@ export default function Hero() {
                   <div className="ml-auto w-44 flex-none space-y-8 pt-32 sm:ml-0 sm:pt-80 lg:order-last lg:pt-36 xl:order-none xl:pt-80">
                     <div className="relative">
                       <img
-                        src="https://storage.sciol.ac.cn/library/hero/hero22.png"
+                        src="https://storage.sciol.ac.cn/library/hero/hero2.png"
                         alt=""
                         className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover shadow-lg"
                       />
@@ -133,7 +133,7 @@ export default function Hero() {
                   <div className="w-44 flex-none space-y-8 pt-32 sm:pt-0">
                     <div className="relative">
                       <img
-                        src="https://storage.sciol.ac.cn/library/hero/hero2.png"
+                        src="https://storage.sciol.ac.cn/library/hero/hero22.png"
                         alt=""
                         className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover shadow-lg"
                       />
