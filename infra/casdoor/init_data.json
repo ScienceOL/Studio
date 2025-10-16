@@ -402,6 +402,7 @@
       "enableSoftDeletion": false,
       "isProfilePublic": false,
       "useEmailAsUsername": false,
+      "hasPrivilegeConsent": true,
       "enableTour": true,
       "mfaItems": null,
       "accountItems": [

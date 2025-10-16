@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/scienceol/studio/service/internal/configs/webapp"
@@ -73,16 +74,21 @@ func (l *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Laborato
 		ak := uuid.NewV4().String()
 		sk := uuid.NewV4().String()
 		if webapp.Config().OAuth2.AuthSource == webapp.AuthCasdoor {
+			// 将 UUID 的连字符替换为下划线，确保符合 Casdoor 用户名规则
+			// 用户名规则：只能包含字母数字、下划线或连字符，不能有连续的连字符/下划线，不能以连字符/下划线开头或结尾
+			safeAk := strings.ReplaceAll(ak, "-", "_")
+			labUsername := fmt.Sprintf("lab_%s_%s", data.UUID, safeAk[:8]) // 使用 lab_ 前缀 + UUID + 短 AK
+
 			err := l.accountClient.CreateLabUser(txCtx, &model.LabInfo{
 				AccessKey:         ak,
 				AccessSecret:      sk,
-				Name:              fmt.Sprintf("%s-%s", req.Name, ak),
+				Name:              labUsername,
 				DisplayName:       req.Name,
-				Avatar:            "https://cdn.casbin.org/img/casbin.svg",
-				Owner:             "scienceol",
+				Avatar:            "https://stroage.sciol.ac.cn/library/default_avatar.png",
+				Owner:             userInfo.Owner,
 				Type:              model.LABTYPE,
-				Password:          "lab-user",
-				SignupApplication: "scienceol",
+				Password:          uuid.NewV4().String(), // 使用随机密码，反正不会被使用
+				SignupApplication: userInfo.SignupApplication,
 			})
 
 			if err != nil {
@@ -99,8 +105,10 @@ func (l *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Laborato
 	}
 
 	return &environment.LaboratoryEnvResp{
-		UUID: data.UUID,
-		Name: data.Name,
+		UUID:         data.UUID,
+		Name:         data.Name,
+		AccessKey:    data.AccessKey,
+		AccessSecret: data.AccessSecret,
 	}, nil
 }
 

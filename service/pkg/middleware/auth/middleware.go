@@ -232,15 +232,9 @@ func (u *userAuth) getLabUser(ctx *gin.Context, authHeader string) (*model.UserD
 }
 
 func (u *userAuth) getNormalUser(ctx *gin.Context, authHeader string) (*model.UserData, string) {
-	// 检查格式是否为 "Bearer {token}"
-	bearerToken := strings.Split(authHeader, " ")
-	if len(bearerToken) != 2 || bearerToken[0] != "Bearer" {
-		logger.Errorf(ctx, "bearer format err: %s", authHeader)
-		return nil, USERKEY
-	}
-
+	// authHeader already contains just the token part (already split in AuthUser)
 	// 验证令牌
-	userInfo, err := ValidateToken(ctx, bearerToken[0], bearerToken[1])
+	userInfo, err := ValidateToken(ctx, "Bearer", authHeader)
 	if err != nil {
 		logger.Errorf(ctx, "Token validation failed: %v", err)
 		return nil, USERKEY

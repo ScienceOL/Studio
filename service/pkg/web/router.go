@@ -116,7 +116,7 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 					owner := workflowRouter.Group("owner")
 					owner.PATCH("", workflowHandle.UpdateWorkflow)        // 更新工作流 done
 					owner.POST("", workflowHandle.Create)                 // 创建工作流 done
-					owner.DELETE("/:uuid", workflowHandle.DelWrokflow)    //  删除自己创建的工作流 done
+					owner.DELETE("/:uuid", workflowHandle.DelWrokflow)    // 删除自己创建的工作流 done
 					owner.GET("/list", workflowHandle.GetWorkflowList)    // 获取工作流列表  done
 					owner.GET("/export", workflowHandle.GetWorkflowList)  // 导出工作流 TODO:
 					owner.POST("/import", workflowHandle.GetWorkflowList) // 导入工作流 TODO:

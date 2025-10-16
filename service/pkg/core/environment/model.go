@@ -13,8 +13,10 @@ type LaboratoryEnvReq struct {
 }
 
 type LaboratoryEnvResp struct {
-	UUID uuid.UUID `json:"uuid"`
-	Name string    `json:"name"`
+	UUID         uuid.UUID `json:"uuid"`
+	Name         string    `json:"name"`
+	AccessKey    string    `json:"access_key"`
+	AccessSecret string    `json:"access_secret"`
 }
 
 func (l *LaboratoryEnvResp) GetUUIDString() string {

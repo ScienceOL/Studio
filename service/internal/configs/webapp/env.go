@@ -1,6 +1,5 @@
 package webapp
 
-// 规划环境变量
 type Database struct {
 	Host     string `mapstructure:"DATABASE_HOST" default:"localhost"`
 	Port     int    `mapstructure:"DATABASE_PORT" default:"5432"`

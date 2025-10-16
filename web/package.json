@@ -5,7 +5,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host --port 32234 --strictPort",
+    "dev": "vite --host 0.0.0.0 --port 32234 --strictPort",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "imagex": "docker buildx build . --platform linux/amd64 -t registry.sciol.ac.cn/sciol/studio-web:latest --push",
@@ -20,7 +20,7 @@
     "@heroicons/react": "^2.2.0",
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.4.0",
-    "@sciol/xyzen": "^0.2.8",
+    "@sciol/xyzen": "^0.2.9",
     "@tailwindcss/postcss": "^4.1.14",
     "@tailwindcss/vite": "^4.1.14",
     "autoprefixer": "^10.4.21",
