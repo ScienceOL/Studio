@@ -1,11 +1,12 @@
 package webapp
 
 type Database struct {
-	Host     string `mapstructure:"DATABASE_HOST" default:"localhost"`
-	Port     int    `mapstructure:"DATABASE_PORT" default:"5432"`
-	Name     string `mapstructure:"DATABASE_NAME" default:"studio"`
-	User     string `mapstructure:"DATABASE_USER" default:"postgres"`
-	Password string `mapstructure:"DATABASE_PASSWORD" default:"postgres"`
+	Host        string `mapstructure:"DATABASE_HOST" default:"localhost"`
+	Port        int    `mapstructure:"DATABASE_PORT" default:"5432"`
+	Name        string `mapstructure:"DATABASE_NAME" default:"studio"`
+	User        string `mapstructure:"DATABASE_USER" default:"postgres"`
+	Password    string `mapstructure:"DATABASE_PASSWORD" default:"postgres"`
+	AutoMigrate bool   `mapstructure:"DATABASE_AUTO_MIGRATE" default:"true"`
 }
 
 type Redis struct {

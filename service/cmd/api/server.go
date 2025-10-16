@@ -17,6 +17,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
 	"github.com/scienceol/studio/service/pkg/middleware/trace"
+	"github.com/scienceol/studio/service/pkg/repo/migrate"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"github.com/scienceol/studio/service/pkg/web"
 
@@ -102,6 +103,11 @@ func initWeb(cmd *cobra.Command, _ []string) error {
 			Level: config.Log.LogLevel,
 		},
 	})
+
+	// 检查数据库迁移状态
+	if err := migrate.HandleAutoMigration(cmd.Context(), config); err != nil {
+		return fmt.Errorf("database migration failed: %w", err)
+	}
 
 	// 初始化 redis
 	redis.InitRedis(cmd.Context(), &redis.Redis{
