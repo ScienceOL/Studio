@@ -17,9 +17,9 @@ import (
 	"github.com/scienceol/studio/service/pkg/core/schedule/device"
 	"github.com/scienceol/studio/service/pkg/core/schedule/engine"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
+	"github.com/scienceol/studio/service/pkg/model"
 	"github.com/scienceol/studio/service/pkg/repo"
 	eStore "github.com/scienceol/studio/service/pkg/repo/environment"
-	"github.com/scienceol/studio/service/pkg/repo/model"
 	wfl "github.com/scienceol/studio/service/pkg/repo/workflow"
 	"github.com/scienceol/studio/service/pkg/utils"
 )

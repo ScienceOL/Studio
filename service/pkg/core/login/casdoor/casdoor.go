@@ -15,7 +15,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
-	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/model"
 	"golang.org/x/oauth2"
 )
 

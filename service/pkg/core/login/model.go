@@ -1,6 +1,6 @@
 package login
 
-import "github.com/scienceol/studio/service/pkg/repo/model"
+import "github.com/scienceol/studio/service/pkg/model"
 
 type LoginReq struct {
 	// 前端回调地址（可选）

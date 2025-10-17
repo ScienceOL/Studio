@@ -5,7 +5,7 @@ import (
 
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
-	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/model"
 	"gorm.io/gorm/schema"
 )
 

@@ -5,8 +5,8 @@ import (
 
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
+	"github.com/scienceol/studio/service/pkg/model"
 	"github.com/scienceol/studio/service/pkg/repo"
-	"github.com/scienceol/studio/service/pkg/repo/model"
 	"gorm.io/gorm/clause"
 )
 

@@ -5,7 +5,7 @@
 
 // @contact.name   API Support
 // @contact.url    http://www.swagger.io/support
-// @contact.email  support@swagger.io
+// @contact.email  harveyque@outlook.com
 
 // @license.name  GNU Affero General Public License v3.0
 // @license.url   http://www.gnu.org/licenses/agpl-3.0.en.html

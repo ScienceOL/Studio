@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/scienceol/studio/service/pkg/middleware/db"
-	"github.com/scienceol/studio/service/pkg/repo/migrate"
+	"github.com/scienceol/studio/service/pkg/model/migrate"
 	"github.com/spf13/cobra"
 )
 

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/scienceol/studio/service/pkg/middleware/db"
-	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/model"
 	"github.com/scienceol/studio/service/pkg/utils"
 )
 

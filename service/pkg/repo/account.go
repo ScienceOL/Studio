@@ -3,7 +3,7 @@ package repo
 import (
 	"context"
 
-	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/model"
 )
 
 type Account interface {

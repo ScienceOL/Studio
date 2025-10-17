@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/scienceol/studio/service/pkg/core/schedule/engine"
-	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/model"
 )
 
 const (

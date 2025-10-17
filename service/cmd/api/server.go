@@ -18,7 +18,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
 	"github.com/scienceol/studio/service/pkg/middleware/trace"
-	"github.com/scienceol/studio/service/pkg/repo/migrate"
+	"github.com/scienceol/studio/service/pkg/model/migrate"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"github.com/scienceol/studio/service/pkg/web"
 

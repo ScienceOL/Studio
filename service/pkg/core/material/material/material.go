@@ -16,10 +16,10 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
+	"github.com/scienceol/studio/service/pkg/model"
 	"github.com/scienceol/studio/service/pkg/repo"
 	eStore "github.com/scienceol/studio/service/pkg/repo/environment"
 	mStore "github.com/scienceol/studio/service/pkg/repo/material"
-	"github.com/scienceol/studio/service/pkg/repo/model"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"gorm.io/datatypes"
 )

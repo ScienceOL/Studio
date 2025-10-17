@@ -9,7 +9,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
-	"github.com/scienceol/studio/service/pkg/repo/model"
+	"github.com/scienceol/studio/service/pkg/model"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
