@@ -1,5 +1,5 @@
 // @title           ScienceOL Studio API
-// @version         0.1
+// @version         1.0
 // @description     Studio 实验室管理系统 API
 // @termsOfService  http://swagger.io/terms/
 
@@ -11,8 +11,12 @@
 // @license.url   http://www.gnu.org/licenses/agpl-3.0.en.html
 
 // @host      localhost:48197
-// @BasePath  /api
+// @BasePath  /api/v1
 // @schemes   http
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 package main
 
 import (
