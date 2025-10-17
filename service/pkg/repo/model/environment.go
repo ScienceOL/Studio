@@ -1,6 +1,11 @@
 package model
 
-import "time"
+import (
+	"errors"
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type EnvironmentStatus string
 
@@ -40,6 +45,16 @@ type LaboratoryMember struct {
 
 func (*LaboratoryMember) TableName() string {
 	return "laboratory_member"
+}
+
+// BeforeSave GORM hook, to validate data before saving
+func (m *LaboratoryMember) BeforeSave(tx *gorm.DB) (err error) {
+	switch m.Role {
+	case LaboratoryMemberAdmin, LaboratoryMemberNormal:
+		return nil
+	default:
+		return errors.New("invalid laboratory member role")
+	}
 }
 
 type InvitationType string

@@ -8,6 +8,14 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 )
 
+// HandleHelloWorld godoc
+// @Summary      Hello World
+// @Description  A simple hello world endpoint
+// @Tags         foo
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}
+// @Router       /api/v1/foo/hello [get]
 func HandleHelloWorld(ctx *gin.Context) {
 	// 使用GetCurrentUser获取当前用户
 	user := auth.GetCurrentUser(ctx)

@@ -1,3 +1,18 @@
+// @title           ScienceOL Studio API
+// @version         0.1
+// @description     Studio 实验室管理系统 API
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
+
+// @license.name  GNU Affero General Public License v3.0
+// @license.url   http://www.gnu.org/licenses/agpl-3.0.en.html
+
+// @host      localhost:48197
+// @BasePath  /api
+// @schemes   http
 package main
 
 import (

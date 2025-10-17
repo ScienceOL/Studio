@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"time"
 
@@ -91,6 +92,23 @@ func initMigrate(cmd *cobra.Command, _ []string) error {
 
 func initWeb(cmd *cobra.Command, _ []string) error {
 	config := webapp.Config()
+
+	// Automatically generate Swagger documentation upon startup.
+	// This is convenient for local development, as any changes to comments will be immediately reflected.
+	// For production builds in Docker, this ensures that the `docs` directory is up-to-date
+	// before the `go build` command packages it into the final binary.
+	logger.Infof(cmd.Context(), "📖 Attempting to generate Swagger documentation...")
+	// The swag command needs to be run from the project root to correctly find the main.go file.
+	swagCmd := exec.Command("swag", "init", "-g", "main.go")
+	swagCmd.Dir = "." // Run from the project root
+	output, err := swagCmd.CombinedOutput()
+	if err != nil {
+		// Log as a warning instead of a fatal error, so the server can still start
+		// even if swag is not installed or fails.
+		logger.Warnf(cmd.Context(), "❌ Could not generate Swagger documentation: %v. Output: %s", err, string(output))
+	} else {
+		logger.Infof(cmd.Context(), "✅ Swagger documentation generated successfully.")
+	}
 
 	// 初始化数据库
 	db.InitPostgres(cmd.Context(), &db.Config{

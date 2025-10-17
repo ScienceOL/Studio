@@ -59,8 +59,8 @@ func (l *Login) Login(ctx *gin.Context) {
 // @Tags 登录模块
 // @Accept json
 // @Produce json
-// @Param refresh_token body types.RefreshTokenReq true "刷新令牌请求"
-// @Success 200 {object} common.Resp{data=types.RefreshTokenResp} "刷新令牌成功 code=0"
+// @Param refresh_token body ls.RefreshTokenReq true "刷新令牌请求"
+// @Success 200 {object} common.Resp{data=ls.RefreshTokenResp} "刷新令牌成功 code=0"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "参数错误 code = 1011"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "刷新 token 失败 code = 1002"
 // @Router /api/auth/refresh [post]

@@ -12,10 +12,16 @@ RUN apk add --no-cache git ca-certificates tzdata
 # 使用国内 GOPROXY，加速依赖下载
 ENV GOPROXY=https://goproxy.cn,direct
 
+# Install swag
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
 COPY go.mod go.sum ./
 COPY . .
 
 RUN go mod download
+
+# Generate swagger documentation before building
+# RUN /go/bin/swag init -g main.go
 
 ARG BUILD_ENV
 RUN CGO_ENABLED=0 GOOS=linux go build \
@@ -28,6 +34,7 @@ FROM base AS production
 RUN apk --no-cache add ca-certificates tzdata make
 WORKDIR /app
 
+# Copy only the final compiled binary. Swag is no longer needed.
 COPY --from=builder /app/backend .
 
 EXPOSE 48197

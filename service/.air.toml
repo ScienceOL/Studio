@@ -12,7 +12,7 @@ tmp_dir = "tmp"
   # Watch these file extensions
   include_ext = ["go", "tpl", "tmpl", "html"]
   # Ignore these directories
-  exclude_dir = ["tmp", "vendor", "testdata", "bin"]
+  exclude_dir = ["tmp", "vendor", "testdata", "bin", "docs"]
   # Log file for build errors
   log = "air_errors.log"
   # Delay in milliseconds before restarting

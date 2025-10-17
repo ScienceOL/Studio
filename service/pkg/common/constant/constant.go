@@ -10,7 +10,7 @@ const (
 
 // 服务标识
 const (
-	Platform = "uni-lab"
+	Platform = "studio"
 )
 
 // websocket

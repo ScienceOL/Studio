@@ -118,4 +118,4 @@ docker-compose.override.yml
 !.placeholder
 
 # Ignore auto-generated swagger documentation
-service/docs/
+service/docs

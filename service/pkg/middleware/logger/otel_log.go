@@ -53,8 +53,8 @@ func InitStdOutCtxLogger(conf *LogConfig, opts ...otelzap.Option) {
 			zapcore.DebugLevel,
 		)
 		l := zap.New(core,
-			zap.Fields(zap.String("platform", conf.Platform),
-				zap.String("service", conf.Service)),
+			// zap.Fields(zap.String("platform", conf.Platform),
+			// 	zap.String("service", conf.Service)),
 			zap.WithCaller(true),
 			zap.AddCallerSkip(1),
 			zap.AddStacktrace(zapcore.ErrorLevel),

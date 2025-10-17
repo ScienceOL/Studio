@@ -9,6 +9,9 @@ WORKDIR /app
 
 RUN apk add --no-cache git ca-certificates tzdata
 
+# Install swag
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
 # 使用国际通用 GOPROXY，适用于 Github CI
 ENV GOPROXY=https://proxy.golang.org,direct
 
@@ -27,6 +30,9 @@ FROM base AS production
 
 RUN apk --no-cache add ca-certificates tzdata make
 WORKDIR /app
+
+# Copy the swag binary from the builder stage to the final image
+COPY --from=builder /go/bin/swag /usr/local/bin/swag
 
 COPY --from=builder /app/backend .
 
