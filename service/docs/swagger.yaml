@@ -1,0 +1,846 @@
+basePath: /api/v1
+definitions:
+  code.ErrCode:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 1000
+    - 1001
+    - 1002
+    - 1003
+    - 5000
+    - 5001
+    - 5002
+    - 5003
+    - 5004
+    - 5005
+    - 5006
+    - 5007
+    - 5008
+    - 5009
+    - 5010
+    - 5011
+    - 5012
+    - 10000
+    - 10001
+    - 10002
+    - 10003
+    - 10004
+    - 10005
+    - 10006
+    - 10007
+    - 10008
+    - 10009
+    - 10010
+    - 20000
+    - 20001
+    - 20002
+    - 20003
+    - 20004
+    - 20005
+    - 20006
+    - 20007
+    - 20008
+    - 20009
+    - 22000
+    - 22001
+    - 22002
+    - 22003
+    - 22004
+    - 22005
+    - 22006
+    - 22007
+    - 22008
+    - 22009
+    - 22010
+    - 22011
+    - 24000
+    - 24001
+    - 24002
+    - 26000
+    - 26001
+    - 26002
+    - 28000
+    - 28001
+    - 28002
+    - 28003
+    - 28004
+    - 28005
+    - 28006
+    - 28007
+    - 28008
+    - 30000
+    - 30001
+    - 30002
+    - 30003
+    - 30004
+    - 30005
+    - 30006
+    - 30007
+    - 30008
+    - 30009
+    type: integer
+    x-enum-comments:
+      BohrBatchQueryErr: bhor batch query user error
+      CallbackParamErr: callback parameter error
+      CanNotFoundEdgeSession: can not found edge session
+      CanNotFoundMaterialNodeErr: can not found material node error
+      CanNotGetLabIDErr: cannot get lab id error
+      CanNotGetWorkflowUUIDErr: can not get workflow uuid
+      CanNotGetworkflowErr: workflow not found error
+      CasDoorCreateLabUserErr: create lab user error
+      CasDoorQueryLabUserErr: query lab user error
+      CreateDataErr: database create data error
+      DeleteDataErr: database delete error
+      EdgeConnectClosedErr: connect closed when node running error
+      EdgeHandleNotExistErr: node handle not exist
+      EdgeNodeNotExistErr: edge node not exist
+      ExchangeTokenErr: exchange token failed
+      FormatCSVTaskErr: format csv data error
+      InvalidDagErr: invalid dag error
+      InvalidToken: invalid token
+      InvalidateJWT: invalidate jwt
+      InvalidateThirdID: invalidate third id error
+      InviteExpiredErr: invite expired error
+      JobRetryTimeout: job retry timeout error
+      JobRunFailErr: job run fail error
+      LabIDIsEmptyErr: lab id is empty error
+      LabInviteNotFoundErr: can not found laboratory invite link error
+      LabNotFound: laboratory not found error
+      LoginCallbackErr: login process user info failed
+      LoginConfigErr: login configuration error
+      LoginFormatErr: login verification format error
+      LoginGetUserInfoErr: get user info failed
+      LoginSetStateErr: set login state error
+      LoginStateErr: state verification failed
+      MaxTplNodeDeepErr: max template node deep error
+      ModelNotImplementTablerErr: model not implement schema.Tabler
+      NoPermission: no permission
+      NodeDataMarshalErr: marshal node data error
+      NotBaseDBTypeErr: not base db type error
+      NotPointerErr: not pointer err
+      NotSlicePointerErr: must be a pointer to a slice
+      NotifyActionAlreadyRegistryErr: notify action already registry
+      NotifySendMsgErr: notify send message error
+      NotifySubscribeChannelErr: notify subscribe channel fail
+      ParamErr: parse parameter error
+      ParentNodeNotFoundErr: parent node not found error
+      ParseLoginRedirectURLErr: redirect login url error
+      PermissionDenied: permission denied
+      PointerIsNilErr: pointer is nil error
+      QueryRecordErr: database query error
+      RecordNotFound: database record not found
+      RedisAddSetErr: redis add user set error
+      RedisLuaRetErr: redis lua return type error
+      RedisLuaScriptErr: redis lua script error
+      RedisRemoveSetErr: redis remove user set error
+      RefreshTokenErr: refresh token failed
+      RefreshTokenParamErr: refresh token parameter error
+      RegActionNameEmptyErr: reg action name empty
+      ResNotExistErr: resource not exist
+      ResourceIsEmptyErr: resource is empty
+      ResourceNotExistErr: resource not exist
+      SaveWorkflowEdgeErr: batch save workflow edge error
+      SaveWorkflowNodeErr: batch save nodes error
+      Success: success
+      TemplateNodeNotFoundErr: template node not found error
+      UnDefineErr: undefined
+      UnLogin: not logged in
+      UnknownWSActionErr: unknown material websocket action
+      UnmarshalWSDataErr: unmarshal material websocket data error
+      UpdateDataErr: database update data error
+      UpdateNodeErr: update material node error
+      UpsertWorkflowEdgeErr: upsert workflow edge error
+      UserIDIsEmptyErr: user id is empty
+      WorkflowHasCircularErr: workflow has circular error
+      WorkflowNodeNotFoundErr: workflow node not found error
+      WorkflowNotExistErr: workflow not exist
+      WorkflowTaskAlreadyExistErr: workflow task already exist error
+      WorkflowTaskFinished: workflow task finished
+      WorkflowTaskNotFoundErr: can not found workflow task error
+      WorkflowTaskStatusErr: workflow task status error
+      WorkflowTemplateNotFoundErr: can not found workflow template error
+    x-enum-descriptions:
+    - success
+    - undefined
+    - no permission
+    - invalidate jwt
+    - parse parameter error
+    - not pointer err
+    - must be a pointer to a slice
+    - pointer is nil error
+    - login configuration error
+    - set login state error
+    - refresh token failed
+    - state verification failed
+    - exchange token failed
+    - callback parameter error
+    - get user info failed
+    - login process user info failed
+    - not logged in
+    - login verification format error
+    - invalid token
+    - refresh token parameter error
+    - redirect login url error
+    - database create data error
+    - database update data error
+    - database record not found
+    - database query error
+    - database delete error
+    - not base db type error
+    - model not implement schema.Tabler
+    - redis lua script error
+    - redis lua return type error
+    - redis add user set error
+    - redis remove user set error
+    - reg action name empty
+    - resource is empty
+    - resource not exist
+    - can not found workflow template error
+    - user id is empty
+    - lab id is empty error
+    - laboratory not found error
+    - can not found laboratory invite link error
+    - invite expired error
+    - invalidate third id error
+    - resource not exist
+    - edge node not exist
+    - node handle not exist
+    - unknown material websocket action
+    - unmarshal material websocket data error
+    - cannot get lab id error
+    - update material node error
+    - parent node not found error
+    - template node not found error
+    - invalid dag error
+    - max template node deep error
+    - can not found material node error
+    - notify action already registry
+    - notify subscribe channel fail
+    - notify send message error
+    - create lab user error
+    - query lab user error
+    - bhor batch query user error
+    - can not get workflow uuid
+    - workflow not exist
+    - upsert workflow edge error
+    - permission denied
+    - batch save nodes error
+    - batch save workflow edge error
+    - workflow node not found error
+    - workflow not found error
+    - format csv data error
+    - workflow task already exist error
+    - can not found edge session
+    - workflow has circular error
+    - connect closed when node running error
+    - marshal node data error
+    - job retry timeout error
+    - job run fail error
+    - can not found workflow task error
+    - workflow task status error
+    - workflow task finished
+    x-enum-varnames:
+    - Success
+    - UnDefineErr
+    - NoPermission
+    - InvalidateJWT
+    - ParamErr
+    - NotPointerErr
+    - NotSlicePointerErr
+    - PointerIsNilErr
+    - LoginConfigErr
+    - LoginSetStateErr
+    - RefreshTokenErr
+    - LoginStateErr
+    - ExchangeTokenErr
+    - CallbackParamErr
+    - LoginGetUserInfoErr
+    - LoginCallbackErr
+    - UnLogin
+    - LoginFormatErr
+    - InvalidToken
+    - RefreshTokenParamErr
+    - ParseLoginRedirectURLErr
+    - CreateDataErr
+    - UpdateDataErr
+    - RecordNotFound
+    - QueryRecordErr
+    - DeleteDataErr
+    - NotBaseDBTypeErr
+    - ModelNotImplementTablerErr
+    - RedisLuaScriptErr
+    - RedisLuaRetErr
+    - RedisAddSetErr
+    - RedisRemoveSetErr
+    - RegActionNameEmptyErr
+    - ResourceIsEmptyErr
+    - ResourceNotExistErr
+    - WorkflowTemplateNotFoundErr
+    - UserIDIsEmptyErr
+    - LabIDIsEmptyErr
+    - LabNotFound
+    - LabInviteNotFoundErr
+    - InviteExpiredErr
+    - InvalidateThirdID
+    - ResNotExistErr
+    - EdgeNodeNotExistErr
+    - EdgeHandleNotExistErr
+    - UnknownWSActionErr
+    - UnmarshalWSDataErr
+    - CanNotGetLabIDErr
+    - UpdateNodeErr
+    - ParentNodeNotFoundErr
+    - TemplateNodeNotFoundErr
+    - InvalidDagErr
+    - MaxTplNodeDeepErr
+    - CanNotFoundMaterialNodeErr
+    - NotifyActionAlreadyRegistryErr
+    - NotifySubscribeChannelErr
+    - NotifySendMsgErr
+    - CasDoorCreateLabUserErr
+    - CasDoorQueryLabUserErr
+    - BohrBatchQueryErr
+    - CanNotGetWorkflowUUIDErr
+    - WorkflowNotExistErr
+    - UpsertWorkflowEdgeErr
+    - PermissionDenied
+    - SaveWorkflowNodeErr
+    - SaveWorkflowEdgeErr
+    - WorkflowNodeNotFoundErr
+    - CanNotGetworkflowErr
+    - FormatCSVTaskErr
+    - WorkflowTaskAlreadyExistErr
+    - CanNotFoundEdgeSession
+    - WorkflowHasCircularErr
+    - EdgeConnectClosedErr
+    - NodeDataMarshalErr
+    - JobRetryTimeout
+    - JobRunFailErr
+    - WorkflowTaskNotFoundErr
+    - WorkflowTaskStatusErr
+    - WorkflowTaskFinished
+  common.Error:
+    properties:
+      info:
+        items:
+          type: string
+        type: array
+      msg:
+        type: string
+    type: object
+  common.PageMoreResp-array_environment_LaboratoryResp:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/environment.LaboratoryResp'
+        type: array
+      has_more:
+        type: boolean
+      page:
+        type: integer
+      page_size:
+        type: integer
+    type: object
+  common.PageResp-array_environment_LabMemberResp:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/environment.LabMemberResp'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  common.Resp:
+    properties:
+      code:
+        $ref: '#/definitions/code.ErrCode'
+      data: {}
+      error:
+        $ref: '#/definitions/common.Error'
+      timestamp:
+        type: integer
+    type: object
+  environment.InviteResp:
+    properties:
+      url:
+        type: string
+    type: object
+  environment.LabMemberResp:
+    properties:
+      lab_id:
+        type: integer
+      role:
+        $ref: '#/definitions/model.LaboratoryMemberRole'
+      user_id:
+        type: string
+      uuid:
+        type: string
+    type: object
+  environment.LaboratoryEnvReq:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  environment.LaboratoryEnvResp:
+    properties:
+      access_key:
+        type: string
+      access_secret:
+        type: string
+      name:
+        type: string
+      uuid:
+        type: string
+    type: object
+  environment.LaboratoryResp:
+    properties:
+      description:
+        type: string
+      member_count:
+        type: integer
+      name:
+        type: string
+      user_id:
+        type: string
+      uuid:
+        type: string
+    type: object
+  environment.ResourceReq:
+    type: object
+  environment.UpdateEnvReq:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      uuid:
+        type: string
+    required:
+    - uuid
+    type: object
+  login.RefreshTokenReq:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  login.RefreshTokenResp:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+    type: object
+  model.LaboratoryMemberRole:
+    enum:
+    - admin
+    - normal
+    type: string
+    x-enum-varnames:
+    - LaboratoryMemberAdmin
+    - LaboratoryMemberNormal
+host: localhost:48197
+info:
+  contact:
+    email: harveyque@outlook.com
+    name: API Support
+    url: http://www.swagger.io/support
+  description: Studio 实验室管理系统 API
+  license:
+    name: GNU Affero General Public License v3.0
+    url: http://www.gnu.org/licenses/agpl-3.0.en.html
+  termsOfService: http://swagger.io/terms/
+  title: ScienceOL Studio API
+  version: "1.0"
+paths:
+  /api/auth/callback/casdoor:
+    get:
+      consumes:
+      - application/json
+      description: 处理OAuth2授权回调
+      parameters:
+      - description: 授权码
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: 防CSRF攻击的状态码
+        in: query
+        name: state
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: 重定向到前端错误页面
+          schema:
+            type: string
+      summary: OAuth2回调
+      tags:
+      - 登录模块
+  /api/auth/login:
+    get:
+      consumes:
+      - application/json
+      description: 检查服务运行状态
+      parameters:
+      - description: 前端回调地址
+        in: query
+        name: frontend_callback_url
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: 重定向到OAuth2授权页面
+          headers:
+            Location:
+              description: 重定向的授权URL地址
+              type: string
+          schema:
+            type: string
+      summary: 登录
+      tags:
+      - 登录模块
+  /api/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: 刷新OAuth2令牌
+      parameters:
+      - description: 刷新令牌请求
+        in: body
+        name: refresh_token
+        required: true
+        schema:
+          $ref: '#/definitions/login.RefreshTokenReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 刷新 token 失败 code = 1002
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                code:
+                  $ref: '#/definitions/code.ErrCode'
+              type: object
+      summary: 刷新令牌
+      tags:
+      - 登录模块
+  /api/health:
+    get:
+      consumes:
+      - application/json
+      description: 检查服务运行状态
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回成功状态
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 健康检查
+      tags:
+      - health
+  /api/v1/foo/hello:
+    get:
+      consumes:
+      - application/json
+      description: A simple hello world endpoint
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Hello World
+      tags:
+      - foo
+  /lab:
+    patch:
+      consumes:
+      - application/json
+      description: 更新实验室环境信息
+      parameters:
+      - description: 实验室更新请求
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/environment.UpdateEnvReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                data:
+                  $ref: '#/definitions/environment.LaboratoryResp'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Resp'
+      security:
+      - BearerAuth: []
+      summary: 更新实验室
+      tags:
+      - Laboratory
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的实验室环境
+      parameters:
+      - description: 实验室创建请求
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/environment.LaboratoryEnvReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                data:
+                  $ref: '#/definitions/environment.LaboratoryEnvResp'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Resp'
+      security:
+      - BearerAuth: []
+      summary: 创建实验室
+      tags:
+      - Laboratory
+  /lab/invite/{lab_uuid}:
+    post:
+      consumes:
+      - application/json
+      description: 创建实验室邀请链接
+      parameters:
+      - description: 实验室UUID
+        in: path
+        name: lab_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                data:
+                  $ref: '#/definitions/environment.InviteResp'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Resp'
+      security:
+      - BearerAuth: []
+      summary: 创建邀请链接
+      tags:
+      - Laboratory
+  /lab/invite/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: 接受实验室邀请链接
+      parameters:
+      - description: 邀请UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.Resp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Resp'
+      security:
+      - BearerAuth: []
+      summary: 接受邀请链接
+      tags:
+      - Laboratory
+  /lab/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户的所有实验室
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页大小
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                data:
+                  $ref: '#/definitions/common.PageMoreResp-array_environment_LaboratoryResp'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Resp'
+      security:
+      - BearerAuth: []
+      summary: 获取实验室列表
+      tags:
+      - Laboratory
+  /lab/member/{lab_uuid}:
+    get:
+      consumes:
+      - application/json
+      description: 根据实验室获取当前实验室成员
+      parameters:
+      - description: 实验室UUID
+        in: path
+        name: lab_uuid
+        required: true
+        type: string
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页大小
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                data:
+                  $ref: '#/definitions/common.PageResp-array_environment_LabMemberResp'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Resp'
+      security:
+      - BearerAuth: []
+      summary: 获取实验室成员
+      tags:
+      - Laboratory
+  /lab/member/{lab_uuid}/{member_uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除实验室成员
+      parameters:
+      - description: 实验室UUID
+        in: path
+        name: lab_uuid
+        required: true
+        type: string
+      - description: 成员UUID
+        in: path
+        name: member_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.Resp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Resp'
+      security:
+      - BearerAuth: []
+      summary: 删除实验室成员
+      tags:
+      - Laboratory
+  /lab/resource:
+    post:
+      consumes:
+      - application/json
+      description: 从边缘侧创建资源
+      parameters:
+      - description: 资源创建请求
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/environment.ResourceReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.Resp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.Resp'
+      security:
+      - BearerAuth: []
+      summary: 创建实验室资源
+      tags:
+      - Laboratory
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
