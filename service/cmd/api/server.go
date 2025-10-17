@@ -94,9 +94,6 @@ func initWeb(cmd *cobra.Command, _ []string) error {
 	config := webapp.Config()
 
 	// Automatically generate Swagger documentation upon startup.
-	// This is convenient for local development, as any changes to comments will be immediately reflected.
-	// For production builds in Docker, this ensures that the `docs` directory is up-to-date
-	// before the `go build` command packages it into the final binary.
 	logger.Infof(cmd.Context(), "📖 Attempting to generate Swagger documentation...")
 	// The swag command needs to be run from the project root to correctly find the main.go file.
 	swagCmd := exec.Command("swag", "init", "-g", "main.go")

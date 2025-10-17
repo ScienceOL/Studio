@@ -89,6 +89,7 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 
 				labRouter.GET("/ws/material/:lab_uuid", materialHandle.LabMaterial) // WARN: websocket 是否要放在统一的路由下
 			}
+
 			{
 				workflowHandle := workflow.NewWorkflowHandle(ctx)
 				workflowRouter := labRouter.Group("/workflow")
