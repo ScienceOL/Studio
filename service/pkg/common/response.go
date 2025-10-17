@@ -64,7 +64,7 @@ func (p *PageReq) Normalize() {
 	}
 
 	if p.PageSize <= 0 {
-		p.PageSize = 1
+		p.PageSize = 10
 	}
 
 	if p.Page <= 0 {

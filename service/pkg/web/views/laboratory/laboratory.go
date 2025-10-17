@@ -93,6 +93,7 @@ func (l *EnvHandle) LabList(ctx *gin.Context) {
 		common.ReplyErr(ctx, code.ParamErr, err.Error())
 		return
 	}
+	req.Normalize()
 
 	resp, err := l.envService.LabList(ctx, req)
 	if err != nil {

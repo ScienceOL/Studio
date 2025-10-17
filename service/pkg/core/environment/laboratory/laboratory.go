@@ -453,7 +453,7 @@ func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageMor
 	return &common.PageMoreResp[[]*environment.LaboratoryResp]{
 		Data:     labResp,
 		Page:     labs.Page,
-		HasMore:  labs.Total > int64(labs.Page+1)*int64(labs.PageSize),
+		HasMore:  labs.Total > int64(labs.Page)*int64(labs.PageSize),
 		PageSize: labs.PageSize,
 	}, nil
 }
