@@ -116,3 +116,6 @@ docker-compose.override.yml
 !.gitkeep
 !.keep
 !.placeholder
+
+# Ignore auto-generated swagger documentation
+service/docs/
