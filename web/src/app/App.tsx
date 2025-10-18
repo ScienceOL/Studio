@@ -19,7 +19,6 @@ export default function App() {
     }
   }, [hasHydrated, applyTheme]);
 
-  // 初始化已在 main.tsx 中完成，这里只负责渲染
   console.log('🔄 App render:', { isAuthenticated, isLoading, hasHydrated });
 
   // 如果已登录，重定向到 dashboard
@@ -30,7 +29,11 @@ export default function App() {
   }, [isAuthenticated, isLoading, navigate]);
 
   if (isLoading) {
-    return <LogoLoading variant="large" animationType="galaxy" />;
+    return (
+      <div className="h-screen w-screen flex items-center justify-center">
+        <LogoLoading variant="large" animationType="galaxy" />
+      </div>
+    );
   }
 
   // 未登录显示 Landscape

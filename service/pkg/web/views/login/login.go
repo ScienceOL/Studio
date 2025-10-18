@@ -32,7 +32,7 @@ func NewLogin() *Login {
 
 // @Summary 登录
 // @Description 检查服务运行状态
-// @Tags 登录模块
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param frontend_callback_url query string false "前端回调地址"
@@ -56,7 +56,7 @@ func (l *Login) Login(ctx *gin.Context) {
 
 // @Summary 刷新令牌
 // @Description 刷新OAuth2令牌
-// @Tags 登录模块
+// @Tags Auth
 // @Accept json
 // @Produce json
 // @Param refresh_token body ls.RefreshTokenReq true "刷新令牌请求"
@@ -84,7 +84,7 @@ func (l *Login) Refresh(ctx *gin.Context) {
 
 // @Summary OAuth2回调
 // @Description 处理OAuth2授权回调
-// @Tags 登录模块
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param code query string true "授权码"
