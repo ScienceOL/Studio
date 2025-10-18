@@ -34,7 +34,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "登录模块"
+                    "Authentication"
                 ],
                 "summary": "OAuth2回调",
                 "parameters": [
@@ -73,7 +73,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "登录模块"
+                    "Authentication"
                 ],
                 "summary": "登录",
                 "parameters": [
@@ -110,7 +110,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "登录模块"
+                    "Auth"
                 ],
                 "summary": "刷新令牌",
                 "parameters": [

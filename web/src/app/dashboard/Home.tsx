@@ -1,4 +1,8 @@
-import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  EllipsisVerticalIcon,
+  PlusIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import GridLayout, { type Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
@@ -140,59 +144,61 @@ const AddWidgetModal = ({
   );
 };
 
-// --- Context Menu ---
-const ContextMenu = ({
-  isOpen,
-  x,
-  y,
-  onClose,
-  onAddWidget,
-}: {
-  isOpen: boolean;
-  x: number;
-  y: number;
-  onClose: () => void;
-  onAddWidget: (type: WidgetType) => void;
-}) => {
+// --- Widget Toolbar ---
+const WidgetToolbar = ({ onRemove }: { onRemove: () => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
   useEffect(() => {
     const handleClickOutside = () => {
-      onClose();
+      setIsOpen(false);
     };
-    // Close on next click or context menu open
     if (isOpen) {
       window.addEventListener('click', handleClickOutside, { once: true });
-      window.addEventListener('contextmenu', handleClickOutside, {
-        once: true,
-      });
     }
     return () => {
       window.removeEventListener('click', handleClickOutside);
-      window.removeEventListener('contextmenu', handleClickOutside);
     };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+  }, [isOpen]);
 
   return (
     <div
-      style={{ top: y, left: x }}
-      className="fixed z-[100] w-56 rounded-lg bg-white p-2 shadow-xl ring-1 ring-black ring-opacity-5 dark:bg-neutral-800 dark:ring-neutral-700"
+      className="absolute right-2 top-2 z-10 no-drag"
+      data-no-drag="true"
+      style={{ pointerEvents: 'auto' }}
     >
-      <div className="py-1">
-        <div className="px-3 py-1 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-          Add Widget
-        </div>
-        <div className="my-1 border-t border-neutral-200 dark:border-neutral-700" />
-        {Object.entries(WIDGET_DEFINITIONS).map(([type, def]) => (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          setIsOpen(!isOpen);
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+        }}
+        className="flex h-6 w-6 items-center justify-center rounded-full bg-black/20 text-white opacity-0 transition-opacity hover:bg-black/40 group-hover:opacity-100"
+        style={{ pointerEvents: 'auto' }}
+      >
+        <EllipsisVerticalIcon className="h-4 w-4" />
+      </button>
+
+      {isOpen && (
+        <div
+          className="absolute right-0 top-8 w-32 rounded-lg bg-white p-1 shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-neutral-800 dark:ring-neutral-700"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
-            key={type}
-            onClick={() => onAddWidget(type as WidgetType)}
-            className="block w-full rounded-md px-3 py-1.5 text-left text-sm text-neutral-900 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+              setIsOpen(false);
+            }}
+            className="flex w-full items-center rounded-md px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
           >
-            {def.name}
+            <XMarkIcon className="mr-2 h-4 w-4" />
+            Remove
           </button>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -204,7 +210,6 @@ export default function DashboardHome() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const [gridWidth, setGridWidth] = useState(1200);
-  const [contextMenu, setContextMenu] = useState({ isOpen: false, x: 0, y: 0 });
 
   const COL_WIDTH = 120;
   const ROW_HEIGHT = 120;
@@ -264,45 +269,24 @@ export default function DashboardHome() {
     setLayout(newLayout);
   };
 
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    // Prevent context menu on widgets themselves
-    if ((e.target as HTMLElement).closest('.react-grid-item')) {
-      return;
-    }
-    setContextMenu({ isOpen: true, x: e.clientX, y: e.clientY });
-  }, []);
-
-  const closeContextMenu = useCallback(() => {
-    setContextMenu((prev) => ({ ...prev, isOpen: false }));
-  }, []);
-
-  const handleAddWidgetFromContextMenu = useCallback(
-    (type: WidgetType) => {
-      addWidget(type);
-      closeContextMenu();
-    },
-    [addWidget, closeContextMenu]
-  );
-
   return (
     <div
       ref={gridContainerRef}
-      className="h-full w-full bg-neutral-50 p-4 dark:bg-neutral-900"
-      onContextMenu={handleContextMenu}
+      className="relative h-full w-full bg-neutral-50 p-4 dark:bg-neutral-900"
     >
+      {/* 右上角添加组件按钮 */}
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className="absolute right-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-colors hover:bg-indigo-700"
+        title="Add Widget"
+      >
+        <PlusIcon className="h-5 w-5" />
+      </button>
+
       <AddWidgetModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onAddWidget={addWidget}
-      />
-
-      <ContextMenu
-        isOpen={contextMenu.isOpen}
-        x={contextMenu.x}
-        y={contextMenu.y}
-        onClose={closeContextMenu}
-        onAddWidget={handleAddWidgetFromContextMenu}
       />
 
       {widgets.length === 0 ? (
@@ -328,6 +312,8 @@ export default function DashboardHome() {
             onLayoutChange={onLayoutChange}
             margin={[16, 16]}
             containerPadding={[0, 0]}
+            draggableCancel=".no-drag"
+            isResizable={false}
           >
             {widgets.map((widget) => {
               const WidgetComponent = WIDGET_DEFINITIONS[widget.type].component;
@@ -337,22 +323,11 @@ export default function DashboardHome() {
                   className="group relative overflow-hidden rounded-lg bg-white shadow-md dark:bg-neutral-800"
                 >
                   <WidgetComponent />
-                  <button
-                    onClick={() => removeWidget(widget.id)}
-                    className="absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/20 p-1 text-white opacity-0 transition-opacity hover:bg-red-500 group-hover:opacity-100"
-                  >
-                    <XMarkIcon className="h-4 w-4" />
-                  </button>
+                  <WidgetToolbar onRemove={() => removeWidget(widget.id)} />
                 </div>
               );
             })}
           </GridLayout>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="fixed bottom-10 right-10 z-40 rounded-full bg-indigo-600 p-4 text-white shadow-lg transition-colors hover:bg-indigo-700"
-          >
-            <PlusIcon className="h-8 w-8" />
-          </button>
         </>
       )}
     </div>

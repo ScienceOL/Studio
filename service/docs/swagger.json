@@ -31,7 +31,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "登录模块"
+                    "Authentication"
                 ],
                 "summary": "OAuth2回调",
                 "parameters": [
@@ -70,7 +70,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "登录模块"
+                    "Authentication"
                 ],
                 "summary": "登录",
                 "parameters": [
@@ -107,7 +107,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "登录模块"
+                    "Auth"
                 ],
                 "summary": "刷新令牌",
                 "parameters": [
