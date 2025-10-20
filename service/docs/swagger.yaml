@@ -492,7 +492,7 @@ paths:
             type: string
       summary: OAuth2回调
       tags:
-      - 登录模块
+      - Authentication
   /api/auth/login:
     get:
       consumes:
@@ -516,7 +516,7 @@ paths:
             type: string
       summary: 登录
       tags:
-      - 登录模块
+      - Authentication
   /api/auth/refresh:
     post:
       consumes:
@@ -543,7 +543,7 @@ paths:
               type: object
       summary: 刷新令牌
       tags:
-      - 登录模块
+      - Auth
   /api/health:
     get:
       consumes:
