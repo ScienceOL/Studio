@@ -41,6 +41,16 @@ func NewMaterialHandle(ctx context.Context) *Handle {
 	return h
 }
 
+// @Summary      创建实验室物料
+// @Description  创建实验室物料节点和连线
+// @Tags         Material
+// @Accept       json
+// @Produce      json
+// @Param        req  body      material.GraphNodeReq  true  "物料创建请求"
+// @Success      200  {object}  common.Resp
+// @Failure      400  {object}  common.Resp
+// @Security     BearerAuth
+// @Router       /lab/material [post]
 func (m *Handle) CreateLabMaterial(ctx *gin.Context) {
 	req := &material.GraphNodeReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -58,6 +68,16 @@ func (m *Handle) CreateLabMaterial(ctx *gin.Context) {
 	common.ReplyOk(ctx)
 }
 
+// @Summary      创建物料连线
+// @Description  创建物料节点之间的连接边
+// @Tags         Material
+// @Accept       json
+// @Produce      json
+// @Param        req  body      material.GraphEdge  true  "物料连线创建请求"
+// @Success      200  {object}  common.Resp
+// @Failure      400  {object}  common.Resp
+// @Security     BearerAuth
+// @Router       /lab/material/edge [post]
 func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
 	req := &material.GraphEdge{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -75,6 +95,16 @@ func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
 	common.ReplyOk(ctx)
 }
 
+// @Summary      下载物料数据
+// @Description  下载实验室物料配置图数据，返回JSON文件
+// @Tags         Material
+// @Accept       json
+// @Produce      application/json
+// @Param        lab_uuid  path      string  true  "实验室UUID"
+// @Success      200       {file}    string  "物料图数据JSON文件"
+// @Failure      400       {object}  common.Resp
+// @Security     BearerAuth
+// @Router       /lab/material/download/{lab_uuid} [get]
 func (m *Handle) DownloadMaterial(ctx *gin.Context) {
 	var err error
 	req := &material.DownloadMaterial{}
@@ -176,6 +206,16 @@ func (m *Handle) initMaterialWebSocket() {
 	})
 }
 
+// @Summary      物料WebSocket连接
+// @Description  建立实验室物料实时通信WebSocket连接，用于实时同步物料状态和操作
+// @Tags         Material
+// @Accept       json
+// @Produce      json
+// @Param        lab_uuid  path      string  true  "实验室UUID"
+// @Success      101       {string}  string  "WebSocket连接升级成功"
+// @Failure      400       {object}  common.Resp
+// @Security     BearerAuth
+// @Router       /lab/ws/material/{lab_uuid} [get]
 func (m *Handle) LabMaterial(ctx *gin.Context) {
 	req := &material.LabWS{}
 	var err error
