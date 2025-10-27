@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/scienceol/studio/service/internal/configs/webapp"
+	"github.com/scienceol/studio/service/internal/config"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
@@ -50,7 +50,7 @@ type BohrImpl struct {
 }
 
 func New() repo.Account {
-	conf := webapp.Config().OAuth2
+	conf := config.Global().OAuth2
 	return &BohrImpl{
 		bohrClient: resty.New().
 			EnableTrace().
@@ -60,7 +60,7 @@ func New() repo.Account {
 }
 
 func NewLab() repo.LabAccount {
-	conf := webapp.Config().OAuth2
+	conf := config.Global().OAuth2
 	return &BohrImpl{
 		bohrClient: resty.New().
 			EnableTrace().

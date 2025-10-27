@@ -1,4 +1,4 @@
-package webapp
+package config
 
 import (
 	"fmt"
@@ -7,20 +7,34 @@ import (
 	"github.com/creasty/defaults"
 )
 
-type WebGlobalConfig struct {
+type GlobalConfig struct {
 	Database      Database `mapstructure:",squash"`
 	Redis         Redis    `mapstructure:",squash"`
 	Server        Server   `mapstructure:",squash"`
 	OAuth2        OAuth2   `mapstructure:",squash"`
 	Log           Log      `mapstructure:",squash"`
-	MQTT          MQTT     `mapstructure:",squash"`
-	Trace         Trace    `mapstructure:",squash"`
+	// Trace         Trace    `mapstructure:",squash"`
 	// Nacos         Nacos    `mapstructure:",squash"`
 	Job           Job      `mapstructure:",squash"`
-	DynamicConfig *DynamicConfig
+	RPC           RPC      `mapstructure:",squash"`
+	Auth          Auth     `mapstructure:",squash"`
+	Storage 	  Storage  `mapstructure:",squash"`
+	// dynamicConfig *DynamicConfig
 }
 
-var config = &WebGlobalConfig{}
+
+
+// func (g *GlobalConfig) SetDynamic(d *DynamicConfig) {
+// 	g.dynamicConfig = d
+// }
+
+// func (g *GlobalConfig) Dynamic() *DynamicConfig {
+// 	return g.dynamicConfig
+// }
+
+var config = &GlobalConfig{
+	// dynamicConfig: &DynamicConfig{},
+}
 
 func init() {
 	// 初始化 tag default 值
@@ -30,6 +44,6 @@ func init() {
 	}
 }
 
-func Config() *WebGlobalConfig {
+func Global() *GlobalConfig {
 	return config
 }

@@ -40,9 +40,9 @@ func (u *Position) UnmarshalJSON(data []byte) error {
 }
 
 type Size struct {
-	Width  int `json:"width"`
-	Height int `json:"height"`
-	Depth  int `json:"depth"`
+	Width  float32 `json:"width"`
+	Height float32 `json:"height"`
+	Depth  float32 `json:"depth"`
 }
 
 // JSON 序列化
@@ -138,10 +138,27 @@ func (u *Rotation) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (p Pose) MarshalJSON() ([]byte, error) {
+	type Alias Pose
+	return json.Marshal(Alias{
+		Layout:           utils.Or(p.Layout, "x-y"),
+		Position:         p.Position,
+		Postion3D:        p.Postion3D,
+		Size:             p.Size,
+		Scale:            p.Scale,
+		Rotation:         p.Rotation,
+		Extra:            p.Extra,
+		CrossSectionType: utils.Or(p.CrossSectionType, "rectangle"),
+	})
+}
+
 type Pose struct {
-	Layout   string   `json:"layout"`
-	Position Position `json:"position"`
-	Size     Size     `json:"size"`
-	Scale    Scale    `json:"scale"`
-	Rotation Rotation `json:"rotation"`
+	Layout           string   `json:"layout"`
+	Position         Position `json:"position"`
+	Postion3D        Position `json:"position_3d"`
+	Size             Size     `json:"size"`
+	Scale            Scale    `json:"scale"`
+	Rotation         Rotation `json:"rotation"`
+	Extra            any      `json:"extra"`
+	CrossSectionType string   `json:"cross_section_type"`
 }

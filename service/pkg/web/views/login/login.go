@@ -56,7 +56,7 @@ func (l *Login) Login(ctx *gin.Context) {
 
 // @Summary 刷新令牌
 // @Description 刷新OAuth2令牌
-// @Tags Auth
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param refresh_token body ls.RefreshTokenReq true "刷新令牌请求"

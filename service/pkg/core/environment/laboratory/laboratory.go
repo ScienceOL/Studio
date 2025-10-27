@@ -2,13 +2,12 @@ package laboratory
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/scienceol/studio/service/internal/configs/webapp"
+	"github.com/scienceol/studio/service/internal/config"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
@@ -35,7 +34,8 @@ func NewLab() environment.EnvService {
 	return &lab{
 		envStore:      eStore.New(),
 		accountClient: casdoor.NewCasClient(),
-		inviteStore:   invite.New(),
+
+		inviteStore: invite.New(),
 	}
 }
 
@@ -73,7 +73,7 @@ func (l *lab) CreateLaboratoryEnv(ctx context.Context, req *environment.Laborato
 
 		ak := uuid.NewV4().String()
 		sk := uuid.NewV4().String()
-		if webapp.Config().OAuth2.AuthSource == webapp.AuthCasdoor {
+		if config.Global().OAuth2.AuthSource == config.AuthCasdoor {
 			// 将 UUID 的连字符替换为下划线，确保符合 Casdoor 用户名规则
 			// 用户名规则：只能包含字母数字、下划线或连字符，不能有连续的连字符/下划线，不能以连字符/下划线开头或结尾
 			safeAk := strings.ReplaceAll(ak, "-", "_")
@@ -139,6 +139,107 @@ func (l *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.UpdateEn
 	}, nil
 }
 
+func (l *lab) DelLab(ctx context.Context, req *environment.DelLabReq) error {
+	if req.UUID.IsNil() {
+		return code.ParamErr.WithMsg("lab uuid is empty")
+	}
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return code.UnLogin
+	}
+
+	lab, err := l.envStore.GetLabByUUID(ctx, req.UUID)
+	if err != nil {
+		return err
+	}
+
+	if lab.UserID != userInfo.ID {
+		// 退出该实验室
+		if err := l.envStore.DelData(ctx, &model.LaboratoryMember{}, map[string]any{
+			"lab_id":  lab.ID,
+			"user_id": userInfo.ID,
+		}); err != nil {
+			return err
+		}
+	} else {
+		// 自己删除实验室，清空所有成员
+		if err := l.envStore.DelData(ctx, &model.LaboratoryMember{}, map[string]any{
+			"lab_id": lab.ID,
+		}); err != nil {
+			return err
+		}
+
+		if err := l.envStore.UpdateData(ctx, &model.Laboratory{
+			Status: model.DELETED,
+		}, map[string]any{
+			"id": lab.ID,
+		}, "status"); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (l *lab) LabInfo(ctx context.Context, req *environment.LabInfoReq) (*environment.LabInfoResp, error) {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return nil, code.UnLogin
+	}
+
+	if req.UUID.IsNil() {
+		return nil, code.ParamErr
+	}
+
+	lab := &model.Laboratory{}
+	var err error
+
+	if req.Type == environment.LABAK {
+		err = l.envStore.GetData(ctx, lab, map[string]any{
+			"access_key": req.UUID,
+		})
+	} else {
+		lab, err = l.envStore.GetLabByUUID(ctx, req.UUID)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &environment.LabInfoResp{
+		UUID:         uuid.UUID{},
+		Name:         "",
+		UserID:       "",
+		IsAdmin:      false,
+		AccessKey:    "",
+		AccessSecret: "",
+		Status:       model.DELETED,
+	}
+	if lab.Status == model.DELETED {
+		return resp, nil
+	}
+
+	count, err := l.envStore.Count(ctx, &model.LaboratoryMember{}, map[string]any{
+		"lab_id":  lab.ID,
+		"user_id": userInfo.ID,
+	})
+	if err != nil || count == 0 {
+		return nil, code.NoPermission
+	}
+
+	if lab.Status != model.DELETED {
+		resp.UUID = lab.UUID
+		resp.Name = lab.Name
+		resp.UserID = lab.UserID
+		resp.IsAdmin = lab.UserID == userInfo.ID
+		resp.AccessKey = lab.AccessKey
+		resp.AccessSecret = lab.AccessSecret
+		resp.Status = lab.Status
+	}
+
+	return resp, nil
+}
+
 func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) error {
 	if len(req.Resources) == 0 {
 		return code.ResourceIsEmptyErr
@@ -157,7 +258,6 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 		resDatas := utils.FilterSlice(req.Resources, func(item *environment.Resource) (*model.ResourceNodeTemplate, bool) {
 			data := &model.ResourceNodeTemplate{
 				Name:         item.RegName,
-				ParentID:     0,
 				LabID:        labData.ID,     // 实验室的 id
 				UserID:       labData.UserID, // 创建实验室的 user id
 				Header:       item.RegName,
@@ -170,6 +270,7 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 				ResourceType: item.ResourceType,
 				Language:     item.Class.Type,
 				StatusTypes:  item.Class.StatusTypes,
+				ConfigInfo:   item.ConfigInfo,
 				Tags:         item.Tags,
 				DataSchema: utils.SafeValue(func() datatypes.JSON {
 					return item.InitParamSchema.Data.Properties
@@ -186,9 +287,9 @@ func (l *lab) CreateResource(ctx context.Context, req *environment.ResourceReq) 
 			return err
 		}
 
-		if err := l.createConfigInfo(txCtx, req.Resources); err != nil {
-			return err
-		}
+		// if err := l.createConfigInfo(txCtx, req.Resources); err != nil {
+		// 	return err
+		// }
 
 		if err := l.createHandle(txCtx, req.Resources); err != nil {
 			return err
@@ -258,104 +359,104 @@ func (l *lab) createHandle(ctx context.Context, res []*environment.Resource) err
 	return l.envStore.UpsertResourceHandleTemplate(ctx, resDeviceHandles)
 }
 
-func (l *lab) createConfigInfo(ctx context.Context, res []*environment.Resource) error {
-	_, err := utils.FilterSliceWithErr(res, func(item *environment.Resource) ([]*model.ResourceNodeTemplate, bool, error) {
-		res, err1 := utils.FilterSliceWithErr(item.ConfigInfo, func(conf *environment.Config) ([]*model.ResourceNodeTemplate, bool, error) {
-			innerConfig := &environment.InnerBaseConfig{}
-			if err := json.Unmarshal(conf.Config, innerConfig); err != nil {
-				logger.Errorf(ctx, "CreateResource Unmarshal innerbaseconfig fail err: %+v", err)
-				return nil, false, err
-			}
+// func (l *lab) createConfigInfo(ctx context.Context, res []*environment.Resource) error {
+// 	_, err := utils.FilterSliceWithErr(res, func(item *environment.Resource) ([]*model.ResourceNodeTemplate, bool, error) {
+// 		res, err1 := utils.FilterSliceWithErr(item.ConfigInfo, func(conf *environment.Config) ([]*model.ResourceNodeTemplate, bool, error) {
+// 			innerConfig := &environment.InnerBaseConfig{}
+// 			if err := json.Unmarshal(conf.Config, innerConfig); err != nil {
+// 				logger.Errorf(ctx, "CreateResource Unmarshal innerbaseconfig fail err: %+v", err)
+// 				return nil, false, err
+// 			}
 
-			pose := model.Pose{
-				Layout:   "2d",
-				Position: conf.Position,
-				Size: model.Size{
-					Width:  int(innerConfig.SizeX),
-					Height: int(innerConfig.SizeY),
-					Depth:  int(innerConfig.SizeZ),
-				},
-				Scale: model.Scale{},
-				Rotation: model.Rotation{
-					X: innerConfig.Rotation.X,
-					Y: innerConfig.Rotation.Y,
-					Z: innerConfig.Rotation.Z,
-				},
-			}
+// 			pose := model.Pose{
+// 				Layout:   "2d",
+// 				Position: conf.Position,
+// 				Size: model.Size{
+// 					Width:  int(innerConfig.SizeX),
+// 					Height: int(innerConfig.SizeY),
+// 					Depth:  int(innerConfig.SizeZ),
+// 				},
+// 				Scale: model.Scale{},
+// 				Rotation: model.Rotation{
+// 					X: innerConfig.Rotation.X,
+// 					Y: innerConfig.Rotation.Y,
+// 					Z: innerConfig.Rotation.Z,
+// 				},
+// 			}
 
-			data := &model.ResourceNodeTemplate{
-				Name:         conf.ID,
-				ParentID:     utils.Ternary(conf.Parent == "", item.SelfDB.ID, 0),
-				LabID:        item.SelfDB.LabID,
-				UserID:       item.SelfDB.UserID,
-				Header:       conf.Name,
-				Footer:       "",
-				Version:      utils.Or(item.Version, "0.0.1"),
-				Icon:         "",
-				Description:  nil,
-				Model:        datatypes.JSON{},
-				Module:       "",
-				ResourceType: conf.Type,
-				Language:     "",
-				StatusTypes:  datatypes.JSON{},
-				Tags:         datatypes.JSONSlice[string]{},
-				DataSchema:   conf.Data,
-				ConfigSchema: conf.Config,
-				Pose:         datatypes.NewJSONType(pose),
+// 			data := &model.ResourceNodeTemplate{
+// 				Name:         conf.ID,
+// 				ParentID:     utils.Ternary(conf.Parent == "", item.SelfDB.ID, 0),
+// 				LabID:        item.SelfDB.LabID,
+// 				UserID:       item.SelfDB.UserID,
+// 				Header:       conf.Name,
+// 				Footer:       "",
+// 				Version:      utils.Or(item.Version, "0.0.1"),
+// 				Icon:         "",
+// 				Description:  nil,
+// 				Model:        datatypes.JSON{},
+// 				Module:       "",
+// 				ResourceType: conf.Type,
+// 				Language:     "",
+// 				StatusTypes:  datatypes.JSON{},
+// 				Tags:         datatypes.JSONSlice[string]{},
+// 				DataSchema:   conf.Data,
+// 				ConfigSchema: conf.Config,
+// 				Pose:         datatypes.NewJSONType(pose),
 
-				ParentNode: item.SelfDB,
-				ParentName: conf.Parent,
-			}
-			return []*model.ResourceNodeTemplate{data}, true, nil
-		})
+// 				ParentNode: item.SelfDB,
+// 				ParentName: conf.Parent,
+// 			}
+// 			return []*model.ResourceNodeTemplate{data}, true, nil
+// 		})
 
-		if err1 != nil {
-			logger.Errorf(ctx, "createConfigInfo err: %+v", err1)
-			return nil, false, err1
-		}
+// 		if err1 != nil {
+// 			logger.Errorf(ctx, "createConfigInfo err: %+v", err1)
+// 			return nil, false, err1
+// 		}
 
-		preBuildNodes := utils.FilterSlice(res, func(item *model.ResourceNodeTemplate) (*utils.Node[string, *model.ResourceNodeTemplate], bool) {
-			return &utils.Node[string, *model.ResourceNodeTemplate]{
-				Name:   item.Name,
-				Parent: item.ParentName,
-				Data:   item,
-			}, true
-		})
+// 		preBuildNodes := utils.FilterSlice(res, func(item *model.ResourceNodeTemplate) (*utils.Node[string, *model.ResourceNodeTemplate], bool) {
+// 			return &utils.Node[string, *model.ResourceNodeTemplate]{
+// 				Name:   item.Name,
+// 				Parent: item.ParentName,
+// 				Data:   item,
+// 			}, true
+// 		})
 
-		buildNodes, err := utils.BuildHierarchy(preBuildNodes)
-		if err != nil {
-			return nil, false, err
-		}
+// 		buildNodes, err := utils.BuildHierarchy(preBuildNodes)
+// 		if err != nil {
+// 			return nil, false, err
+// 		}
 
-		// FIXME: 是否还有优化空间
-		upsertNodeMap := make(map[string]*model.ResourceNodeTemplate)
-		for _, datas := range buildNodes {
-			for _, data := range datas {
-				if data.ParentName != "" {
-					parentNode, ok := upsertNodeMap[data.ParentName]
-					if ok {
-						data.ParentID = parentNode.ID
-					} else {
-						logger.Errorf(ctx, "can not found config info parent config: %+v", data)
-						return nil, false, code.ParamErr.WithMsg(fmt.Sprintf("can not found config info parent config: %+v", data))
-					}
-				}
-			}
+// 		// FIXME: 是否还有优化空间
+// 		upsertNodeMap := make(map[string]*model.ResourceNodeTemplate)
+// 		for _, datas := range buildNodes {
+// 			for _, data := range datas {
+// 				if data.ParentName != "" {
+// 					parentNode, ok := upsertNodeMap[data.ParentName]
+// 					if ok {
+// 						data.ParentID = parentNode.ID
+// 					} else {
+// 						logger.Errorf(ctx, "can not found config info parent config: %+v", data)
+// 						return nil, false, code.ParamErr.WithMsg(fmt.Sprintf("can not found config info parent config: %+v", data))
+// 					}
+// 				}
+// 			}
 
-			if err := l.envStore.UpsertResourceNodeTemplate(ctx, datas); err != nil {
-				return nil, false, err
-			}
+// 			if err := l.envStore.UpsertResourceNodeTemplate(ctx, datas); err != nil {
+// 				return nil, false, err
+// 			}
 
-			for _, data := range datas {
-				upsertNodeMap[data.Name] = data
-			}
-		}
+// 			for _, data := range datas {
+// 				upsertNodeMap[data.Name] = data
+// 			}
+// 		}
 
-		return res, true, err
-	})
+// 		return res, true, err
+// 	})
 
-	return err
-}
+// 	return err
+// }
 
 func (l *lab) createActionHandles(ctx context.Context, actions []*model.WorkflowNodeTemplate) error {
 	resHandles, _ := utils.FilterSliceWithErr(actions, func(item *model.WorkflowNodeTemplate) ([]*model.WorkflowHandleTemplate, bool, error) {
@@ -432,7 +533,7 @@ func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageMor
 		return l.ID, l
 	})
 
-	labMemberMap := l.envStore.GetLabMemberCount(ctx, userInfo.ID, labIDs...)
+	labMemberMap := l.envStore.GetLabMemberCount(ctx, labIDs...)
 
 	labResp := utils.FilterSlice(labs.Data, func(item *model.LaboratoryMember) (*environment.LaboratoryResp, bool) {
 		lab, ok := labMap[item.LabID]

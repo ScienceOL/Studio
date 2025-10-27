@@ -26,5 +26,10 @@ type Service interface {
 	DelWorkflow(ctx context.Context, req *DelReq) error
 	WorkflowTemplateList(ctx context.Context, req *TemplateListReq) (*common.PageResp[[]*TemplateListRes], error)
 	WorkflowTemplateTags(ctx context.Context) ([]string, error)
+	WorkflowTemplateTagsByLab(ctx context.Context, req *TemplateTagsReq) ([]string, error)
 	ForkWrokflow(ctx context.Context, req *ForkReq) error
+	DuplicateWorkflow(ctx context.Context, req *DuplicateReq) (*DuplicateRes, error)
+	ExportWorkflow(ctx context.Context, req *ExportReq) (*ExportData, error)
+	ImportWorkflow(ctx context.Context, req *ImportReq) (*CreateResp, error)
+	HttpRunWorkflow(ctx context.Context, req *RunReq) (uuid.UUID, error)
 }

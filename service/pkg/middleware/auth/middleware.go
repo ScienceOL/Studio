@@ -11,8 +11,7 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/scienceol/studio/service/internal/configs/schedule"
-	"github.com/scienceol/studio/service/internal/configs/webapp"
+	"github.com/scienceol/studio/service/internal/config"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
@@ -60,7 +59,7 @@ func ValidateToken(ctx context.Context, tokenType string, token string) (*model.
 	client := oauthConfig.Client(ctx, oauthToken)
 
 	// 获取配置中的用户信息URL
-	config := webapp.Config()
+	config := config.Global()
 
 	// 获取用户信息 - 如果token有效，这个请求将成功
 	resp, err := client.Get(config.OAuth2.UserInfoURL)
@@ -99,9 +98,9 @@ func AuthLab() func(ctx *gin.Context) {
 			AuthTypeBohr:   authClient.getBohrUser,
 		}
 
-		if schedule.Config().OAuth2.AuthSource == schedule.AuthBohr {
+		if config.Global().OAuth2.AuthSource == config.AuthBohr {
 			authClient.client = bohr.NewLab()
-		} else if schedule.Config().OAuth2.AuthSource == schedule.AuthCasdoor {
+		} else if config.Global().OAuth2.AuthSource == config.AuthCasdoor {
 			authClient.client = casdoor.NewLabAccess()
 		} else {
 			panic("auth type err")
@@ -121,9 +120,9 @@ func Auth() func(ctx *gin.Context) {
 			AuthTypeBohr:   authClient.getBohrUser,
 		}
 
-		if webapp.Config().OAuth2.AuthSource == webapp.AuthBohr {
+		if config.Global().OAuth2.AuthSource == config.AuthBohr {
 			authClient.client = bohr.NewLab()
-		} else if webapp.Config().OAuth2.AuthSource == webapp.AuthCasdoor {
+		} else if config.Global().OAuth2.AuthSource == config.AuthCasdoor {
 			authClient.client = casdoor.NewLabAccess()
 		} else {
 			panic("auth type err")

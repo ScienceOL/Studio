@@ -11,6 +11,7 @@ func _() {
 	_ = x[Success-0]
 	_ = x[UnDefineErr-1]
 	_ = x[NoPermission-2]
+	_ = x[InvalidateJWT-3]
 	_ = x[ParamErr-1000]
 	_ = x[NotPointerErr-1001]
 	_ = x[NotSlicePointerErr-1002]
@@ -49,6 +50,7 @@ func _() {
 	_ = x[LabInviteNotFoundErr-20007]
 	_ = x[InviteExpiredErr-20008]
 	_ = x[InvalidateThirdID-20009]
+	_ = x[LabAlreadyDeletedErr-20010]
 	_ = x[ResNotExistErr-22000]
 	_ = x[EdgeNodeNotExistErr-22001]
 	_ = x[EdgeHandleNotExistErr-22002]
@@ -61,11 +63,23 @@ func _() {
 	_ = x[InvalidDagErr-22009]
 	_ = x[MaxTplNodeDeepErr-22010]
 	_ = x[CanNotFoundMaterialNodeErr-22011]
+	_ = x[MachineAlreadyExistErr-22012]
+	_ = x[QueryMachineStatusFailErr-22013]
+	_ = x[MachineNotExistErr-22014]
+	_ = x[MachineReachMaxNumCountErr-22015]
+	_ = x[MachineNodeStoppingErr-22016]
+	_ = x[MachineStartUnknownErr-22017]
+	_ = x[CanNotFoundTargetNode-22018]
+	_ = x[PathHasEmptyName-22019]
 	_ = x[NotifyActionAlreadyRegistryErr-24000]
 	_ = x[NotifySubscribeChannelErr-24001]
 	_ = x[NotifySendMsgErr-24002]
-	_ = x[CasDoorCreateLabUserErr-26000]
-	_ = x[CasDoorQueryLabUserErr-26001]
+	_ = x[RPCHttpErr-26000]
+	_ = x[RPCHttpCodeErr-26001]
+	_ = x[RPCHttpCodeRespErr-26002]
+	_ = x[CasDoorCreateLabUserErr-26003]
+	_ = x[CasDoorQueryLabUserErr-26004]
+	_ = x[BohrBatchQueryErr-26005]
 	_ = x[CanNotGetWorkflowUUIDErr-28000]
 	_ = x[WorkflowNotExistErr-28001]
 	_ = x[UpsertWorkflowEdgeErr-28002]
@@ -80,42 +94,65 @@ func _() {
 	_ = x[WorkflowHasCircularErr-30002]
 	_ = x[EdgeConnectClosedErr-30003]
 	_ = x[NodeDataMarshalErr-30004]
-	_ = x[JobRetryTimeout-30005]
-	_ = x[JobRunFailErr-30006]
-	_ = x[WorkflowTaskNotFoundErr-30007]
-	_ = x[WorkflowTaskStatusErr-30008]
-	_ = x[WorkflowTaskFinished-30009]
+	_ = x[JobRunFailErr-30005]
+	_ = x[WorkflowTaskNotFoundErr-30006]
+	_ = x[WorkflowTaskStatusErr-30007]
+	_ = x[WorkflowTaskFinished-30008]
+	_ = x[WorkflowNodeNoDeviceName-30009]
+	_ = x[WorkflowNodeNoActionName-30010]
+	_ = x[WorkflowNodeNoActionType-30011]
+	_ = x[QueryJobStatusKeyNotExistErr-30012]
+	_ = x[CallbackJobStatusKeyNotExistErr-30013]
+	_ = x[JobTimeoutErr-30014]
+	_ = x[JobRetryTimeout-30015]
+	_ = x[CallbackJobStatusTimeoutErr-30016]
+	_ = x[JobCanceled-30017]
+	_ = x[CanNotGetWorkflowTaskErr-30018]
+	_ = x[WorkflowTaskStatusNotPendingErr-30019]
+	_ = x[CanNotFoundWorkflowHandleErr-30020]
+	_ = x[CanNotGetParentJobErr-30021]
+	_ = x[ParamDataKeyInvalidateErr-30022]
+	_ = x[ParamDataValueInvalidateErr-30023]
+	_ = x[DataNotMapAnyTypeErr-30024]
+	_ = x[ValueSliceOutIndexErr-30025]
+	_ = x[ValueNotExistErr-30026]
+	_ = x[TargetDataNotMapAnyTypeErr-30027]
+	_ = x[MarshalTargetDataErr-30028]
+	_ = x[TargetParamInvalidateErr-30029]
+	_ = x[WorkflowNodeScriptEmtpyErr-30030]
+	_ = x[UnknownWorkflowNodeTypeErr-30031]
+	_ = x[ExecWorkflowNodeScriptErr-30032]
 }
 
 const (
-	_ErrCode_name_0 = "successundefinedno permission"
+	_ErrCode_name_0 = "successundefinedno permissioninvalidate jwt"
 	_ErrCode_name_1 = "parse parameter errornot pointer errmust be a pointer to a slicepointer is nil error"
 	_ErrCode_name_2 = "login configuration errorset login state errorrefresh token failedstate verification failedexchange token failedcallback parameter errorget user info failedlogin process user info failednot logged inlogin verification format errorinvalid tokenrefresh token parameter errorredirect login url error"
 	_ErrCode_name_3 = "database create data errordatabase update data errordatabase record not founddatabase query errordatabase delete errornot base db type errormodel not implement schema.Tablerredis lua script errorredis lua return type errorredis add user set errorredis remove user set error"
-	_ErrCode_name_4 = "reg action name emptyresource is emptyresource not existcan not found workflow template erroruser id is emptylab id is empty errorlaboratory not found errorcan not found laboratory invite link errorinvite expired errorinvalidate third id error"
-	_ErrCode_name_5 = "resource not existedge node not existnode handle not existunknown material websocket actionunmarshal material websocket data errorcannot get lab id errorupdate material node errorparent node not found errortemplate node not found errorinvalid dag errormax template node deep errorcan not found material node error"
+	_ErrCode_name_4 = "reg action name emptyresource is emptyresource not existcan not found workflow template erroruser id is emptylab id is empty errorlaboratory not found errorcan not found laboratory invite link errorinvite expired errorinvalidate third id errorlab already deleted error"
+	_ErrCode_name_5 = "resource not existedge node not existnode handle not existunknown material websocket actionunmarshal material websocket data errorcannot get lab id errorupdate material node errorparent node not found errortemplate node not found errorinvalid dag errormax template node deep errorcan not found material node errormachine already exist errorquery machine status errormachine not exist errormachine reach max number errormachine is stoppingstart machine unknown errorcan not found target node errorpath has empty name error"
 	_ErrCode_name_6 = "notify action already registrynotify subscribe channel failnotify send message error"
-	_ErrCode_name_7 = "create lab user errorquery lab user error"
+	_ErrCode_name_7 = "rpc request http errorrpc request http code errorrpc request http code resp errorcreate lab user errorquery lab user errorbhor batch query user error"
 	_ErrCode_name_8 = "can not get workflow uuidworkflow not existupsert workflow edge errorpermission deniedbatch save nodes errorbatch save workflow edge errorworkflow node not found errorworkflow not found errorformat csv data error"
-	_ErrCode_name_9 = "workflow task already exist errorcan not found edge sessionworkflow has circular errorconnect closed when node running errormarshal node data errorjob retry timeout errorjob run fail errorcan not found workflow task errorworkflow task status errorworkflow task finished"
+	_ErrCode_name_9 = "workflow task already exist errorcan not found edge sessionworkflow has circular errorconnect closed when node running errormarshal node data errorjob run fail errorcan not found workflow task errorworkflow task status errorworkflow task finishedworkflow node no device name errorworkflow node no action name errorworkflow node no action type errorquery job status key note exists errorcallback job status key note exists errorjob timeout errorjob retry timeout errorcallback job status timeout errorjob is canceledcan not get workflow task errorworkflow task not in pending statuscan not found workflow handle errorcan not found parent node job errorparam data key invalidate errorparam data value invalidate errordata not map any type errorvalue slice out index errorvalue not exist errortarget data not map any type errormarshal target data errortarget param invalidate errorworkflow script empty errorunknown workflow node type errorexec workflow script error"
 )
 
 var (
-	_ErrCode_index_0 = [...]uint8{0, 7, 16, 29}
+	_ErrCode_index_0 = [...]uint8{0, 7, 16, 29, 43}
 	_ErrCode_index_1 = [...]uint8{0, 21, 36, 64, 84}
 	_ErrCode_index_2 = [...]uint16{0, 25, 46, 66, 91, 112, 136, 156, 186, 199, 230, 243, 272, 296}
 	_ErrCode_index_3 = [...]uint16{0, 26, 52, 77, 97, 118, 140, 173, 195, 222, 246, 273}
-	_ErrCode_index_4 = [...]uint8{0, 21, 38, 56, 93, 109, 130, 156, 198, 218, 243}
-	_ErrCode_index_5 = [...]uint16{0, 18, 37, 58, 91, 130, 153, 179, 206, 235, 252, 280, 313}
+	_ErrCode_index_4 = [...]uint16{0, 21, 38, 56, 93, 109, 130, 156, 198, 218, 243, 268}
+	_ErrCode_index_5 = [...]uint16{0, 18, 37, 58, 91, 130, 153, 179, 206, 235, 252, 280, 313, 340, 366, 389, 419, 438, 465, 496, 521}
 	_ErrCode_index_6 = [...]uint8{0, 30, 59, 84}
-	_ErrCode_index_7 = [...]uint8{0, 21, 41}
+	_ErrCode_index_7 = [...]uint8{0, 22, 49, 81, 102, 122, 149}
 	_ErrCode_index_8 = [...]uint8{0, 25, 43, 69, 86, 108, 138, 167, 191, 212}
-	_ErrCode_index_9 = [...]uint16{0, 33, 59, 86, 124, 147, 170, 188, 221, 247, 269}
+	_ErrCode_index_9 = [...]uint16{0, 33, 59, 86, 124, 147, 165, 198, 224, 246, 280, 314, 348, 386, 427, 444, 467, 500, 515, 546, 581, 616, 651, 682, 715, 742, 769, 790, 824, 849, 878, 905, 937, 963}
 )
 
 func (i ErrCode) String() string {
 	switch {
-	case 0 <= i && i <= 2:
+	case 0 <= i && i <= 3:
 		return _ErrCode_name_0[_ErrCode_index_0[i]:_ErrCode_index_0[i+1]]
 	case 1000 <= i && i <= 1003:
 		i -= 1000
@@ -126,22 +163,22 @@ func (i ErrCode) String() string {
 	case 10000 <= i && i <= 10010:
 		i -= 10000
 		return _ErrCode_name_3[_ErrCode_index_3[i]:_ErrCode_index_3[i+1]]
-	case 20000 <= i && i <= 20009:
+	case 20000 <= i && i <= 20010:
 		i -= 20000
 		return _ErrCode_name_4[_ErrCode_index_4[i]:_ErrCode_index_4[i+1]]
-	case 22000 <= i && i <= 22011:
+	case 22000 <= i && i <= 22019:
 		i -= 22000
 		return _ErrCode_name_5[_ErrCode_index_5[i]:_ErrCode_index_5[i+1]]
 	case 24000 <= i && i <= 24002:
 		i -= 24000
 		return _ErrCode_name_6[_ErrCode_index_6[i]:_ErrCode_index_6[i+1]]
-	case 26000 <= i && i <= 26001:
+	case 26000 <= i && i <= 26005:
 		i -= 26000
 		return _ErrCode_name_7[_ErrCode_index_7[i]:_ErrCode_index_7[i+1]]
 	case 28000 <= i && i <= 28008:
 		i -= 28000
 		return _ErrCode_name_8[_ErrCode_index_8[i]:_ErrCode_index_8[i+1]]
-	case 30000 <= i && i <= 30009:
+	case 30000 <= i && i <= 30032:
 		i -= 30000
 		return _ErrCode_name_9[_ErrCode_index_9[i]:_ErrCode_index_9[i+1]]
 	default:

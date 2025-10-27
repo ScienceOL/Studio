@@ -103,6 +103,14 @@ func Range[T any](source []T, f func(index int, i T) bool) {
 	}
 }
 
+func RangeMap[T comparable, V any](source map[T]V, f func(key T, value V) bool) {
+	for index, item := range source {
+		if !f(index, item) {
+			return
+		}
+	}
+}
+
 func FindTarget[S any, T any](sources []T, f func(i T) (S, bool)) S {
 	var zero S
 	for _, item := range sources {
@@ -112,6 +120,20 @@ func FindTarget[S any, T any](sources []T, f func(i T) (S, bool)) S {
 		}
 	}
 	return zero
+}
+
+func FilterSliceErr[S any, T any](sources []T, f func(i T) (S, bool, error)) ([]S, error) {
+	newSlice := make([]S, 0, len(sources))
+	for _, item := range sources {
+		datas, isAdd, err := f(item)
+		if err != nil {
+			return nil, err
+		}
+		if isAdd {
+			newSlice = append(newSlice, datas)
+		}
+	}
+	return newSlice, nil
 }
 
 func FilterSliceWithErr[S any, T any](sources []T, f func(i T) ([]S, bool, error)) ([]S, error) {
@@ -157,4 +179,44 @@ func MapToSlice[K comparable, V any, T any](sources map[K]V, f func(key K, value
 	}
 
 	return result
+}
+
+// 语法糖包装
+func Wrapper[T any](f func() T) T {
+	return f()
+}
+
+func SetDifference[T comparable, V any](source map[T]V, target map[T]V) map[T]V {
+	diffMap := make(map[T]V)
+	for k, v := range source {
+		if _, ok := target[k]; ok {
+			continue
+		}
+		diffMap[k] = v
+	}
+
+	return diffMap
+}
+
+func FindDuplicates[E any, T comparable](slice []E, kf func(ele E) T) (uniques []E, duplicates []E) {
+	seen := make(map[T]int)
+
+	// 第一次遍历：统计每个元素的出现次数
+	for _, item := range slice {
+		seen[kf(item)]++
+	}
+
+	// 第二次遍历：根据出现次数分类
+	for _, item := range slice {
+		key := kf(item)
+		if count, exists := seen[key]; exists {
+			if count > 1 {
+				duplicates = append(duplicates, item)
+			} else {
+				uniques = append(uniques, item)
+			}
+		}
+	}
+
+	return uniques, duplicates
 }

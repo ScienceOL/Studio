@@ -2,6 +2,7 @@
 package common
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
+	"github.com/scienceol/studio/service/pkg/middleware/logger"
 )
 
 const (
@@ -64,7 +66,7 @@ func (p *PageReq) Normalize() {
 	}
 
 	if p.PageSize <= 0 {
-		p.PageSize = 10
+		p.PageSize = 1
 	}
 
 	if p.Page <= 0 {
@@ -122,6 +124,15 @@ func ReplyErr(ctx *gin.Context, err error, msg ...string) {
 	})
 }
 
+func Reply(ctx *gin.Context, err error, data ...any) {
+	if err != nil {
+		ReplyErr(ctx, err)
+		return
+	}
+
+	ReplyOk(ctx, data...)
+}
+
 // 禁止 data 直接返回数组，不方便接口拓展
 func ReplyOk(ctx *gin.Context, data ...any) {
 	if len(data) > 0 {
@@ -150,7 +161,10 @@ func ReplyWSOk(s *melody.Session, action string, msgUUID uuid.UUID, data ...any)
 			},
 			Timestamp: time.Now().Unix(),
 		}
-		v, _ := json.Marshal(d)
+		v, err := json.Marshal(d)
+		if err != nil {
+			logger.Warnf(context.Background(), "=============== %+v, body: +%v", err, *d)
+		}
 		return s.Write(v)
 	}
 

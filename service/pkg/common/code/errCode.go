@@ -110,6 +110,7 @@ const (
 	LabInviteNotFoundErr                               // can not found laboratory invite link error
 	InviteExpiredErr                                   // invite expired error
 	InvalidateThirdID                                  // invalidate third id error
+	LabAlreadyDeletedErr                               // lab already deleted error
 )
 
 // material module errors
@@ -126,6 +127,14 @@ const (
 	InvalidDagErr                                     // invalid dag error
 	MaxTplNodeDeepErr                                 // max template node deep error
 	CanNotFoundMaterialNodeErr                        // can not found material node error
+	MachineAlreadyExistErr                            // machine already exist error
+	QueryMachineStatusFailErr                         // query machine status error
+	MachineNotExistErr                                // machine not exist error
+	MachineReachMaxNumCountErr                        // machine reach max number error
+	MachineNodeStoppingErr                            // machine is stopping
+	MachineStartUnknownErr                            // start machine unknown error
+	CanNotFoundTargetNode                             // can not found target node error
+	PathHasEmptyName                                  // path has empty name error
 )
 
 // notify module errors
@@ -135,9 +144,12 @@ const (
 	NotifySendMsgErr                                      // notify send message error
 )
 
-// rpc casdoor module errors
+// rpc account module errors
 const (
-	CasDoorCreateLabUserErr ErrCode = iota + 26000 // create lab user error
+	RPCHttpErr              ErrCode = iota + 26000 // rpc request http error
+	RPCHttpCodeErr                                 // rpc request http code error
+	RPCHttpCodeRespErr                             // rpc request http code resp error
+	CasDoorCreateLabUserErr                        // create lab user error
 	CasDoorQueryLabUserErr                         // query lab user error
 	BohrBatchQueryErr                              // bhor batch query user error
 )
@@ -157,14 +169,38 @@ const (
 
 // schedule module errors
 const (
-	WorkflowTaskAlreadyExistErr ErrCode = iota + 30000 // workflow task already exist error
-	CanNotFoundEdgeSession                             // can not found edge session
-	WorkflowHasCircularErr                             // workflow has circular error
-	EdgeConnectClosedErr                               // connect closed when node running error
-	NodeDataMarshalErr                                 // marshal node data error
-	JobRetryTimeout                                    // job retry timeout error
-	JobRunFailErr                                      // job run fail error
-	WorkflowTaskNotFoundErr                            // can not found workflow task error
-	WorkflowTaskStatusErr                              // workflow task status error
-	WorkflowTaskFinished                               // workflow task finished
+	WorkflowTaskAlreadyExistErr     ErrCode = iota + 30000 // workflow task already exist error
+	CanNotFoundEdgeSession                                 // can not found edge session
+	WorkflowHasCircularErr                                 // workflow has circular error
+	EdgeConnectClosedErr                                   // connect closed when node running error
+	NodeDataMarshalErr                                     // marshal node data error
+	JobRunFailErr                                          // job run fail error
+	WorkflowTaskNotFoundErr                                // can not found workflow task error
+	WorkflowTaskStatusErr                                  // workflow task status error
+	WorkflowTaskFinished                                   // workflow task finished
+	WorkflowNodeNoDeviceName                               // workflow node no device name error
+	WorkflowNodeNoActionName                               // workflow node no action name error
+	WorkflowNodeNoActionType                               // workflow node no action type error
+	QueryJobStatusKeyNotExistErr                           // query job status key note exists error
+	CallbackJobStatusKeyNotExistErr                        // callback job status key note exists error
+	JobTimeoutErr                                          // job timeout error
+	JobRetryTimeout                                        // job retry timeout error
+	CallbackJobStatusTimeoutErr                            // callback job status timeout error
+	JobCanceled                                            // job is canceled
+	CanNotGetWorkflowTaskErr                               // can not get workflow task error
+	WorkflowTaskStatusNotPendingErr                        // workflow task not in pending status
+	CanNotFoundWorkflowHandleErr                           // can not found workflow handle error
+	CanNotGetParentJobErr                                  // can not found parent node job error
+	ParamDataKeyInvalidateErr                              // param data key invalidate error
+	ParamDataValueInvalidateErr                            // param data value invalidate error
+	DataNotMapAnyTypeErr                                   // data not map any type error
+	ValueSliceOutIndexErr                                  // value slice out index error
+	ValueNotExistErr                                       // value not exist error
+	TargetDataNotMapAnyTypeErr                             // target data not map any type error
+	MarshalTargetDataErr                                   // marshal target data error
+	TargetParamInvalidateErr                               // target param invalidate error
+	WorkflowNodeScriptEmtpyErr                             // workflow script empty error
+	UnknownWorkflowNodeTypeErr                             // unknown workflow node type error
+	ExecWorkflowNodeScriptErr                              // exec workflow script error
+
 )

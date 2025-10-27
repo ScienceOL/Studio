@@ -107,7 +107,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "Authentication"
                 ],
                 "summary": "刷新令牌",
                 "parameters": [
@@ -153,7 +153,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "health"
+                    "Health"
                 ],
                 "summary": "健康检查",
                 "responses": {
@@ -167,37 +167,8 @@
                 }
             }
         },
-        "/api/v1/foo/hello": {
-            "get": {
-                "description": "A simple hello world endpoint",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "foo"
-                ],
-                "summary": "Hello World",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/lab": {
+        "/api/lab": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "创建一个新的实验室环境",
                 "consumes": [
                     "application/json"
@@ -208,11 +179,11 @@
                 "tags": [
                     "Laboratory"
                 ],
-                "summary": "创建实验室",
+                "summary": "创建实验室环境",
                 "parameters": [
                     {
-                        "description": "实验室创建请求",
-                        "name": "req",
+                        "description": "实验室环境创建请求",
+                        "name": "lab",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -222,7 +193,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "请求参数错误",
                         "schema": {
                             "allOf": [
                                 {
@@ -231,29 +202,18 @@
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/environment.LaboratoryEnvResp"
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
                                         }
                                     }
                                 }
                             ]
                         }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.Resp"
-                        }
                     }
                 }
             },
-            "patch": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "更新实验室环境信息",
+            "delete": {
+                "description": "删除一个实验室环境",
                 "consumes": [
                     "application/json"
                 ],
@@ -263,11 +223,55 @@
                 "tags": [
                     "Laboratory"
                 ],
-                "summary": "更新实验室",
+                "summary": "删除实验室环境",
                 "parameters": [
                     {
-                        "description": "实验室更新请求",
-                        "name": "req",
+                        "description": "删除实验室请求",
+                        "name": "lab",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/environment.DelLabReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "更新一个已存在的实验室环境",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Laboratory"
+                ],
+                "summary": "更新实验室环境",
+                "parameters": [
+                    {
+                        "description": "实验室环境更新请求",
+                        "name": "lab",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -277,7 +281,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "请求参数错误",
                         "schema": {
                             "allOf": [
                                 {
@@ -286,31 +290,20 @@
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/environment.LaboratoryResp"
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
                                         }
                                     }
                                 }
                             ]
                         }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.Resp"
-                        }
                     }
                 }
             }
         },
-        "/lab/invite/{lab_uuid}": {
+        "/api/lab/invite/{lab_uuid}": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "创建实验室邀请链接",
+                "description": "为实验室创建邀请链接",
                 "consumes": [
                     "application/json"
                 ],
@@ -332,7 +325,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "请求参数错误",
                         "schema": {
                             "allOf": [
                                 {
@@ -341,31 +334,20 @@
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/environment.InviteResp"
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
                                         }
                                     }
                                 }
                             ]
                         }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.Resp"
-                        }
                     }
                 }
             }
         },
-        "/lab/invite/{uuid}": {
+        "/api/lab/invite/{uuid}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "接受实验室邀请链接",
+                "description": "通过邀请链接加入实验室",
                 "consumes": [
                     "application/json"
                 ],
@@ -375,11 +357,11 @@
                 "tags": [
                     "Laboratory"
                 ],
-                "summary": "接受邀请链接",
+                "summary": "接受邀请",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "邀请UUID",
+                        "description": "邀请链接UUID",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -387,27 +369,28 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "请求参数错误",
                         "schema": {
-                            "$ref": "#/definitions/common.Resp"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.Resp"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
             }
         },
-        "/lab/list": {
+        "/api/lab/list": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "获取当前用户的所有实验室",
                 "consumes": [
                     "application/json"
@@ -422,20 +405,18 @@
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "每页大小",
                         "name": "page_size",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "请求参数错误",
                         "schema": {
                             "allOf": [
                                 {
@@ -444,31 +425,513 @@
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/common.PageMoreResp-array_environment_LaboratoryResp"
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
                                         }
                                     }
                                 }
                             ]
                         }
-                    },
-                    "400": {
-                        "description": "Bad Request",
+                    }
+                }
+            }
+        },
+        "/api/lab/material": {
+            "post": {
+                "description": "在实验室中创建物料图（节点与边）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "创建物料图",
+                "parameters": [
+                    {
+                        "description": "物料图创建请求",
+                        "name": "material",
+                        "in": "body",
+                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/common.Resp"
+                            "$ref": "#/definitions/material.GraphNodeReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
             }
         },
-        "/lab/member/{lab_uuid}": {
+        "/api/lab/material/actions": {
             "get": {
-                "security": [
+                "description": "获取设备对应的可用动作列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "设备可用动作",
+                "parameters": [
                     {
-                        "BearerAuth": []
+                        "type": "string",
+                        "description": "实验室UUID",
+                        "name": "lab_uuid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "设备名称",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
                     }
                 ],
-                "description": "根据实验室获取当前实验室成员",
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/lab/material/edge": {
+            "post": {
+                "description": "创建两个物料节点之间的连线",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "创建物料连线",
+                "parameters": [
+                    {
+                        "description": "物料连线请求",
+                        "name": "edges",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/material.GraphEdge"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/lab/material/edge/connection": {
+            "post": {
+                "description": "从边缘端创建物料之间的连线",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "边缘端创建物料连线",
+                "parameters": [
+                    {
+                        "description": "创建连线请求",
+                        "name": "edges",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/material.CreateMaterialEdgeReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/lab/material/edge/create": {
+            "post": {
+                "description": "从边缘端创建物料（带 UUID 的节点）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "边缘端创建物料",
+                "parameters": [
+                    {
+                        "description": "边缘端创建物料请求",
+                        "name": "material",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/material.CreateMaterialReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/lab/material/edge/download": {
+            "get": {
+                "description": "边缘端下载物料图",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "边缘端下载物料",
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/lab/material/edge/upsert": {
+            "post": {
+                "description": "边缘端批量更新或插入物料",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "边缘端更新/插入物料",
+                "parameters": [
+                    {
+                        "description": "边缘端更新/插入物料请求",
+                        "name": "material",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/material.UpsertMaterialReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/lab/material/query": {
+            "get": {
+                "description": "查询实验室物料",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "查询物料",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "with_children",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/lab/material/query-by-uuid": {
+            "post": {
+                "description": "通过 UUID 列表查询物料信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "按 UUID 查询物料",
+                "parameters": [
+                    {
+                        "description": "物料 UUID 列表",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/material.MaterialQueryReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/lab/material/save": {
+            "post": {
+                "description": "保存当前实验室的物料图",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "保存物料图",
+                "parameters": [
+                    {
+                        "description": "保存物料图请求",
+                        "name": "material",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/material.SaveGrapReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/lab/material/template/detail/{template_uuid}": {
+            "get": {
+                "description": "获取物料模板详情",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "获取模板详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "模板UUID",
+                        "name": "template_uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/lab/member/{lab_uuid}": {
+            "get": {
+                "description": "获取指定实验室的成员列表",
                 "consumes": [
                     "application/json"
                 ],
@@ -489,20 +952,18 @@
                     },
                     {
                         "type": "integer",
-                        "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "每页大小",
                         "name": "page_size",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "请求参数错误",
                         "schema": {
                             "allOf": [
                                 {
@@ -511,31 +972,20 @@
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/common.PageResp-array_environment_LabMemberResp"
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
                                         }
                                     }
                                 }
                             ]
                         }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.Resp"
-                        }
                     }
                 }
             }
         },
-        "/lab/member/{lab_uuid}/{member_uuid}": {
+        "/api/lab/member/{lab_uuid}/{member_uuid}": {
             "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "删除实验室成员",
+                "description": "从实验室中删除一个成员",
                 "consumes": [
                     "application/json"
                 ],
@@ -564,28 +1014,29 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "请求参数错误",
                         "schema": {
-                            "$ref": "#/definitions/common.Resp"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.Resp"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
             }
         },
-        "/lab/resource": {
+        "/api/lab/resource": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "从边缘侧创建资源",
+                "description": "从边缘端创建实验室资源",
                 "consumes": [
                     "application/json"
                 ],
@@ -598,8 +1049,8 @@
                 "summary": "创建实验室资源",
                 "parameters": [
                     {
-                        "description": "资源创建请求",
-                        "name": "req",
+                        "description": "资源请求",
+                        "name": "resource",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -609,15 +1060,95 @@
                 ],
                 "responses": {
                     "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/lab/{lab_uuid}": {
+            "get": {
+                "description": "获取单个实验室的详细信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Laboratory"
+                ],
+                "summary": "获取实验室信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "实验室UUID",
+                        "name": "lab_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否包含成员列表",
+                        "name": "with_member",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/foo/hello": {
+            "get": {
+                "description": "A simple hello world endpoint",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "foo"
+                ],
+                "summary": "Hello World",
+                "responses": {
+                    "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.Resp"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.Resp"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -670,6 +1201,7 @@
                 20007,
                 20008,
                 20009,
+                20010,
                 22000,
                 22001,
                 22002,
@@ -682,12 +1214,23 @@
                 22009,
                 22010,
                 22011,
+                22012,
+                22013,
+                22014,
+                22015,
+                22016,
+                22017,
+                22018,
+                22019,
                 24000,
                 24001,
                 24002,
                 26000,
                 26001,
                 26002,
+                26003,
+                26004,
+                26005,
                 28000,
                 28001,
                 28002,
@@ -706,32 +1249,66 @@
                 30006,
                 30007,
                 30008,
-                30009
+                30009,
+                30010,
+                30011,
+                30012,
+                30013,
+                30014,
+                30015,
+                30016,
+                30017,
+                30018,
+                30019,
+                30020,
+                30021,
+                30022,
+                30023,
+                30024,
+                30025,
+                30026,
+                30027,
+                30028,
+                30029,
+                30030,
+                30031,
+                30032
             ],
             "x-enum-comments": {
                 "BohrBatchQueryErr": "bhor batch query user error",
+                "CallbackJobStatusKeyNotExistErr": "callback job status key note exists error",
+                "CallbackJobStatusTimeoutErr": "callback job status timeout error",
                 "CallbackParamErr": "callback parameter error",
                 "CanNotFoundEdgeSession": "can not found edge session",
                 "CanNotFoundMaterialNodeErr": "can not found material node error",
+                "CanNotFoundTargetNode": "can not found target node error",
+                "CanNotFoundWorkflowHandleErr": "can not found workflow handle error",
                 "CanNotGetLabIDErr": "cannot get lab id error",
+                "CanNotGetParentJobErr": "can not found parent node job error",
+                "CanNotGetWorkflowTaskErr": "can not get workflow task error",
                 "CanNotGetWorkflowUUIDErr": "can not get workflow uuid",
                 "CanNotGetworkflowErr": "workflow not found error",
                 "CasDoorCreateLabUserErr": "create lab user error",
                 "CasDoorQueryLabUserErr": "query lab user error",
                 "CreateDataErr": "database create data error",
+                "DataNotMapAnyTypeErr": "data not map any type error",
                 "DeleteDataErr": "database delete error",
                 "EdgeConnectClosedErr": "connect closed when node running error",
                 "EdgeHandleNotExistErr": "node handle not exist",
                 "EdgeNodeNotExistErr": "edge node not exist",
                 "ExchangeTokenErr": "exchange token failed",
+                "ExecWorkflowNodeScriptErr": "exec workflow script error",
                 "FormatCSVTaskErr": "format csv data error",
                 "InvalidDagErr": "invalid dag error",
                 "InvalidToken": "invalid token",
                 "InvalidateJWT": "invalidate jwt",
                 "InvalidateThirdID": "invalidate third id error",
                 "InviteExpiredErr": "invite expired error",
+                "JobCanceled": "job is canceled",
                 "JobRetryTimeout": "job retry timeout error",
                 "JobRunFailErr": "job run fail error",
+                "JobTimeoutErr": "job timeout error",
+                "LabAlreadyDeletedErr": "lab already deleted error",
                 "LabIDIsEmptyErr": "lab id is empty error",
                 "LabInviteNotFoundErr": "can not found laboratory invite link error",
                 "LabNotFound": "laboratory not found error",
@@ -741,6 +1318,12 @@
                 "LoginGetUserInfoErr": "get user info failed",
                 "LoginSetStateErr": "set login state error",
                 "LoginStateErr": "state verification failed",
+                "MachineAlreadyExistErr": "machine already exist error",
+                "MachineNodeStoppingErr": "machine is stopping",
+                "MachineNotExistErr": "machine not exist error",
+                "MachineReachMaxNumCountErr": "machine reach max number error",
+                "MachineStartUnknownErr": "start machine unknown error",
+                "MarshalTargetDataErr": "marshal target data error",
                 "MaxTplNodeDeepErr": "max template node deep error",
                 "ModelNotImplementTablerErr": "model not implement schema.Tabler",
                 "NoPermission": "no permission",
@@ -751,12 +1334,20 @@
                 "NotifyActionAlreadyRegistryErr": "notify action already registry",
                 "NotifySendMsgErr": "notify send message error",
                 "NotifySubscribeChannelErr": "notify subscribe channel fail",
+                "ParamDataKeyInvalidateErr": "param data key invalidate error",
+                "ParamDataValueInvalidateErr": "param data value invalidate error",
                 "ParamErr": "parse parameter error",
                 "ParentNodeNotFoundErr": "parent node not found error",
                 "ParseLoginRedirectURLErr": "redirect login url error",
+                "PathHasEmptyName": "path has empty name error",
                 "PermissionDenied": "permission denied",
                 "PointerIsNilErr": "pointer is nil error",
+                "QueryJobStatusKeyNotExistErr": "query job status key note exists error",
+                "QueryMachineStatusFailErr": "query machine status error",
                 "QueryRecordErr": "database query error",
+                "RPCHttpCodeErr": "rpc request http code error",
+                "RPCHttpCodeRespErr": "rpc request http code resp error",
+                "RPCHttpErr": "rpc request http error",
                 "RecordNotFound": "database record not found",
                 "RedisAddSetErr": "redis add user set error",
                 "RedisLuaRetErr": "redis lua return type error",
@@ -771,22 +1362,32 @@
                 "SaveWorkflowEdgeErr": "batch save workflow edge error",
                 "SaveWorkflowNodeErr": "batch save nodes error",
                 "Success": "success",
+                "TargetDataNotMapAnyTypeErr": "target data not map any type error",
+                "TargetParamInvalidateErr": "target param invalidate error",
                 "TemplateNodeNotFoundErr": "template node not found error",
                 "UnDefineErr": "undefined",
                 "UnLogin": "not logged in",
                 "UnknownWSActionErr": "unknown material websocket action",
+                "UnknownWorkflowNodeTypeErr": "unknown workflow node type error",
                 "UnmarshalWSDataErr": "unmarshal material websocket data error",
                 "UpdateDataErr": "database update data error",
                 "UpdateNodeErr": "update material node error",
                 "UpsertWorkflowEdgeErr": "upsert workflow edge error",
                 "UserIDIsEmptyErr": "user id is empty",
+                "ValueNotExistErr": "value not exist error",
+                "ValueSliceOutIndexErr": "value slice out index error",
                 "WorkflowHasCircularErr": "workflow has circular error",
+                "WorkflowNodeNoActionName": "workflow node no action name error",
+                "WorkflowNodeNoActionType": "workflow node no action type error",
+                "WorkflowNodeNoDeviceName": "workflow node no device name error",
                 "WorkflowNodeNotFoundErr": "workflow node not found error",
+                "WorkflowNodeScriptEmtpyErr": "workflow script empty error",
                 "WorkflowNotExistErr": "workflow not exist",
                 "WorkflowTaskAlreadyExistErr": "workflow task already exist error",
                 "WorkflowTaskFinished": "workflow task finished",
                 "WorkflowTaskNotFoundErr": "can not found workflow task error",
                 "WorkflowTaskStatusErr": "workflow task status error",
+                "WorkflowTaskStatusNotPendingErr": "workflow task not in pending status",
                 "WorkflowTemplateNotFoundErr": "can not found workflow template error"
             },
             "x-enum-descriptions": [
@@ -832,6 +1433,7 @@
                 "can not found laboratory invite link error",
                 "invite expired error",
                 "invalidate third id error",
+                "lab already deleted error",
                 "resource not exist",
                 "edge node not exist",
                 "node handle not exist",
@@ -844,9 +1446,20 @@
                 "invalid dag error",
                 "max template node deep error",
                 "can not found material node error",
+                "machine already exist error",
+                "query machine status error",
+                "machine not exist error",
+                "machine reach max number error",
+                "machine is stopping",
+                "start machine unknown error",
+                "can not found target node error",
+                "path has empty name error",
                 "notify action already registry",
                 "notify subscribe channel fail",
                 "notify send message error",
+                "rpc request http error",
+                "rpc request http code error",
+                "rpc request http code resp error",
                 "create lab user error",
                 "query lab user error",
                 "bhor batch query user error",
@@ -864,11 +1477,34 @@
                 "workflow has circular error",
                 "connect closed when node running error",
                 "marshal node data error",
-                "job retry timeout error",
                 "job run fail error",
                 "can not found workflow task error",
                 "workflow task status error",
-                "workflow task finished"
+                "workflow task finished",
+                "workflow node no device name error",
+                "workflow node no action name error",
+                "workflow node no action type error",
+                "query job status key note exists error",
+                "callback job status key note exists error",
+                "job timeout error",
+                "job retry timeout error",
+                "callback job status timeout error",
+                "job is canceled",
+                "can not get workflow task error",
+                "workflow task not in pending status",
+                "can not found workflow handle error",
+                "can not found parent node job error",
+                "param data key invalidate error",
+                "param data value invalidate error",
+                "data not map any type error",
+                "value slice out index error",
+                "value not exist error",
+                "target data not map any type error",
+                "marshal target data error",
+                "target param invalidate error",
+                "workflow script empty error",
+                "unknown workflow node type error",
+                "exec workflow script error"
             ],
             "x-enum-varnames": [
                 "Success",
@@ -913,6 +1549,7 @@
                 "LabInviteNotFoundErr",
                 "InviteExpiredErr",
                 "InvalidateThirdID",
+                "LabAlreadyDeletedErr",
                 "ResNotExistErr",
                 "EdgeNodeNotExistErr",
                 "EdgeHandleNotExistErr",
@@ -925,9 +1562,20 @@
                 "InvalidDagErr",
                 "MaxTplNodeDeepErr",
                 "CanNotFoundMaterialNodeErr",
+                "MachineAlreadyExistErr",
+                "QueryMachineStatusFailErr",
+                "MachineNotExistErr",
+                "MachineReachMaxNumCountErr",
+                "MachineNodeStoppingErr",
+                "MachineStartUnknownErr",
+                "CanNotFoundTargetNode",
+                "PathHasEmptyName",
                 "NotifyActionAlreadyRegistryErr",
                 "NotifySubscribeChannelErr",
                 "NotifySendMsgErr",
+                "RPCHttpErr",
+                "RPCHttpCodeErr",
+                "RPCHttpCodeRespErr",
                 "CasDoorCreateLabUserErr",
                 "CasDoorQueryLabUserErr",
                 "BohrBatchQueryErr",
@@ -945,11 +1593,34 @@
                 "WorkflowHasCircularErr",
                 "EdgeConnectClosedErr",
                 "NodeDataMarshalErr",
-                "JobRetryTimeout",
                 "JobRunFailErr",
                 "WorkflowTaskNotFoundErr",
                 "WorkflowTaskStatusErr",
-                "WorkflowTaskFinished"
+                "WorkflowTaskFinished",
+                "WorkflowNodeNoDeviceName",
+                "WorkflowNodeNoActionName",
+                "WorkflowNodeNoActionType",
+                "QueryJobStatusKeyNotExistErr",
+                "CallbackJobStatusKeyNotExistErr",
+                "JobTimeoutErr",
+                "JobRetryTimeout",
+                "CallbackJobStatusTimeoutErr",
+                "JobCanceled",
+                "CanNotGetWorkflowTaskErr",
+                "WorkflowTaskStatusNotPendingErr",
+                "CanNotFoundWorkflowHandleErr",
+                "CanNotGetParentJobErr",
+                "ParamDataKeyInvalidateErr",
+                "ParamDataValueInvalidateErr",
+                "DataNotMapAnyTypeErr",
+                "ValueSliceOutIndexErr",
+                "ValueNotExistErr",
+                "TargetDataNotMapAnyTypeErr",
+                "MarshalTargetDataErr",
+                "TargetParamInvalidateErr",
+                "WorkflowNodeScriptEmtpyErr",
+                "UnknownWorkflowNodeTypeErr",
+                "ExecWorkflowNodeScriptErr"
             ]
         },
         "common.Error": {
@@ -966,27 +1637,67 @@
                 }
             }
         },
-        "common.PageMoreResp-array_environment_LaboratoryResp": {
+        "common.Resp": {
             "type": "object",
             "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/environment.LaboratoryResp"
-                    }
+                "code": {
+                    "$ref": "#/definitions/code.ErrCode"
                 },
-                "has_more": {
-                    "type": "boolean"
+                "data": {},
+                "error": {
+                    "$ref": "#/definitions/common.Error"
                 },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
+                "timestamp": {
                     "type": "integer"
                 }
             }
         },
-        "common.PageResp-array_environment_LabMemberResp": {
+        "environment.DelLabReq": {
+            "type": "object",
+            "required": [
+                "uuid"
+            ],
+            "properties": {
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.InviteResp": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.LabInfoResp": {
+            "type": "object",
+            "properties": {
+                "access_key": {
+                    "type": "string"
+                },
+                "access_secret": {
+                    "type": "string"
+                },
+                "is_admin": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.EnvironmentStatus"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.LabMemberListResp": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1006,34 +1717,26 @@
                 }
             }
         },
-        "common.Resp": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "$ref": "#/definitions/code.ErrCode"
-                },
-                "data": {},
-                "error": {
-                    "$ref": "#/definitions/common.Error"
-                },
-                "timestamp": {
-                    "type": "integer"
-                }
-            }
-        },
-        "environment.InviteResp": {
-            "type": "object",
-            "properties": {
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
         "environment.LabMemberResp": {
             "type": "object",
             "properties": {
+                "display_name": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "is_admin": {
+                    "type": "boolean"
+                },
                 "lab_id": {
                     "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
                 },
                 "role": {
                     "$ref": "#/definitions/model.LaboratoryMemberRole"
@@ -1074,11 +1777,34 @@
                 }
             }
         },
+        "environment.LaboratoryListResp": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/environment.LaboratoryResp"
+                    }
+                },
+                "has_more": {
+                    "type": "boolean"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                }
+            }
+        },
         "environment.LaboratoryResp": {
             "type": "object",
             "properties": {
                 "description": {
                     "type": "string"
+                },
+                "is_admin": {
+                    "type": "boolean"
                 },
                 "member_count": {
                     "type": "integer"
@@ -1090,6 +1816,109 @@
                     "type": "string"
                 },
                 "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.RegAction": {
+            "type": "object",
+            "properties": {
+                "feedback": {
+                    "type": "object"
+                },
+                "goal": {
+                    "type": "object"
+                },
+                "goal_default": {
+                    "type": "object"
+                },
+                "handles": {
+                    "type": "object"
+                },
+                "result": {
+                    "type": "object"
+                },
+                "schema": {
+                    "type": "object"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.RegClass": {
+            "type": "object",
+            "properties": {
+                "action_value_mappings": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/environment.RegAction"
+                    }
+                },
+                "module": {
+                    "type": "string"
+                },
+                "status_types": {
+                    "type": "object"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.RegHandle": {
+            "type": "object",
+            "properties": {
+                "data_key": {
+                    "type": "string"
+                },
+                "data_source": {
+                    "type": "string"
+                },
+                "data_type": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "handler_key": {
+                    "type": "string"
+                },
+                "io_type": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "side": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.RegInitParamSchema": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/environment.RegSchema"
+                },
+                "data": {
+                    "$ref": "#/definitions/environment.RegSchema"
+                }
+            }
+        },
+        "environment.RegSchema": {
+            "type": "object",
+            "properties": {
+                "properties": {
+                    "type": "object"
+                },
+                "required": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
                     "type": "string"
                 }
             }
@@ -1142,6 +1971,784 @@
                 }
             }
         },
+        "material.CreateMaterialEdgeReq": {
+            "type": "object",
+            "properties": {
+                "edges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.MaterialEdge"
+                    }
+                }
+            }
+        },
+        "material.CreateMaterialReq": {
+            "type": "object",
+            "properties": {
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.Material"
+                    }
+                }
+            }
+        },
+        "material.CreateMaterialResp": {
+            "type": "object",
+            "required": [
+                "id",
+                "name"
+            ],
+            "properties": {
+                "cloud_uuid": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "实际是数据库的 name",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "实际是数据库的 display name",
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "material.DeviceAction": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "action_type": {
+                    "type": "string"
+                },
+                "schema": {
+                    "type": "object"
+                }
+            }
+        },
+        "material.DeviceActionResp": {
+            "type": "object",
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.DeviceAction"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "material.DownloadMaterialResp": {
+            "type": "object",
+            "properties": {
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.Node"
+                    }
+                }
+            }
+        },
+        "material.Edge": {
+            "type": "object",
+            "properties": {
+                "source": {
+                    "type": "string"
+                },
+                "sourceHandle": {
+                    "description": "FIXME: 下面两个字段命令 unilab 需要修改命名称",
+                    "type": "string"
+                },
+                "source_uuid": {
+                    "type": "string"
+                },
+                "target": {
+                    "type": "string"
+                },
+                "targetHandle": {
+                    "type": "string"
+                },
+                "target_uuid": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "material.EdgeNode": {
+            "type": "object",
+            "properties": {
+                "class": {
+                    "type": "string"
+                },
+                "config": {
+                    "type": "object"
+                },
+                "data": {
+                    "type": "object"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "extra": {
+                    "type": "object"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "object"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_uuid": {
+                    "type": "string"
+                },
+                "pose": {
+                    "$ref": "#/definitions/model.Pose"
+                },
+                "schema": {
+                    "type": "object"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.DEVICETYPE"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "material.GraphEdge": {
+            "type": "object",
+            "properties": {
+                "edges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.Edge"
+                    }
+                }
+            }
+        },
+        "material.GraphNodeReq": {
+            "type": "object",
+            "properties": {
+                "edges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.Edge"
+                    }
+                },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.Node"
+                    }
+                }
+            }
+        },
+        "material.Material": {
+            "type": "object",
+            "required": [
+                "class",
+                "id",
+                "name",
+                "type",
+                "uuid"
+            ],
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "class": {
+                    "type": "string"
+                },
+                "config": {
+                    "type": "object"
+                },
+                "data": {
+                    "type": "object"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "实际是数据库的 name",
+                    "type": "string"
+                },
+                "model": {
+                    "type": "object"
+                },
+                "name": {
+                    "description": "实际是数据库的 display name",
+                    "type": "string"
+                },
+                "parent": {
+                    "type": "string"
+                },
+                "parent_uuid": {
+                    "type": "string"
+                },
+                "pose": {
+                    "type": "object"
+                },
+                "position": {
+                    "$ref": "#/definitions/model.Position"
+                },
+                "position_3d": {
+                    "$ref": "#/definitions/model.Position"
+                },
+                "schema": {
+                    "description": "FIXME: 这块后续要优化掉，从 reg 获取",
+                    "type": "object"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.DEVICETYPE"
+                },
+                "uuid": {
+                    "description": "有可能是 edge 编造 || 云端的",
+                    "type": "string"
+                }
+            }
+        },
+        "material.MaterialEdge": {
+            "type": "object",
+            "properties": {
+                "sourceHandle": {
+                    "type": "string"
+                },
+                "source_uuid": {
+                    "type": "string"
+                },
+                "targetHandle": {
+                    "type": "string"
+                },
+                "target_uuid": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "material.MaterialQueryReq": {
+            "type": "object",
+            "properties": {
+                "uuids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "material.MaterialQueryResp": {
+            "type": "object",
+            "properties": {
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.EdgeNode"
+                    }
+                }
+            }
+        },
+        "material.MaterialResp": {
+            "type": "object",
+            "properties": {
+                "child_nodes_uuid": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "class": {
+                    "type": "string"
+                },
+                "cloud_uuid": {
+                    "type": "string"
+                },
+                "collapsed": {
+                    "type": "boolean"
+                },
+                "config": {
+                    "type": "object"
+                },
+                "data": {
+                    "type": "object"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "device_id": {
+                    "type": "string"
+                },
+                "dirs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "disabled": {
+                    "type": "boolean"
+                },
+                "dragHandle": {
+                    "type": "string"
+                },
+                "eq_type": {
+                    "type": "string"
+                },
+                "experiment_env": {
+                    "type": "integer"
+                },
+                "height": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "minimized": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent": {
+                    "type": "string"
+                },
+                "parent_node_uuid": {
+                    "type": "string"
+                },
+                "position": {
+                    "$ref": "#/definitions/model.Position"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "number"
+                }
+            }
+        },
+        "material.Node": {
+            "type": "object",
+            "required": [
+                "class",
+                "id",
+                "name",
+                "type"
+            ],
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "class": {
+                    "type": "string"
+                },
+                "config": {
+                    "type": "object"
+                },
+                "data": {
+                    "type": "object"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "extra": {
+                    "type": "object"
+                },
+                "id": {
+                    "description": "实际是数据库的 name",
+                    "type": "string"
+                },
+                "model": {
+                    "type": "object"
+                },
+                "name": {
+                    "description": "实际是数据库的 display name",
+                    "type": "string"
+                },
+                "parent": {
+                    "type": "string"
+                },
+                "parent_uuid": {
+                    "type": "string"
+                },
+                "pose": {
+                    "type": "object"
+                },
+                "position": {
+                    "$ref": "#/definitions/model.Position"
+                },
+                "position_3d": {
+                    "$ref": "#/definitions/model.Position"
+                },
+                "schema": {
+                    "description": "FIXME: 这块后续要优化掉，从 reg 获取",
+                    "type": "object"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.DEVICETYPE"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "material.ResourceHandleTemplate": {
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "type": "string"
+                },
+                "io_type": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "side": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "material.SaveGrapReq": {
+            "type": "object",
+            "properties": {
+                "graph": {
+                    "$ref": "#/definitions/material.WSGraph"
+                },
+                "lab_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "material.TemplateResp": {
+            "type": "object",
+            "properties": {
+                "config_infos": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "config_schema": {
+                    "type": "object"
+                },
+                "data_schema": {
+                    "type": "object"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "footer": {
+                    "type": "string"
+                },
+                "handles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.ResourceHandleTemplate"
+                    }
+                },
+                "header": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "object"
+                },
+                "module": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_uuid": {
+                    "type": "string"
+                },
+                "pose": {
+                    "type": "object"
+                },
+                "resource_type": {
+                    "type": "string"
+                },
+                "status_types": {
+                    "type": "object"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "material.UpsertMaterialReq": {
+            "type": "object",
+            "properties": {
+                "mount_uuid": {
+                    "type": "string"
+                },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.Material"
+                    }
+                }
+            }
+        },
+        "material.UpsertMaterialResp": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "cloud_uuid": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "material.WSEdge": {
+            "type": "object",
+            "properties": {
+                "source_handle_uuid": {
+                    "type": "string"
+                },
+                "source_node_uuid": {
+                    "type": "string"
+                },
+                "target_handle_uuid": {
+                    "type": "string"
+                },
+                "target_node_uuid": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "material.WSGraph": {
+            "type": "object",
+            "properties": {
+                "edges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.WSEdge"
+                    }
+                },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.WSNode"
+                    }
+                }
+            }
+        },
+        "material.WSHandle": {
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "type": "string"
+                },
+                "io_type": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "side": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "NodeUUID    uuid.UUID `json:\"node_uuid\"`",
+                    "type": "string"
+                }
+            }
+        },
+        "material.WSNode": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "handles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.WSHandle"
+                    }
+                },
+                "header": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "init_param_data": {
+                    "type": "object"
+                },
+                "model": {
+                    "type": "object"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_uuid": {
+                    "type": "string"
+                },
+                "plate_well_datas": {
+                    "type": "object"
+                },
+                "pose": {
+                    "type": "object"
+                },
+                "res_template_name": {
+                    "type": "string"
+                },
+                "res_template_uuid": {
+                    "type": "string"
+                },
+                "schema": {
+                    "type": "object"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.DEVICETYPE"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.DEVICETYPE": {
+            "type": "string",
+            "enum": [
+                "repository",
+                "plate",
+                "container",
+                "resource",
+                "device",
+                "well",
+                "tip",
+                "tip_rack",
+                "tip_spot",
+                "deck",
+                "workstation"
+            ],
+            "x-enum-varnames": [
+                "MATERIALREPO",
+                "MATERIALPLATE",
+                "MATERIALCONTAINER",
+                "MATERIALRESOURCE",
+                "MATERIALDEVICE",
+                "MATERIALWELL",
+                "MATERIALTIP",
+                "MATERIALTIPRACK",
+                "MATERIALTIPSPOT",
+                "MATERIALDECK",
+                "MATERIALWORKSTATION"
+            ]
+        },
+        "model.EnvironmentStatus": {
+            "type": "string",
+            "enum": [
+                "INIT",
+                "DELETED"
+            ],
+            "x-enum-varnames": [
+                "INIT",
+                "DELETED"
+            ]
+        },
         "model.LaboratoryMemberRole": {
             "type": "string",
             "enum": [
@@ -1152,6 +2759,89 @@
                 "LaboratoryMemberAdmin",
                 "LaboratoryMemberNormal"
             ]
+        },
+        "model.Pose": {
+            "type": "object",
+            "properties": {
+                "cross_section_type": {
+                    "type": "string"
+                },
+                "extra": {},
+                "layout": {
+                    "type": "string"
+                },
+                "position": {
+                    "$ref": "#/definitions/model.Position"
+                },
+                "position_3d": {
+                    "$ref": "#/definitions/model.Position"
+                },
+                "rotation": {
+                    "$ref": "#/definitions/model.Rotation"
+                },
+                "scale": {
+                    "$ref": "#/definitions/model.Scale"
+                },
+                "size": {
+                    "$ref": "#/definitions/model.Size"
+                }
+            }
+        },
+        "model.Position": {
+            "type": "object",
+            "properties": {
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                },
+                "z": {
+                    "type": "number"
+                }
+            }
+        },
+        "model.Rotation": {
+            "type": "object",
+            "properties": {
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                },
+                "z": {
+                    "type": "number"
+                }
+            }
+        },
+        "model.Scale": {
+            "type": "object",
+            "properties": {
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                },
+                "z": {
+                    "type": "number"
+                }
+            }
+        },
+        "model.Size": {
+            "type": "object",
+            "properties": {
+                "depth": {
+                    "type": "number"
+                },
+                "height": {
+                    "type": "number"
+                },
+                "width": {
+                    "type": "number"
+                }
+            }
         }
     },
     "securityDefinitions": {

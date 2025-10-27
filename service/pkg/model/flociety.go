@@ -4,31 +4,43 @@ import (
 	"gorm.io/datatypes"
 )
 
+type ResourceConfig struct {
+	Children []string
+	Class    string
+	Config   datatypes.JSON
+	Data     datatypes.JSON
+	ID       string
+	Name     string
+	Parent   string
+	Position Position
+	SampleID any
+	Type     string
+}
+
 // 资源模板
 type ResourceNodeTemplate struct {
 	BaseModel
-	Name         string                      `gorm:"type:varchar(255);not null;uniqueIndex:idx_rnt_lnpv,priority:2" json:"name"`
-	LabID        int64                       `gorm:"type:bigint;not null;uniqueIndex:idx_rnt_lnpv,priority:1" json:"lab_id"`
-	UserID       string                      `gorm:"type:varchar(120);not null" json:"user_id"`
-	ParentID     int64                       `gorm:"type:bigint;uniqueIndex:idx_rnt_lnpv,priority:3" json:"parent_id"`
-	Header       string                      `gorm:"type:text" json:"header"`
-	Footer       string                      `gorm:"type:text" json:"footer"`
-	Icon         string                      `gorm:"type:text" json:"icon"`
-	Description  *string                     `gorm:"type:text" json:"description"`
-	Model        datatypes.JSON              `gorm:"type:jsonb;" json:"model"`
-	Module       string                      `gorm:"type:varchar(1024)" json:"module"`
-	ResourceType string                      `gorm:"type:varchar(255);not null;default:'device'" json:"resource_type"`
-	Language     string                      `gorm:"type:varchar(255);not null;" json:"language"`
-	StatusTypes  datatypes.JSON              `gorm:"type:jsonb" json:"status_types"`
-	Tags         datatypes.JSONSlice[string] `gorm:"type:jsonb" json:"tags"` // label 标签
-	DataSchema   datatypes.JSON              `gorm:"type:jsonb" json:"data_schema"`
-	ConfigSchema datatypes.JSON              `gorm:"type:jsonb" json:"config_schema"`
-	Pose         datatypes.JSONType[Pose]    `gorm:"type:jsonb;not null;default:'{}'" json:"pose"`
-	Version      string                      `gorm:"type:varchar(50);not null;default:'1.0.0'" json:"version"`
+	Name         string                              `gorm:"type:varchar(255);not null;uniqueIndex:idx_rntp_lnv,priority:2" json:"name"`
+	LabID        int64                               `gorm:"type:bigint;not null;uniqueIndex:idx_rntp_lnv,priority:1" json:"lab_id"`
+	UserID       string                              `gorm:"type:varchar(120);not null" json:"user_id"`
+	Header       string                              `gorm:"type:text" json:"header"`
+	Footer       string                              `gorm:"type:text" json:"footer"`
+	Icon         string                              `gorm:"type:text" json:"icon"`
+	Description  *string                             `gorm:"type:text" json:"description"`
+	Model        datatypes.JSON                      `gorm:"type:jsonb;" json:"model"`
+	Module       string                              `gorm:"type:varchar(1024)" json:"module"`
+	ResourceType string                              `gorm:"type:varchar(255);not null;default:'device'" json:"resource_type"`
+	Language     string                              `gorm:"type:varchar(255);not null;" json:"language"`
+	StatusTypes  datatypes.JSON                      `gorm:"type:jsonb" json:"status_types"`
+	Tags         datatypes.JSONSlice[string]         `gorm:"type:jsonb" json:"tags"` // label 标签
+	DataSchema   datatypes.JSON                      `gorm:"type:jsonb" json:"data_schema"`
+	ConfigSchema datatypes.JSON                      `gorm:"type:jsonb" json:"config_schema"`
+	Pose         datatypes.JSONType[Pose]            `gorm:"type:jsonb;not null;default:'{}'" json:"pose"`
+	Version      string                              `gorm:"type:varchar(50);not null;default:'1.0.0'" json:"version"`
+	ConfigInfo   datatypes.JSONSlice[ResourceConfig] `gorm:"jsonb;not null;default:'[]'" json:"config_info"`
 
-	ParentNode *ResourceNodeTemplate   `gorm:"-"`
-	ParentName string                  `gorm:"-"`
-	ConfigInfo []*ResourceNodeTemplate `gorm:"-"`
+	ParentNode *ResourceNodeTemplate `gorm:"-"`
+	ParentName string                `gorm:"-"`
 }
 
 func (*ResourceNodeTemplate) TableName() string {
@@ -53,9 +65,9 @@ func (*ResourceHandleTemplate) TableName() string {
 
 type WorkflowNodeTemplate struct {
 	BaseModel
-	LabID          int64          `gorm:"type:bigint;not null;index:idx_da_lab_id" json:"lab_id"`
+	LabID          int64          `gorm:"type:bigint;not null;index:idx_da_lab_id_name" json:"lab_id"`
 	ResourceNodeID int64          `gorm:"type:bigint;not null;uniqueIndex:idx_da_id_name,priority:1" json:"resource_node_id"` // 资源模板节点 id
-	Name           string         `gorm:"type:varchar(255);not null;uniqueIndex:idx_da_id_name,priority:2" json:"name"`
+	Name           string         `gorm:"type:varchar(255);not null;index:idx_da_lab_id_name;uniqueIndex:idx_da_id_name,priority:2" json:"name"`
 	Class          string         `gorm:"type:varchar(200)" json:"class"`
 	Goal           datatypes.JSON `gorm:"type:jsonb" json:"goal"`
 	GoalDefault    datatypes.JSON `gorm:"type:jsonb" json:"goal_default"`

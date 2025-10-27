@@ -1,5 +1,7 @@
 package model
 
+import "github.com/scienceol/studio/service/pkg/common/uuid"
+
 type UserType string
 
 const (
@@ -32,20 +34,23 @@ type LabAkSk struct {
 }
 
 type UserData struct {
-	Owner             string `json:"owner"`
-	Name              string `json:"name"`
-	ID                string `json:"id"`
-	Avatar            string `json:"avatar"`
-	Type              string `json:"type"`
-	DisplayName       string `json:"displayName"`
-	SignupApplication string `json:"signupApplication"`
-	AccessToken       string `json:"accessToken"`
-	AccessKey         string `json:"accessKey"`
-	AccessSecret      string `json:"accessSecret"`
-	Phone             string `json:"phone"`
-	Status            int    `json:"status"`
-	UserNo            string `json:"user_no"`
-	Email             string `json:"email"`
+	Owner             string    `json:"owner"`
+	Name              string    `json:"name"`
+	ID                string    `json:"id"`
+	OrgID             string    `json:"org_id"`
+	Avatar            string    `json:"avatar"`
+	Type              string    `json:"type"`
+	DisplayName       string    `json:"displayName"`
+	SignupApplication string    `json:"signupApplication"`
+	AccessToken       string    `json:"accessToken"`
+	AccessKey         string    `json:"accessKey"` // 只有实验室用户才会有这个值
+	LabID             int64     `json:"-"`         // 只有实验室用户才会有这个值
+	LabUUID           uuid.UUID `json:"-"`         // 只有实验室用户才会有这个值
+	AccessSecret      string    `json:"accessSecret"`
+	Phone             string    `json:"phone"`
+	Status            int       `json:"status"`
+	UserNo            string    `json:"user_no"`
+	Email             string    `json:"email"`
 }
 
 type UserInfo struct {

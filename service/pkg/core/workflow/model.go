@@ -23,6 +23,7 @@ type CreateResp struct {
 	UUID        uuid.UUID `json:"uuid"`
 	Name        string    `json:"name"`
 	Description *string   `json:"description,omitempty"`
+	Tags        []string  `json:"tags"`
 }
 
 type TemplateHandle struct {
@@ -161,7 +162,7 @@ type WSNode struct {
 	LabNodeType  string                         `json:"lab_node_type"`
 }
 
-type WSWorkflowEdge struct {
+type WSEdge struct {
 	UUID             uuid.UUID `json:"uuid"`
 	SourceNodeUUID   uuid.UUID `json:"source_node_uuid"`
 	TargetNodeUUID   uuid.UUID `json:"target_node_uuid"`
@@ -170,8 +171,8 @@ type WSWorkflowEdge struct {
 }
 
 type WSGraph struct {
-	Nodes []*WSNode         `json:"nodes"`
-	Edges []*WSWorkflowEdge `json:"edges"`
+	Nodes []*WSNode `json:"nodes"`
+	Edges []*WSEdge `json:"edges"`
 }
 
 type WSTemplate struct {
@@ -244,6 +245,8 @@ type ListResp struct {
 	Name        string    `json:"name"`
 	Description *string   `json:"description,omitempty"`
 	UserID      string    `json:"user_id"`
+	Published   bool      `json:"published"`
+	Tags        []string  `json:"tags"`
 }
 
 // 工作流列表返回（滚动加载）
@@ -259,6 +262,7 @@ type DetailResp struct {
 	Description *string   `json:"description,omitempty"`
 	UserID      string    `json:"user_id"`
 	Nodes       []*WSNode `json:"nodes"`
+	Edges       []*WSEdge `json:"edges"`
 }
 
 // 获取任务列表
@@ -277,11 +281,6 @@ type TaskResp struct {
 	Status     model.WorkflowTaskStatus `json:"status"`
 	CreatedAt  time.Time                `json:"created_at"`
 	FinishedAt time.Time                `json:"finished_at"`
-}
-
-type DuplicateWorkflow struct {
-	SourceUUID uuid.UUID `json:"source_uuid"`
-	Name       string    `json:"name"`
 }
 
 type UpdateReq struct {
@@ -305,6 +304,7 @@ type TemplateListRes struct {
 	UUID      uuid.UUID `json:"uuid"`
 	Name      string    `json:"name"`
 	UserID    string    `json:"user_id"`
+	Tags      []string  `json:"tags"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -315,4 +315,81 @@ type DetailReq struct {
 type ForkReq struct {
 	TargetLabUUID      uuid.UUID `json:"target_lab_uuid" uri:"target_lab_uuid" form:"target_lab_uuid" binding:"required"`
 	SourceWorkflowUUID uuid.UUID `json:"source_workflow_uuid" uri:"source_workflow_uuid" form:"source_workflow_uuid" binding:"required"`
+}
+
+type DuplicateReq struct {
+	SourceUUID    uuid.UUID `json:"source_uuid"`
+	TargetLabUUID uuid.UUID `json:"target_lab_uuid"`
+	Name          string    `json:"name"`
+}
+
+type DuplicateError struct {
+	SourceTemplateName string `json:"source_template_name"`
+	TargetTemplateName string `json:"target_template_name"`
+	Reason             string `json:"reason"`
+}
+
+type DuplicateRes struct {
+	UUID   uuid.UUID         `json:"uuid"`
+	Name   string            `json:"name"`
+	Errors []*DuplicateError `json:"errors"`
+}
+
+type TplMapping struct {
+	WorkflowTpl *model.WorkflowNodeTemplate
+	ResourceTpl *model.ResourceNodeTemplate
+}
+
+// ================= Export/Import =================
+
+type ExportReq struct {
+	UUID uuid.UUID `json:"uuid" form:"uuid" uri:"uuid" binding:"required"`
+}
+
+// 导出节点（包含用于跨实验室匹配的模板/资源信息）
+type ExportNode struct {
+	UUID        uuid.UUID                      `json:"uuid"`
+	ParentUUID  uuid.UUID                      `json:"parent_uuid"`
+	Name        string                         `json:"name"`
+	Type        model.WorkflowNodeType         `json:"type"`
+	Icon        string                         `json:"icon"`
+	Pose        datatypes.JSONType[model.Pose] `json:"pose"`
+	Param       datatypes.JSON                 `json:"param"`
+	Footer      string                         `json:"footer"`
+	DeviceName  *string                        `json:"device_name,omitempty"`
+	Disabled    bool                           `json:"disabled"`
+	Minimized   bool                           `json:"minimized"`
+	LabNodeType string                         `json:"lab_node_type"`
+
+	TemplateUUID uuid.UUID `json:"template_uuid"`
+	TemplateName string    `json:"template_name"`
+	ResourceName string    `json:"resource_name"`
+}
+
+type ExportEdge struct {
+	SourceNodeUUID uuid.UUID `json:"source_node_uuid"`
+	TargetNodeUUID uuid.UUID `json:"target_node_uuid"`
+	// 句柄以可匹配字段导出（导入时用 handle_key + io_type 匹配目标模板的句柄）
+	SourceHandleKey string `json:"source_handle_key"`
+	SourceHandleIO  string `json:"source_handle_io"`
+	TargetHandleKey string `json:"target_handle_key"`
+	TargetHandleIO  string `json:"target_handle_io"`
+}
+
+type ExportData struct {
+	WorkflowUUID uuid.UUID     `json:"workflow_uuid"`
+	WorkflowName string        `json:"workflow_name"`
+	Published    *bool         `json:"published,omitempty"`
+	Tags         []string      `json:"tags,omitempty"`
+	Nodes        []*ExportNode `json:"nodes"`
+	Edges        []*ExportEdge `json:"edges"`
+}
+
+type ImportReq struct {
+	TargetLabUUID uuid.UUID   `json:"target_lab_uuid" binding:"required"`
+	Data          *ExportData `json:"data" binding:"required"`
+}
+
+type RunReq struct {
+	WorkflowUUID uuid.UUID `json:"workflow_uuid" binding:"required"`
 }

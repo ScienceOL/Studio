@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/scienceol/studio/service/pkg/core/schedule"
+	"github.com/scienceol/studio/service/pkg/core/schedule/control"
 )
 
 type Handle struct {
@@ -13,7 +14,7 @@ type Handle struct {
 
 func New(ctx context.Context) *Handle {
 	return &Handle{
-		ctrl: schedule.NewControl(ctx),
+		ctrl: control.NewControl(ctx),
 	}
 }
 

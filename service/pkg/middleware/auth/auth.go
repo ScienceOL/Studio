@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/scienceol/studio/service/internal/configs/webapp"
+	"github.com/scienceol/studio/service/internal/config"
 	"golang.org/x/oauth2"
 )
 
@@ -25,7 +25,7 @@ var (
 // GetOAuthConfig 获取OAuth2配置
 func GetOAuthConfig() *oauth2.Config {
 	if oauthConfig == nil {
-		authConf := webapp.Config().OAuth2
+		authConf := config.Global().OAuth2
 		oauthConfig = &oauth2.Config{
 			ClientID:     authConf.ClientID,
 			ClientSecret: authConf.ClientSecret,

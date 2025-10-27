@@ -75,7 +75,7 @@ func (w *workflowImpl) IsExist(ctx context.Context, uuid uuid.UUID) (bool, error
 func (w *workflowImpl) GetWorkflowGraph(ctx context.Context, userID string, workflowUUID uuid.UUID) (*repo.WorkflowGrpah, error) {
 	workflow := &model.Workflow{}
 	if err := w.DBWithContext(ctx).
-		Where("uuid = ? and user_id = ?", workflowUUID, userID).
+		Where("uuid = ?", workflowUUID).
 		Take(workflow).Error; err != nil {
 		logger.Errorf(ctx, "GetWorkflowGraph get workflow fail err: %+v", err)
 		return nil, code.QueryRecordErr
@@ -201,10 +201,16 @@ func (w *workflowImpl) GetWorkflowHandleTemplates(ctx context.Context, wfTemaplt
 	return handles, nil
 }
 
-func (w *workflowImpl) GetWorkflowNodes(ctx context.Context, condition map[string]any) ([]*model.WorkflowNode, error) {
+func (w *workflowImpl) GetWorkflowNodes(ctx context.Context, condition map[string]any, keys ...string) ([]*model.WorkflowNode, error) {
 	data := make([]*model.WorkflowNode, 0, 1)
-	if err := w.DBWithContext(ctx).
-		Where(condition).
+
+	query := w.DBWithContext(ctx).
+		Where(condition)
+	if len(keys) > 0 {
+		query = query.Select(keys)
+	}
+
+	if err := query.
 		Find(&data).Error; err != nil {
 
 		logger.Errorf(ctx, "GetWorkflowNode fail condition: %v, err: %+v", condition, err)
@@ -378,7 +384,9 @@ func (w *workflowImpl) GetWorkflowList(ctx context.Context, userID string, labID
 	}
 
 	// 按用户ID过滤
-	query = query.Where("user_id = ?", userID)
+	if len(userID) > 0 {
+		query = query.Where("user_id = ?", userID)
+	}
 
 	// 获取总数
 	if err := query.Count(&total).Error; err != nil {
@@ -614,7 +622,9 @@ func (w *workflowImpl) GetWorkflowTasks(ctx context.Context,
 	query = query.Where("lab_id = ?", req.Data.LabID)
 
 	// 按用户ID过滤
-	query = query.Where("user_id = ?", req.Data.UserID)
+	if len(req.Data.UserID) > 0 {
+		query = query.Where("user_id = ?", req.Data.UserID)
+	}
 
 	// 工作流
 	query = query.Where("workflow_id = ?", req.Data.WrokflowID)
@@ -650,6 +660,13 @@ func (w *workflowImpl) DelWorkflow(ctx context.Context, workflowID int64) error 
 	}
 
 	return w.ExecTx(ctx, func(txCtx context.Context) error {
+		if err := w.DBWithContext(txCtx).
+			Where("id = ?", workflowID).
+			Delete(&model.Workflow{}).Error; err != nil {
+			logger.Errorf(ctx, "DeleteWorkflow fail id: %d, err: %+v", workflowID, err)
+			return code.DeleteDataErr.WithErr(err)
+		}
+
 		nodes := make([]*model.WorkflowNode, 0, 1)
 		if err := w.DBWithContext(txCtx).Clauses(
 			clause.Returning{
@@ -659,7 +676,7 @@ func (w *workflowImpl) DelWorkflow(ctx context.Context, workflowID int64) error 
 					{Name: "type"},
 				},
 			}).
-			Where("workflow_id in ?").
+			Where("workflow_id = ?", workflowID).
 			Delete(&nodes).Error; err != nil {
 
 			logger.Errorf(ctx, "DeleteWorkflow fail id: %d, err: %+v", workflowID, err)
@@ -670,43 +687,49 @@ func (w *workflowImpl) DelWorkflow(ctx context.Context, workflowID int64) error 
 			return n.UUID, true
 		})
 
-		return w.DBWithContext(txCtx).
+		if err := w.DBWithContext(txCtx).
 			Where("source_node_uuid in ? or target_node_uuid in ?", nodeUUIDs, nodeUUIDs).
-			Delete(&model.WorkflowEdge{}).Error
+			Delete(&model.WorkflowEdge{}).Error; err != nil {
+			logger.Errorf(ctx, "DeleteWorkflow edges fail id: %d, err: %+v", workflowID, err)
+			return code.DeleteDataErr.WithErr(err)
+		}
+
+		return nil
 	})
 }
 
-func (w *workflowImpl) GetWorkflow(ctx context.Context, req *common.PageReqT[*repo.QueryWorkflow]) (*common.PageResp[[]*model.Workflow], error) {
+func (w *workflowImpl) GetWorkflow(ctx context.Context, req *common.PageReqT[*repo.QueryWorkflow], keys ...string) (*common.PageResp[[]*model.Workflow], error) {
 	/*
 		tagsToFind := []string{"AI", "ML"}
-
 		// 方法 1: 使用 Where 条件 包含其中一个
 		db.Where("tags ?| array[?]", tagsToFind).Find(&workflows)
 
-
-
 		tagsToFind := []string{"AI", "ML"}
-
 		// 将标签数组转换为 JSON 字符串 包含所有
 		tagsJSON, _ := json.Marshal(tagsToFind)
-
 		// 方法 1: 使用 Where 条件
 		db.Where("tags @> ?", string(tagsJSON)).Find(&workflows)
 	*/
 
-	query := w.DBWithContext(ctx).
+	query := w.DBWithContext(ctx).Debug().
 		Model(&model.Workflow{}).
 		Where("published = true")
 	if len(req.Data.Tags) > 0 {
 		tagsJSON, _ := json.Marshal(req.Data.Tags)
-		query.Where("tags @> ?", tagsJSON)
+		query.Where("tags @> ?", string(tagsJSON))
 	}
+
+	defaultKeys := []string{"uuid", "name", "created_at", "user_id", "tags"}
+	if len(keys) > 0 {
+		defaultKeys = keys
+	}
+	query = query.Select(defaultKeys)
 
 	var count int64
 	var datas []*model.Workflow
 	if err := query.Count(&count).
 		Offset(req.Offest()).
-		Limit(req.PageSize).Select("uuid", "name", "created_at", "user_id").
+		Limit(req.PageSize).Order("id desc").
 		Find(&datas).Error; err != nil {
 		return nil, err
 	}
@@ -729,5 +752,26 @@ func (w *workflowImpl) GetTemplateTags(ctx context.Context, tagType model.TagTyp
 		return nil, code.QueryRecordErr.WithErr(err)
 	}
 
+	return tags, nil
+}
+
+// GetWorkflowTagsByLab 返回某实验室下已发布工作流的去重标签（从 workflow.tags 聚合）
+func (w *workflowImpl) GetWorkflowTagsByLab(ctx context.Context, labID int64) ([]string, error) {
+	if labID == 0 {
+		return []string{}, nil
+	}
+	var tags []string
+	err := w.DBWithContext(ctx).
+		Table("workflow as w").
+		Where("w.lab_id = ?", labID).
+		Where("w.tags is not null").
+		Select("distinct jsonb_array_elements_text(case when jsonb_typeof(w.tags) = 'array' then w.tags else '[]'::jsonb end) as tag").
+		Pluck("tag", &tags).Error
+	if err != nil {
+		return nil, code.QueryRecordErr.WithErr(err)
+	}
+	if len(tags) == 0 {
+		return []string{}, nil
+	}
 	return tags, nil
 }

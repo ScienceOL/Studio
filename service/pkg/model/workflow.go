@@ -26,7 +26,13 @@ type WorkflowNodeType string
 const (
 	WorkflowNodeGroup WorkflowNodeType = "Group"
 	WorkflowNodeILab  WorkflowNodeType = "ILab"
+	WorkflowPyScript  WorkflowNodeType = "py_script"
 )
+
+type Ref struct {
+	SourceUUID uuid.UUID
+	Param      map[string]any
+}
 
 type WorkflowNode struct {
 	BaseModel
@@ -47,6 +53,7 @@ type WorkflowNode struct {
 	ActionType     string                   `gorm:"type:text" json:"action_type"`
 	Disabled       bool                     `gorm:"type:bool;not null;default:false" json:"disabled"`
 	Minimized      bool                     `gorm:"type:bool;not null;default:false" json:"minimized"`
+	Script         *string                  `gorm:"type:text" json:"script"`
 
 	OldNode *WorkflowNode `gorm:"-"` // 复制的节点
 }
@@ -78,21 +85,31 @@ func (*WorkflowEdge) TableName() string {
 type WorkflowJobStatus string
 
 const (
-	WorkflowJobDraft   WorkflowJobStatus = "draft"
-	WorkflowJobSkipped WorkflowJobStatus = "skipped"
-	WorkflowJobSuccess WorkflowJobStatus = "success"
-	WorkflowJobFailed  WorkflowJobStatus = "failed"
-	WorkflowJobRunning WorkflowJobStatus = "running"
-	WorkflowJobPending WorkflowJobStatus = "pending"
+	WorkflowJobDraft    WorkflowJobStatus = "draft"
+	WorkflowJobSkipped  WorkflowJobStatus = "skipped"
+	WorkflowJobSuccess  WorkflowJobStatus = "success"
+	WorkflowJobFailed   WorkflowJobStatus = "failed"
+	WorkflowJobRunning  WorkflowJobStatus = "running"
+	WorkflowJobPending  WorkflowJobStatus = "pending"
+	WorkflowJobCanceled WorkflowJobStatus = "canceled"
+	WorkflowJobTimeout  WorkflowJobStatus = "timeout"
 )
+
+type ReturnInfo struct {
+	Suc         bool   `json:"suc"`
+	Error       string `json:"error"`
+	ReturnValue any    `json:"return_value"`
+}
 
 type WorkflowNodeJob struct {
 	BaseModel
-	LabID          int64             `gorm:"type:bigint;not null;uniqueIndex:idx_workflownodejob_lwn,priority:1" json:"lab_id"`
-	WorkflowTaskID int64             `gorm:"type:bigint;not null;uniqueIndex:idx_workflownodejob_lwn,priority:2" json:"workflow_task_id"`
-	NodeID         int64             `gorm:"type:bigint;not null;uniqueIndex:idx_workflownodejob_lwn,priority:3" json:"node_id"`
-	Status         WorkflowJobStatus `gorm:"type:varchar(50);not null" json:"status"`
-	Data           datatypes.JSON    `gorm:"type:jsonb" json:"data"`
+	LabID          int64                          `gorm:"type:bigint;not null;uniqueIndex:idx_workflownodejob_lwn,priority:1" json:"lab_id"`
+	WorkflowTaskID int64                          `gorm:"type:bigint;not null;index:idx_workflownodejob_task;uniqueIndex:idx_workflownodejob_lwn,priority:2" json:"workflow_task_id"`
+	NodeID         int64                          `gorm:"type:bigint;not null;uniqueIndex:idx_workflownodejob_lwn,priority:3" json:"node_id"`
+	Status         WorkflowJobStatus              `gorm:"type:varchar(50);not null" json:"status"`
+	FeedbackData   datatypes.JSON                 `gorm:"type:jsonb" json:"feedback_data"`
+	ReturnInfo     datatypes.JSONType[ReturnInfo] `gorm:"type:jsonb" json:"return_info"`
+	Timestamp      time.Time                      `json:"timestamp"`
 }
 
 func (*WorkflowNodeJob) TableName() string {
@@ -104,9 +121,10 @@ type WorkflowTaskStatus string
 const (
 	WorkflowTaskStatusPending   WorkflowTaskStatus = "pending"
 	WorkflowTaskStatusRunnig    WorkflowTaskStatus = "running"
-	WorkflowTaskStatusStoped    WorkflowTaskStatus = "stoped"
-	WorkflowTaskStatusFiled     WorkflowTaskStatus = "failed"
+	WorkflowTaskStatusCanceled  WorkflowTaskStatus = "canceled"
+	WorkflowTaskStatusFailed    WorkflowTaskStatus = "failed"
 	WorkflowTaskStatusSuccessed WorkflowTaskStatus = "successed"
+	WorkflowTaskStatusTimeout   WorkflowTaskStatus = "timeout"
 )
 
 type WorkflowTask struct {

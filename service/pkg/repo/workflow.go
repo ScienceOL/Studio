@@ -52,7 +52,7 @@ type WorkflowRepo interface {
 	GetWorkflowGraph(ctx context.Context, userID string, uuid uuid.UUID) (*WorkflowGrpah, error)
 	GetWorkflowNodeTemplate(ctx context.Context, condition map[string]any) ([]*model.WorkflowNodeTemplate, error)
 	GetWorkflowHandleTemplates(ctx context.Context, wfTemaplteIDs []int64) ([]*model.WorkflowHandleTemplate, error)
-	GetWorkflowNodes(ctx context.Context, condition map[string]any) ([]*model.WorkflowNode, error)
+	GetWorkflowNodes(ctx context.Context, condition map[string]any, keys ...string) ([]*model.WorkflowNode, error)
 	GetWorkflowEdges(ctx context.Context, nodeUUIDs []uuid.UUID) ([]*model.WorkflowEdge, error)
 	UpdateWorkflowNode(ctx context.Context, nodeUUID uuid.UUID, data *model.WorkflowNode, updateColumns []string) error
 	UpdateWorkflowNodes(ctx context.Context, nodeUUIDs []uuid.UUID, data *model.WorkflowNode, updateColumns []string) error
@@ -74,6 +74,7 @@ type WorkflowRepo interface {
 	CreateWorkflowTask(ctx context.Context, data *model.WorkflowTask) error
 	GetWorkflowTasks(ctx context.Context, req *common.PageReqT[*TaskReq]) (*common.PageMoreResp[[]*model.WorkflowTask], error)
 	DelWorkflow(ctx context.Context, workflowID int64) error
-	GetWorkflow(ctx context.Context, req *common.PageReqT[*QueryWorkflow]) (*common.PageResp[[]*model.Workflow], error)
+	GetWorkflow(ctx context.Context, req *common.PageReqT[*QueryWorkflow], keys ...string) (*common.PageResp[[]*model.Workflow], error)
 	GetTemplateTags(ctx context.Context, tagType model.TagType) ([]string, error)
+	GetWorkflowTagsByLab(ctx context.Context, labID int64) ([]string, error)
 }

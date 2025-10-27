@@ -3,18 +3,19 @@ package dag
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/olahol/melody"
 	"github.com/panjf2000/ants/v2"
-	"github.com/scienceol/studio/service/internal/configs/schedule"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/core/notify"
 	"github.com/scienceol/studio/service/pkg/core/notify/events"
-	"github.com/scienceol/studio/service/pkg/core/schedule/device"
+	"github.com/scienceol/studio/service/pkg/core/schedule"
 	"github.com/scienceol/studio/service/pkg/core/schedule/engine"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/model"
@@ -22,76 +23,90 @@ import (
 	eStore "github.com/scienceol/studio/service/pkg/repo/environment"
 	wfl "github.com/scienceol/studio/service/pkg/repo/workflow"
 	"github.com/scienceol/studio/service/pkg/utils"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
+	"gorm.io/datatypes"
 )
 
+type stepFunc func(ctx context.Context) error
+
 type dagEngine struct {
-	deviceManager device.Service
-	job           *engine.WorkflowInfo
-	Cancel        context.CancelFunc
-	session       *melody.Session
+	job     *engine.WorkflowInfo
+	cancel  context.CancelFunc
+	ctx     context.Context
+	session *melody.Session
 
 	envStore      repo.LaboratoryRepo
 	workflowStore repo.WorkflowRepo
 
-	nodes []*model.WorkflowNode
-	edges []*model.WorkflowEdge
+	nodes   []*model.WorkflowNode           // 所有节点
+	edges   []*model.WorkflowEdge           // 所有边
+	handles []*model.WorkflowHandleTemplate // 所有 handles
 
-	dependencies map[*model.WorkflowNode]map[*model.WorkflowNode]struct{}
+	jobMap          map[uuid.UUID]*model.WorkflowNodeJob // 所有的 job map
+	nodeMap         map[int64]*model.WorkflowNodeJob     // 所有的 node 对应的运行结果
+	nodeParentEdges map[int64][]*engine.HandlePair       // 节点对应的所有 parent edge
 
-	pools *ants.Pool
-	wg    sync.WaitGroup
+	dependencies map[*model.WorkflowNode]map[*model.WorkflowNode]struct{} // dag 图依赖关系
+
+	pools     *ants.Pool
+	wg        sync.WaitGroup
+	stepFuncs []stepFunc
 
 	boardEvent notify.MsgCenter
+	sandbox    repo.Sandbox
+
+	actionStatus sync.Map
 }
 
-func NewDagTask(_ context.Context, param *engine.TaskParam) engine.Task {
+func NewDagTask(ctx context.Context, param *engine.TaskParam) engine.Task {
 	pools, _ := ants.NewPool(5,
 		ants.WithExpiryDuration(10*time.Second))
 
-	return &dagEngine{
-		deviceManager: param.Devices,
-		session:       param.Session,
-		Cancel:        param.Cancle,
-		envStore:      eStore.New(),
-		workflowStore: wfl.New(),
-		dependencies:  make(map[*model.WorkflowNode]map[*model.WorkflowNode]struct{}),
-		pools:         pools,
-		wg:            sync.WaitGroup{},
-		boardEvent:    events.NewEvents(),
+	d := &dagEngine{
+		session:         param.Session,
+		cancel:          param.Cancle,
+		ctx:             ctx,
+		envStore:        eStore.New(),
+		workflowStore:   wfl.New(),
+		dependencies:    make(map[*model.WorkflowNode]map[*model.WorkflowNode]struct{}),
+		pools:           pools,
+		wg:              sync.WaitGroup{},
+		boardEvent:      events.NewEvents(),
+		jobMap:          make(map[uuid.UUID]*model.WorkflowNodeJob),
+		nodeMap:         make(map[int64]*model.WorkflowNodeJob),
+		nodeParentEdges: make(map[int64][]*engine.HandlePair),
+		sandbox:         param.Sandbox,
 	}
+	d.stepFuncs = append(d.stepFuncs,
+		d.checkTaskStatus, // 检查任务状态
+		d.loadData,        // 加载运行数据
+		d.buildTask,       // 构建任务
+		d.runAllNodes,     // 运行任务
+	)
+
+	return d
 }
 
-func (d *dagEngine) checkTaskStatus(ctx context.Context) bool {
-	tasks := make([]*model.WorkflowTask, 0, 1)
-	if err := d.workflowStore.FindDatas(ctx, &tasks, map[string]any{
+func (d *dagEngine) checkTaskStatus(ctx context.Context) error {
+	task := &model.WorkflowTask{}
+	if err := d.workflowStore.GetData(ctx, task, map[string]any{
 		"uuid": d.job.TaskUUID,
 	}, "id", "uuid", "status"); err != nil {
 		logger.Errorf(ctx, "can not found workflow task uuid: %s, err: %+v", d.job.TaskUUID, err)
-		return false
+		return code.CanNotGetWorkflowTaskErr
 	}
 
-	if len(tasks) != 1 {
-		logger.Errorf(ctx, "can not found workflow task uuid: %s", d.job.TaskUUID)
-		return false
+	if task.Status != model.WorkflowTaskStatusPending {
+		return code.WorkflowTaskStatusNotPendingErr
 	}
 
-	if tasks[0].Status == model.WorkflowTaskStatusStoped {
-		return false
-	}
-
-	d.job.TaskID = tasks[0].ID
-	return true
+	d.job.TaskID = task.ID
+	return nil
 }
 
 func (d *dagEngine) loadData(ctx context.Context) error {
-	d.boardMsg(ctx, &engine.BoardMsg{
-		Header:         "",
-		WorkflowStatus: "starting",
-		Status:         "pending",
-		Type:           "info",
-		Msg:            []string{"prepare to run node"},
-	})
-
+	// 获取工作流
 	wk, err := d.workflowStore.GetWorkflowByUUID(ctx, d.job.WorkflowUUID)
 	if err != nil {
 		return err
@@ -100,20 +115,47 @@ func (d *dagEngine) loadData(ctx context.Context) error {
 	// 加载所有工作流节点数据
 	allNodes, err := d.workflowStore.GetWorkflowNodes(ctx, map[string]any{
 		"workflow_id": wk.ID,
+		"type": []model.WorkflowNodeType{
+			model.WorkflowNodeILab,
+			model.WorkflowPyScript,
+		},
 	})
 	if err != nil {
 		return err
 	}
 
-	// 过滤可执行节点
-	nodes := utils.FilterSlice(allNodes, func(node *model.WorkflowNode) (*model.WorkflowNode, bool) {
+	// 过滤检查可执行节点
+	nodes, err := utils.FilterSliceWithErr(allNodes, func(node *model.WorkflowNode) ([]*model.WorkflowNode, bool, error) {
 		if node.Type == model.WorkflowNodeGroup || node.Disabled {
-			return nil, false
+			return nil, false, nil
 		}
-		return node, true
-	})
 
-	// 获取节点UUID用于查询边
+		if node.Type == model.WorkflowNodeILab {
+			if node.DeviceName == nil || *node.DeviceName == "" {
+				return nil, false, code.WorkflowNodeNoDeviceName
+			}
+
+			if node.ActionName == "" {
+				return nil, false, code.WorkflowNodeNoActionName
+			}
+
+			if node.ActionType == "" {
+				return nil, false, code.WorkflowNodeNoActionType
+			}
+		} else {
+			// 计算类型
+			if node.Script == nil || *node.Script == "" {
+				return nil, false, code.WorkflowNodeScriptEmtpyErr
+			}
+		}
+
+		return []*model.WorkflowNode{node}, true, nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// 节点UUID查询边
 	nodeUUIDs := utils.FilterSlice(nodes, func(node *model.WorkflowNode) (uuid.UUID, bool) {
 		return node.UUID, true
 	})
@@ -123,93 +165,128 @@ func (d *dagEngine) loadData(ctx context.Context) error {
 		return err
 	}
 
+	edgeHandleUUIDs := make([]uuid.UUID, 0, 2*len(edges))
+	utils.Range(edges, func(_ int, e *model.WorkflowEdge) bool {
+		edgeHandleUUIDs = utils.AppendUniqSlice(edgeHandleUUIDs, e.SourceHandleUUID)
+		edgeHandleUUIDs = utils.AppendUniqSlice(edgeHandleUUIDs, e.TargetHandleUUID)
+		return true
+	})
+
+	handleTpls := make([]*model.WorkflowHandleTemplate, 0, len(edgeHandleUUIDs))
+	if err := d.workflowStore.FindDatas(ctx, &handleTpls, map[string]any{
+		"uuid": edgeHandleUUIDs,
+	}); err != nil {
+		return err
+	}
+
 	d.nodes = nodes
 	d.edges = edges
+	d.handles = handleTpls
 	return nil
 }
 
-func (d *dagEngine) boardMsg(ctx context.Context, msg *engine.BoardMsg) {
-	if err := d.boardEvent.Broadcast(ctx, &notify.SendMsg{
-		Channel:      notify.WorkflowRun,
-		LabUUID:      d.job.LabUUID,
-		WorkflowUUID: d.job.WorkflowUUID,
-		TaskUUID:     d.job.TaskUUID,
-		UserID:       d.job.UserID,
-		Data:         msg,
-		UUID:         d.job.TaskUUID,
-		Timestamp:    time.Now().Unix(),
-	}); err != nil {
-		logger.Errorf(ctx, "schedule board msg fail err: %+v", err)
-	}
-}
-
-func (d *dagEngine) buildTask(_ context.Context) error {
+func (d *dagEngine) buildTask(ctx context.Context) error {
 	// 构建图关系
 	nodeMap := utils.Slice2Map(d.nodes, func(node *model.WorkflowNode) (uuid.UUID, *model.WorkflowNode) {
 		return node.UUID, node
 	})
 
-	// 修复：构建正确的边关系映射，支持一对多关系
-	targetSourcesMap := make(map[uuid.UUID][]uuid.UUID)
-	sourceTargetsMap := make(map[uuid.UUID][]uuid.UUID)
+	nodeParentUUIDMap := make(map[uuid.UUID][]uuid.UUID)
+	nodeChildrenUUIDMap := make(map[uuid.UUID][]uuid.UUID)
 
 	for _, edge := range d.edges {
 		// 目标节点的所有源节点
-		targetSourcesMap[edge.TargetNodeUUID] = append(targetSourcesMap[edge.TargetNodeUUID], edge.SourceNodeUUID)
+		nodeParentUUIDMap[edge.TargetNodeUUID] = append(nodeParentUUIDMap[edge.TargetNodeUUID], edge.SourceNodeUUID)
 		// 源节点的所有目标节点
-		sourceTargetsMap[edge.SourceNodeUUID] = append(sourceTargetsMap[edge.SourceNodeUUID], edge.TargetNodeUUID)
+		nodeChildrenUUIDMap[edge.SourceNodeUUID] = append(nodeChildrenUUIDMap[edge.SourceNodeUUID], edge.TargetNodeUUID)
 	}
 
 	// 先检测循环
-	if err := d.detectCycle(sourceTargetsMap); err != nil {
+	if err := d.detectCycle(nodeChildrenUUIDMap); err != nil {
 		return err
 	}
+	handleMap := utils.Slice2Map(d.handles, func(h *model.WorkflowHandleTemplate) (uuid.UUID, *model.WorkflowHandleTemplate) {
+		return h.UUID, h
+	})
 
 	for _, node := range d.nodes {
-		// d.boardMsg(ctx, &engine.BoardMsg{
-		// 	Header:         node.ActionName,
-		// 	WorkflowStatus: "running",
-		// 	Status:         "pending",
-		// 	Type:           "info",
-		// 	Msg:            []string{"prepare to run node"},
-		// })
-
 		parentNodeMap := make(map[*model.WorkflowNode]struct{})
-		d.findAllParents(nodeMap, targetSourcesMap, node, parentNodeMap)
+		d.findAllParents(nodeMap, nodeParentUUIDMap, node, parentNodeMap)
 		d.dependencies[node] = parentNodeMap
-	}
-	return nil
-}
 
-// 使用DFS检测循环
-func (d *dagEngine) detectCycle(edgeMap map[uuid.UUID][]uuid.UUID) error {
-	visited := make(map[uuid.UUID]bool)
-	recStack := make(map[uuid.UUID]bool)
+		// 找出该节点的所有前向边
+		leftEdges := utils.FilterSlice(d.edges, func(e *model.WorkflowEdge) (*model.WorkflowEdge, bool) {
+			if node.UUID == e.TargetNodeUUID {
+				return e, true
+			}
+			return nil, false
+		})
 
-	for _, node := range d.nodes {
-		if !visited[node.UUID] {
-			if d.dfsDetectCycle(node.UUID, edgeMap, visited, recStack) {
-				return code.WorkflowHasCircularErr
+		// if config.Global().Dynamic().Schedule.TranslateNodeParam {
+		if true {
+			var err error
+			d.nodeParentEdges[node.ID], err = utils.FilterSliceErr(leftEdges, func(e *model.WorkflowEdge) (*engine.HandlePair, bool, error) {
+				sourceHandle, ok := handleMap[e.SourceHandleUUID]
+				if !ok {
+					return nil, false, code.CanNotFoundWorkflowHandleErr.WithMsg(fmt.Sprintf("node id: %d, source uuid: %s", node.ID, e.SourceHandleUUID))
+				}
+
+				targetHandle, ok := handleMap[e.TargetHandleUUID]
+				if !ok {
+					return nil, false, code.CanNotFoundWorkflowHandleErr.WithMsg(fmt.Sprintf("node id: %d, target uuid: %s", node.ID, e.TargetHandleUUID))
+				}
+
+				pair := &engine.HandlePair{
+					SourceHandle: sourceHandle,
+					TargetHandle: targetHandle,
+				}
+
+				sourceNode, ok := nodeMap[e.SourceNodeUUID]
+				if ok {
+					pair.SourceNode = sourceNode
+				}
+				// 不存在的情况是父节点被禁用了
+
+				return pair, true, nil
+			})
+			if err != nil {
+				return err
 			}
 		}
 	}
 	return nil
 }
 
+// 使用DFS检测循环
+func (d *dagEngine) detectCycle(nodeChildrenUUIDMap map[uuid.UUID][]uuid.UUID) error {
+	visited := make(map[uuid.UUID]bool)
+	recStack := make(map[uuid.UUID]bool)
+
+	for _, node := range d.nodes {
+		if !visited[node.UUID] {
+			if d.dfsDetectCycle(node.UUID, nodeChildrenUUIDMap, visited, recStack) {
+				return code.WorkflowHasCircularErr
+			}
+		}
+	}
+
+	return nil
+}
+
 func (d *dagEngine) dfsDetectCycle(nodeUUID uuid.UUID,
-	edgeMap map[uuid.UUID][]uuid.UUID, visited, recStack map[uuid.UUID]bool,
+	nodeChildrenUUIDMap map[uuid.UUID][]uuid.UUID, visited, recStack map[uuid.UUID]bool,
 ) bool {
 	visited[nodeUUID] = true
 	recStack[nodeUUID] = true
 
 	// 查找所有子节点
-	if targets, exists := edgeMap[nodeUUID]; exists {
-		for _, targetUUID := range targets {
-			if !visited[targetUUID] {
-				if d.dfsDetectCycle(targetUUID, edgeMap, visited, recStack) {
+	if children, exists := nodeChildrenUUIDMap[nodeUUID]; exists {
+		for _, child := range children {
+			if !visited[child] {
+				if d.dfsDetectCycle(child, nodeChildrenUUIDMap, visited, recStack) {
 					return true
 				}
-			} else if recStack[targetUUID] {
+			} else if recStack[child] {
 				return true // 发现循环
 			}
 		}
@@ -221,14 +298,14 @@ func (d *dagEngine) dfsDetectCycle(nodeUUID uuid.UUID,
 
 // 修复后的findAllParents方法，支持多个父节点
 func (d *dagEngine) findAllParents(nodeMap map[uuid.UUID]*model.WorkflowNode,
-	targetSourcesMap map[uuid.UUID][]uuid.UUID, node *model.WorkflowNode, parentMap map[*model.WorkflowNode]struct{},
+	nodeParentUUIDMap map[uuid.UUID][]uuid.UUID, node *model.WorkflowNode, parentMap map[*model.WorkflowNode]struct{},
 ) {
 	if node == nil {
 		return
 	}
 
-	// 查找所有指向当前节点的父节点
-	if sources, exists := targetSourcesMap[node.UUID]; exists {
+	// 查找该节点的所有父节点
+	if sources, exists := nodeParentUUIDMap[node.UUID]; exists {
 		for _, sourceUUID := range sources {
 			parentNode, ok := nodeMap[sourceUUID]
 			if !ok {
@@ -239,48 +316,80 @@ func (d *dagEngine) findAllParents(nodeMap map[uuid.UUID]*model.WorkflowNode,
 			if _, exists := parentMap[parentNode]; !exists {
 				parentMap[parentNode] = struct{}{}
 				// 递归查找父节点的父节点
-				d.findAllParents(nodeMap, targetSourcesMap, parentNode, parentMap)
+				d.findAllParents(nodeMap, nodeParentUUIDMap, parentNode, parentMap)
 			}
 		}
 	}
 }
 
+// 运行入口
 func (d *dagEngine) Run(ctx context.Context, job *engine.WorkflowInfo) error {
 	d.job = job
-	if !d.checkTaskStatus(ctx) {
-		return nil
-	}
-	if err := d.loadData(ctx); err != nil {
-		return err
-	}
-
-	d.boardMsg(ctx, &engine.BoardMsg{
-		Header:         "",
-		WorkflowStatus: "starting",
-		Status:         "pending",
-		Type:           "info",
-		Msg:            []string{"prepare to run node"},
-	})
-	if err := d.buildTask(ctx); err != nil {
-		return err
-	}
-
-	err := d.runAllNodes(ctx)
-
+	var err error
 	data := &engine.BoardMsg{
-		Header:         "end",
-		WorkflowStatus: "finished",
-		Type:           "info",
-		Status:         "success",
-		Msg:            []string{"running node"},
+		TaskStatus: "starting",
+		JobStatus:  "pending",
+		Header:     "",
+		Type:       "info",
+		Msg:        "prepare to run node",
+		StackTrace: nil,
 	}
-	if err != nil {
-		data.Status = "fail"
-		data.Msg = append(data.Msg, err.Error())
+	d.boardMsg(ctx, data)
+
+	// 执行所有步骤
+	for _, step := range d.stepFuncs {
+		if err = step(ctx); err != nil {
+			break
+		}
 	}
 
+	taskStatus := model.WorkflowTaskStatusFailed
+	data.TaskStatus = "end"
+	data.Timestamp = time.Now()
+	if err != nil {
+		if errors.Is(err, code.JobTimeoutErr) {
+			taskStatus = model.WorkflowTaskStatusTimeout
+			data.Msg = "job timeout"
+			data.Type = "warning"
+		} else if errors.Is(err, code.JobCanceled) {
+			taskStatus = model.WorkflowTaskStatusCanceled
+			data.Msg = "job canceled"
+			data.Type = "warning"
+		} else {
+			taskStatus = model.WorkflowTaskStatusFailed
+			data.Msg = "job failed"
+			data.Type = "error"
+		}
+	} else {
+		taskStatus = model.WorkflowTaskStatusSuccessed
+		data.Msg = "finished"
+	}
+
+	d.updateTaskStatus(ctx, taskStatus, d.job.TaskID)
 	d.boardMsg(ctx, data)
+
+	d.wg.Wait()
 	return err
+}
+
+func (d *dagEngine) Stop(_ context.Context) error {
+	data := schedule.SendAction[*engine.CancelTask]{
+		Action: schedule.CancelTask,
+		Data: &engine.CancelTask{
+			TaskID: d.job.TaskUUID,
+		},
+	}
+	b, _ := json.Marshal(data)
+	d.session.Write(b)
+
+	d.cancel()
+	d.wg.Wait()
+
+	if d.pools != nil {
+		d.pools.Release()
+	}
+
+	return nil
 }
 
 func (d *dagEngine) runAllNodes(ctx context.Context) error {
@@ -296,42 +405,54 @@ func (d *dagEngine) runAllNodes(ctx context.Context) error {
 
 		select {
 		case <-closeCtx.Done():
-			return nil
+			return code.JobCanceled
 		default:
 		}
 
-		canRunNodes := make([]*model.WorkflowNode, 0, 10)
+		noDepNodes := make([]*model.WorkflowNode, 0, 10)
 		nodeJobs := make([]*model.WorkflowNodeJob, 0, 10)
 		for node, nodeDependences := range d.dependencies {
-			if len(nodeDependences) == 0 {
-				canRunNodes = append(canRunNodes, node)
-				nodeJobs = append(nodeJobs, &model.WorkflowNodeJob{
-					LabID:          d.job.LabData.ID,
-					WorkflowTaskID: d.job.TaskID,
-					NodeID:         node.ID,
-					Status:         model.WorkflowJobPending,
-				})
+			if len(nodeDependences) > 0 {
+				continue
 			}
+
+			noDepNodes = append(noDepNodes, node)
+			nodeJobs = append(nodeJobs, &model.WorkflowNodeJob{
+				LabID:          d.job.LabData.ID,
+				WorkflowTaskID: d.job.TaskID,
+				NodeID:         node.ID,
+				Status:         model.WorkflowJobPending,
+			})
 		}
 
 		if err := d.workflowStore.CreateJobs(closeCtx, nodeJobs); err != nil {
 			return err
 		}
 
-		for index, node := range canRunNodes {
+		for _, job := range nodeJobs {
+			d.jobMap[job.UUID] = job
+			d.nodeMap[job.NodeID] = job
+		}
+
+		for index, node := range noDepNodes {
 			newNode := node
-			newInde := index
-			d.wg.Add(1) // Add应该在Submit之前调用
+			newIndex := index
+			d.wg.Add(1)
 			if err := d.pools.Submit(func() {
 				defer d.wg.Done()
+
 				if err := utils.SafelyRun(func() {
 					select {
 					case <-closeCtx.Done():
 						return
 					default:
 					}
-					if err := d.runNode(closeCtx, newNode, nodeJobs[newInde]); err != nil {
-						logger.Errorf(closeCtx, "node run fail node id: %d, errr: %+v", newNode.ID, err)
+
+					if err := d.runNode(closeCtx, newNode, nodeJobs[newIndex]); err != nil {
+						if !errors.Is(err, code.JobCanceled) {
+							logger.Errorf(closeCtx, "node run fail node id: %d, err: %+v", newNode.ID, err)
+						}
+
 						if !hasError.Load() {
 							firstError.Store(err)
 							hasError.Store(true)
@@ -339,19 +460,24 @@ func (d *dagEngine) runAllNodes(ctx context.Context) error {
 						}
 					}
 				}); err != nil {
-					logger.Errorf(ctx, "run all node SafelyRun err: %+v", err)
+					if !errors.Is(err, code.JobCanceled) {
+						logger.Errorf(ctx, "run all node SafelyRun err: %+v", err)
+					}
 				}
 			}); err != nil {
 				logger.Errorf(ctx, "run all node submit run node fail err: %+v", err)
 			}
+
 		}
+
 		d.wg.Wait()
 
 		if hasError.Load() {
 			return firstError.Load().(error)
 		}
 
-		for _, runnedNode := range canRunNodes {
+		// 移除依赖关系
+		for _, runnedNode := range noDepNodes {
 			delete(d.dependencies, runnedNode)
 			for _, nodeDependences := range d.dependencies {
 				delete(nodeDependences, runnedNode)
@@ -360,55 +486,267 @@ func (d *dagEngine) runAllNodes(ctx context.Context) error {
 	}
 }
 
+func (d *dagEngine) parsePreNodeParam(ctx context.Context, node *model.WorkflowNode) error {
+	// dynamicConf := config.Global().Dynamic()
+	// if !dynamicConf.Schedule.TranslateNodeParam {
+	// 	return nil
+	// }
+
+	pairs, ok := d.nodeParentEdges[node.ID]
+	if !ok || len(pairs) == 0 {
+		return nil
+	}
+
+	for _, p := range pairs {
+		// 无父节点
+		if p.SourceNode == nil {
+			continue
+		}
+
+		if p.SourceHandle == nil || p.SourceHandle.DataKey == "" {
+			continue
+		}
+
+		if p.TargetHandle == nil || p.TargetHandle.DataKey == "" {
+			continue
+		}
+
+		if p.SourceHandle.DataSource != "executor" ||
+			p.SourceHandle.HandleKey == "ready" {
+			continue
+		}
+
+		job, ok := d.nodeMap[p.SourceNode.ID]
+		if !ok {
+			return code.CanNotGetParentJobErr.WithMsg(
+				fmt.Sprintf("parent node id: %d, node id: %d", p.SourceNode.ID, node.ID))
+		}
+
+		var err error
+		retValueB, err := json.Marshal(job.ReturnInfo.Data().ReturnValue)
+		if err != nil {
+			return code.DataNotMapAnyTypeErr
+		}
+		res := gjson.Get(string(retValueB), p.SourceHandle.DataKey)
+		if !res.Exists() {
+			return code.ValueNotExistErr
+		}
+
+		jsonStr, err := sjson.Set(string(node.Param), p.TargetHandle.DataKey, res.Value())
+		if err != nil {
+			return code.UpdateNodeErr
+		}
+
+		node.Param = datatypes.JSON(jsonStr)
+	}
+
+	return nil
+}
+
 func (d *dagEngine) runNode(ctx context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
-	d.boardMsg(ctx, &engine.BoardMsg{
-		Header:         node.ActionName,
-		NodeUUID:       node.UUID,
-		WorkflowStatus: "running",
-		Status:         "running",
-		Type:           "info",
-		Msg:            []string{"running node"},
-	})
-	if err := d.sendAction(ctx, node, job); err != nil {
+	if err := d.parsePreNodeParam(ctx, node); err != nil {
 		return err
 	}
 
-	err := d.callbackAction(ctx, job)
-
 	data := &engine.BoardMsg{
-		Header:         node.ActionName,
-		NodeUUID:       node.UUID,
-		WorkflowStatus: "running",
-		Type:           "info",
-		Msg:            []string{"running node"},
+		TaskStatus: "running",
+		JobStatus:  "running",
+		Header:     node.ActionName,
+		NodeUUID:   node.UUID,
+		Type:       "info",
+		Msg:        "running",
 	}
-	data.Status = "success"
-	if err != nil {
-		data.Status = "failed"
-		data.Msg = append(data.Msg, err.Error())
-	}
+
 	d.boardMsg(ctx, data)
+
+	var err error
+	defer func() {
+		jobStatus := model.WorkflowJobFailed
+		data.Msg = "failed"
+		data.Timestamp = time.Now()
+		data.ReturnInfos = job.ReturnInfo
+		if err != nil {
+			jobStatus = model.WorkflowJobFailed
+			if errors.Is(err, code.JobCanceled) {
+				data.Msg = "job canceled"
+				data.Type = "warning"
+				data.JobStatus = "failed"
+				jobStatus = model.WorkflowJobCanceled
+			}
+
+			if errors.Is(err, code.JobTimeoutErr) {
+				data.Msg = "job timeout"
+				data.Type = "warning"
+				data.JobStatus = "failed"
+				jobStatus = model.WorkflowJobTimeout
+			} else {
+				data.Msg = "job failed"
+				data.Type = "warning"
+				data.JobStatus = "failed"
+				data.StackTrace = append(data.StackTrace, err.Error())
+				jobStatus = model.WorkflowJobFailed
+			}
+		} else {
+			data.Msg = "success"
+			data.JobStatus = "success"
+			jobStatus = model.WorkflowJobSuccess
+		}
+
+		d.boardMsg(ctx, data)
+		d.updateJob(ctx, jobStatus, job.ID)
+	}()
+
+	// 查询 action 是否可以执行
+	if node.Type == model.WorkflowNodeILab {
+		err = d.queryAction(ctx, node, job)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = d.execNodeAction(ctx, node, job)
+	if err != nil {
+		return err
+	}
+
+	if node.Type == model.WorkflowPyScript {
+		return err
+	}
+
+	key := engine.ActionKey{
+		Type:       engine.JobCallbackStatus,
+		TaskID:     d.job.TaskUUID,
+		JobID:      job.UUID,
+		DeviceID:   *node.DeviceName,
+		ActionName: node.ActionName,
+	}
+
+	d.InitDeviceActionStatus(ctx, key, time.Now().Add(20*time.Second), false)
+	err = d.callbackAction(ctx, key, job)
+
+	return err
+}
+
+func (d *dagEngine) queryAction(ctx context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
+	if node.Type == model.WorkflowPyScript {
+		return nil
+	}
+
+	key := engine.ActionKey{
+		Type:   engine.QueryActionStatus,
+		TaskID: d.job.TaskUUID,
+		JobID:  job.UUID,
+		DeviceID: utils.SafeValue(func() string {
+			return *node.DeviceName
+		}, ""),
+		ActionName: node.ActionName,
+	}
+	d.InitDeviceActionStatus(ctx, key, time.Now().Add(time.Second*20), false)
+	if err := d.sendQueryAction(ctx, node, job); err != nil {
+		return err
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return code.JobCanceled
+		default:
+		}
+
+		time.Sleep(time.Millisecond * 500)
+		value, exist := d.GetDeviceActionStatus(ctx, key)
+		if !exist {
+			return code.QueryJobStatusKeyNotExistErr
+		}
+
+		if value.Free {
+			d.DelStatus(ctx, key)
+			return nil
+		}
+
+		if value.Timestamp.Unix() < time.Now().Unix() {
+			return code.JobTimeoutErr
+		}
+	}
+}
+
+func (d *dagEngine) sendQueryAction(_ context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
+	if d.session.IsClosed() {
+		return code.EdgeConnectClosedErr
+	}
+
+	data := schedule.SendAction[engine.ActionKey]{
+		Action: schedule.QueryActionStatus,
+		Data: engine.ActionKey{
+			TaskID:     d.job.TaskUUID,
+			JobID:      job.UUID,
+			DeviceID:   *node.DeviceName,
+			ActionName: node.ActionName,
+		},
+	}
+
+	bData, _ := json.Marshal(data)
+	return d.session.Write(bData)
+}
+
+func (d *dagEngine) execNodeAction(ctx context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
+	switch node.Type {
+	case model.WorkflowNodeILab:
+		return d.sendAction(ctx, node, job)
+	case model.WorkflowPyScript:
+		return d.execScript(ctx, node, job)
+	default:
+		return code.UnknownWorkflowNodeTypeErr
+	}
+}
+
+func (d *dagEngine) execScript(ctx context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
+	inputs := map[string]any{}
+	err := json.Unmarshal(node.Param, &inputs)
+	returnInfo := model.ReturnInfo{
+		Suc:         false,
+		Error:       "",
+		ReturnValue: nil,
+	}
+
+	ret, errMsg, err := d.sandbox.ExecCode(ctx, *node.Script, inputs)
+	returnInfo.Error = errMsg
+	returnInfo.ReturnValue = ret
+	if err != nil {
+		returnInfo.Suc = false
+	}
+
+	if err != nil || errMsg != "" {
+		job.Status = model.WorkflowJobFailed
+	}
+
+	job.ReturnInfo = datatypes.NewJSONType(returnInfo)
+	job.UpdatedAt = time.Now()
+
+	if err := d.workflowStore.UpdateData(ctx, job, map[string]any{
+		"uuid": job.UUID,
+	}, "status", "feedback_data", "return_info", "updated_at"); err != nil {
+		logger.Errorf(ctx, "onJobStatus update job fail uuid: %s, err: %+v", job.UUID, err)
+	}
 
 	return err
 }
 
 func (d *dagEngine) sendAction(_ context.Context, node *model.WorkflowNode, job *model.WorkflowNodeJob) error {
-	param := node.Param
 	if d.session.IsClosed() {
 		return code.EdgeConnectClosedErr
 	}
-	// 数据库插入数据
-	data := engine.SendAction[*engine.SendActionData]{
-		Type: engine.ActionKeyJobStart,
+
+	data := schedule.SendAction[*engine.SendActionData]{
+		Action: schedule.JobStart,
 		Data: &engine.SendActionData{
-			DeviceID: utils.SafeValue(func() string {
-				return *node.DeviceName
-			}, ""),
+			DeviceID:   *node.DeviceName,
 			Action:     node.ActionName,
 			ActionType: node.ActionType,
-			ActionArgs: param,
-			JobID:      job.UUID.String(),
-			NodeID:     node.UUID.String(),
+			ActionArgs: node.Param,
+			JobID:      job.UUID,
+			TaskID:     d.job.TaskUUID,
+			NodeID:     node.UUID,
 			ServerInfo: engine.ServerInfo{
 				SendTimestamp: float64(time.Now().UnixNano()) / 1e9,
 			},
@@ -423,51 +761,158 @@ func (d *dagEngine) sendAction(_ context.Context, node *model.WorkflowNode, job 
 	return d.session.Write(b)
 }
 
-func (d *dagEngine) callbackAction(ctx context.Context, job *model.WorkflowNodeJob) error {
-	// FIXME: 测试结束后放开这段代码。
-	time.Sleep(5 * time.Second)
-	return nil
+func (d *dagEngine) callbackAction(ctx context.Context, key engine.ActionKey, job *model.WorkflowNodeJob) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return code.JobCanceled
+		default:
+		}
+
+		time.Sleep(time.Millisecond * 500)
+		value, exist := d.GetDeviceActionStatus(ctx, key)
+		if !exist {
+			return code.CallbackJobStatusKeyNotExistErr
+		}
+
+		if value.Free {
+			d.DelStatus(ctx, key)
+			break
+		}
+
+		if value.Timestamp.Unix() < time.Now().Unix() {
+			return code.JobTimeoutErr
+		}
+	}
+
 	// 查询任务状态是否回调成功
-	dagConf := schedule.Config().DynamicConfig.DagTask
-	retry := dagConf.RetryCount
-	var jobs []*model.WorkflowNodeJob
-	for retry > 0 {
-		time.Sleep(time.Duration(dagConf.Interval) * time.Second)
-		err := d.workflowStore.FindDatas(ctx, &jobs, map[string]any{
-			"id": job.ID,
-		})
-		if err != nil {
-			return err
-		}
-
-		if len(jobs) != 1 {
-			return code.RecordNotFound.WithMsgf("can not found job id: %+d", job.ID)
-		}
-
-		switch jobs[0].Status {
-		case model.WorkflowJobSuccess:
-			return nil
-		case model.WorkflowJobFailed:
-			return code.JobRunFailErr
-		}
-
-		retry--
+	err := d.workflowStore.GetData(ctx, job, map[string]any{
+		"id": job.ID,
+	})
+	if err != nil {
+		return err
 	}
 
-	logger.Warnf(ctx, "schedule job run timeout id: %d", job.ID)
-	return nil
-}
-
-func (d *dagEngine) Stop(_ context.Context) error {
-	d.Cancel()
-	if d.pools != nil {
-		d.pools.Release()
+	logger.Infof(ctx, "schedule job run finished: %d", job.ID)
+	switch job.Status {
+	case model.WorkflowJobSuccess:
+		return nil
+	case model.WorkflowJobFailed:
+		return code.JobRunFailErr
+	default:
+		return code.JobRunFailErr
 	}
-
-	d.wg.Wait()
-	return nil
 }
 
 func (d *dagEngine) GetStatus(_ context.Context) error {
 	return nil
+}
+
+func (d *dagEngine) OnJobUpdate(ctx context.Context, data *engine.JobData) error {
+	if data.Status == "running" {
+		return nil
+	}
+
+	d.SetDeviceActionStatus(ctx, engine.ActionKey{
+		Type:       engine.JobCallbackStatus,
+		TaskID:     data.TaskID,
+		JobID:      data.JobID,
+		DeviceID:   data.DeviceID,
+		ActionName: data.ActionName,
+	}, true, 0)
+
+	if job, ok := d.jobMap[data.JobID]; ok {
+		job.ReturnInfo = data.ReturnInfo
+		job.FeedbackData = data.FeedbackData
+		job.Status = model.WorkflowJobStatus(data.Status)
+	}
+
+	if err := d.workflowStore.UpdateData(ctx, &model.WorkflowNodeJob{
+		Status:       model.WorkflowJobStatus(data.Status),
+		FeedbackData: data.FeedbackData,
+		ReturnInfo:   data.ReturnInfo,
+		BaseModel: model.BaseModel{
+			UpdatedAt: time.Now(),
+		},
+		// Timestamp:    data.Timestamp,
+	}, map[string]any{
+		"uuid": data.JobID,
+	}, "status", "feedback_data", "return_info", "updated_at"); err != nil {
+		logger.Errorf(ctx, "onJobStatus update job fail uuid: %s, err: %+v", data.JobID, err)
+	}
+
+	return nil
+}
+
+func (d *dagEngine) updateTaskStatus(ctx context.Context, status model.WorkflowTaskStatus, taskID int64) {
+	data := &model.WorkflowTask{
+		Status:       status,
+		FinishedTime: time.Now(),
+	}
+	data.UpdatedAt = time.Now()
+	if err := d.workflowStore.UpdateData(context.Background(), data, map[string]any{
+		"id": taskID,
+	}, "status", "updated_at", "finished_time"); err != nil {
+		logger.Errorf(ctx, "engine dag updateTask id: %d, err: %+v", taskID, err)
+	}
+}
+
+func (d *dagEngine) updateJob(ctx context.Context, status model.WorkflowJobStatus, jobID int64) {
+	data := &model.WorkflowNodeJob{
+		Status: status,
+	}
+	data.UpdatedAt = time.Now()
+
+	if err := d.workflowStore.UpdateData(context.Background(), data, map[string]any{
+		"id": jobID,
+	}, "status", "updated_at"); err != nil {
+		logger.Errorf(ctx, "engine dag updateJob job id: %+v, err: %+v", jobID, err)
+	}
+}
+
+func (d *dagEngine) boardMsg(ctx context.Context, msg *engine.BoardMsg) {
+	if err := d.boardEvent.Broadcast(context.Background(), &notify.SendMsg{
+		Channel:      notify.WorkflowRun,
+		TaskUUID:     d.job.TaskUUID,
+		LabUUID:      d.job.LabUUID,
+		WorkflowUUID: d.job.WorkflowUUID,
+		UserID:       d.job.UserID,
+		UUID:         d.job.TaskUUID,
+		Data:         msg,
+		Timestamp:    time.Now().Unix(),
+	}); err != nil {
+		logger.Errorf(ctx, "schedule board msg fail err: %+v", err)
+	}
+}
+
+func (d *dagEngine) GetDeviceActionStatus(ctx context.Context, key engine.ActionKey) (engine.ActionValue, bool) {
+	valueI, ok := d.actionStatus.Load(key)
+	if !ok {
+		return engine.ActionValue{}, false
+	}
+	return valueI.(engine.ActionValue), true
+}
+
+func (d *dagEngine) SetDeviceActionStatus(ctx context.Context, key engine.ActionKey, free bool, needMore time.Duration) {
+	valueI, ok := d.actionStatus.Load(key)
+	if ok {
+		value := valueI.(engine.ActionValue)
+		value.Free = free
+		value.Timestamp = value.Timestamp.Add(needMore)
+		logger.Warnf(ctx, "SetDeviceActionStatus key: %+v, value: %+v, more: %d", key, value, needMore)
+		d.actionStatus.Store(key, value)
+	} else {
+		logger.Warnf(ctx, "SetDeviceActionStatus not found key: %+v", key)
+	}
+}
+
+func (d *dagEngine) InitDeviceActionStatus(ctx context.Context, key engine.ActionKey, start time.Time, free bool) {
+	d.actionStatus.Store(key, engine.ActionValue{
+		Timestamp: start,
+		Free:      free,
+	})
+}
+
+func (d *dagEngine) DelStatus(ctx context.Context, key engine.ActionKey) {
+	d.actionStatus.Delete(key)
 }

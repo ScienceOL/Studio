@@ -55,6 +55,18 @@ dev: ## 开发模式启动 (热重载)
 	fi
 	air -c .air.toml
 
+.PHONY: dev-schedule
+dev-schedule: ## 开发模式启动 schedule (热重载)
+	@echo "🚀 启动 schedule 开发服务器..."
+	@if ! command -v air > /dev/null 2>&1; then \
+		echo "📦 安装 air (热重载工具)..."; \
+		$(GO) install github.com/air-verse/air@v1.62.0; \
+		echo "✅ air 安装完成"; \
+	else \
+		echo "✅ air 已存在，跳过安装"; \
+	fi
+	air -c .air.schedule.toml
+
 .PHONY: run
 run: build ## 构建并运行应用
 	@echo "🚀 启动应用..."

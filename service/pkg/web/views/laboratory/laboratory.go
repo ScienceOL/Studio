@@ -19,16 +19,15 @@ func NewEnvironment() *EnvHandle {
 	}
 }
 
-// @Summary      创建实验室
-// @Description  创建一个新的实验室环境
-// @Tags         Laboratory
-// @Accept       json
-// @Produce      json
-// @Param        req  body      environment.LaboratoryEnvReq  true  "实验室创建请求"
-// @Success      200  {object}  common.Resp{data=environment.LaboratoryEnvResp}
-// @Failure      400  {object}  common.Resp
-// @Security     BearerAuth
-// @Router       /lab [post]
+// @Summary 创建实验室环境
+// @Description 创建一个新的实验室环境
+// @Tags Laboratory
+// @Accept json
+// @Produce json
+// @Param lab body environment.LaboratoryEnvReq true "实验室环境创建请求"
+// @Success 200 {object} common.Resp{data=environment.LaboratoryEnvResp} "创建成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab [post]
 func (l *EnvHandle) CreateLabEnv(ctx *gin.Context) {
 	req := &environment.LaboratoryEnvReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -47,16 +46,15 @@ func (l *EnvHandle) CreateLabEnv(ctx *gin.Context) {
 	common.ReplyOk(ctx, resp)
 }
 
-// @Summary      更新实验室
-// @Description  更新实验室环境信息
-// @Tags         Laboratory
-// @Accept       json
-// @Produce      json
-// @Param        req  body      environment.UpdateEnvReq  true  "实验室更新请求"
-// @Success      200  {object}  common.Resp{data=environment.LaboratoryResp}
-// @Failure      400  {object}  common.Resp
-// @Security     BearerAuth
-// @Router       /lab [patch]
+// @Summary 更新实验室环境
+// @Description 更新一个已存在的实验室环境
+// @Tags Laboratory
+// @Accept json
+// @Produce json
+// @Param lab body environment.UpdateEnvReq true "实验室环境更新请求"
+// @Success 200 {object} common.Resp{data=environment.LaboratoryResp} "更新成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab [patch]
 func (l *EnvHandle) UpdateLabEnv(ctx *gin.Context) {
 	req := &environment.UpdateEnvReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -75,17 +73,36 @@ func (l *EnvHandle) UpdateLabEnv(ctx *gin.Context) {
 	common.ReplyOk(ctx, resp)
 }
 
-// @Summary      获取实验室列表
-// @Description  获取当前用户的所有实验室
-// @Tags         Laboratory
-// @Accept       json
-// @Produce      json
-// @Param        page      query     int  false  "页码"
-// @Param        page_size query     int  false  "每页大小"
-// @Success      200       {object}  common.Resp{data=common.PageMoreResp[[]environment.LaboratoryResp]}
-// @Failure      400       {object}  common.Resp
-// @Security     BearerAuth
-// @Router       /lab/list [get]
+// @Summary 删除实验室环境
+// @Description 删除一个实验室环境
+// @Tags Laboratory
+// @Accept json
+// @Produce json
+// @Param lab body environment.DelLabReq true "删除实验室请求"
+// @Success 200 {object} common.Resp{} "删除成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab [delete]
+func (l *EnvHandle) DelLabEnv(ctx *gin.Context) {
+	req := &environment.DelLabReq{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		logger.Errorf(ctx, "parse body err: %+v", err)
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	err := l.envService.DelLab(ctx, req)
+	common.Reply(ctx, err)
+}
+
+// @Summary 获取实验室列表
+// @Description 获取当前用户的所有实验室
+// @Tags Laboratory
+// @Accept json
+// @Produce json
+// @Param page query common.PageReq false "分页参数"
+// @Success 200 {object} common.Resp{data=environment.LaboratoryListResp} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/list [get]
 func (l *EnvHandle) LabList(ctx *gin.Context) {
 	req := &common.PageReq{}
 	if err := ctx.ShouldBindQuery(req); err != nil {
@@ -93,7 +110,6 @@ func (l *EnvHandle) LabList(ctx *gin.Context) {
 		common.ReplyErr(ctx, code.ParamErr, err.Error())
 		return
 	}
-	req.Normalize()
 
 	resp, err := l.envService.LabList(ctx, req)
 	if err != nil {
@@ -105,17 +121,43 @@ func (l *EnvHandle) LabList(ctx *gin.Context) {
 	common.ReplyOk(ctx, resp)
 }
 
-// @Summary      创建实验室资源
-// @Description  从边缘侧创建资源
-// @Tags         Laboratory
-// @Accept       json
-// @Produce      json
-// @Param        req  body      environment.ResourceReq  true  "资源创建请求"
-// @Success      200  {object}  common.Resp
-// @Failure      400  {object}  common.Resp
-// @Security     BearerAuth
-// @Router       /lab/resource [post]
-// 创建注册表
+// @Summary 获取实验室信息
+// @Description 获取单个实验室的详细信息
+// @Tags Laboratory
+// @Accept json
+// @Produce json
+// @Param lab_uuid path string true "实验室UUID"
+// @Param with_member query bool false "是否包含成员列表"
+// @Success 200 {object} common.Resp{data=environment.LabInfoResp} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/{lab_uuid} [get]
+func (l *EnvHandle) LabInfo(ctx *gin.Context) {
+	req := &environment.LabInfoReq{}
+	if err := ctx.ShouldBindUri(req); err != nil {
+		logger.Errorf(ctx, "parse body err: %+v", err)
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	if err := ctx.ShouldBindQuery(req); err != nil {
+		logger.Errorf(ctx, "parse body err: %+v", err)
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	resp, err := l.envService.LabInfo(ctx, req)
+	common.Reply(ctx, err, resp)
+}
+
+// @Summary 创建实验室资源
+// @Description 从边缘端创建实验室资源
+// @Tags Laboratory
+// @Accept json
+// @Produce json
+// @Param resource body environment.ResourceReq true "资源请求"
+// @Success 200 {object} common.Resp{} "创建成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/resource [post]
 func (l *EnvHandle) CreateLabResource(ctx *gin.Context) {
 	req := &environment.ResourceReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -134,18 +176,16 @@ func (l *EnvHandle) CreateLabResource(ctx *gin.Context) {
 	common.ReplyOk(ctx)
 }
 
-// @Summary      获取实验室成员
-// @Description  根据实验室获取当前实验室成员
-// @Tags         Laboratory
-// @Accept       json
-// @Produce      json
-// @Param        lab_uuid  path      string  true  "实验室UUID"
-// @Param        page      query     int     false  "页码"
-// @Param        page_size query     int     false  "每页大小"
-// @Success      200       {object}  common.Resp{data=common.PageResp[[]environment.LabMemberResp]}
-// @Failure      400       {object}  common.Resp
-// @Security     BearerAuth
-// @Router       /lab/member/{lab_uuid} [get]
+// @Summary 获取实验室成员
+// @Description 获取指定实验室的成员列表
+// @Tags Laboratory
+// @Accept json
+// @Produce json
+// @Param lab_uuid path string true "实验室UUID"
+// @Param page query common.PageReq false "分页参数"
+// @Success 200 {object} common.Resp{data=environment.LabMemberListResp} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/member/{lab_uuid} [get]
 func (l *EnvHandle) GetLabMemeber(ctx *gin.Context) {
 	req := &environment.LabMemberReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
@@ -168,17 +208,16 @@ func (l *EnvHandle) GetLabMemeber(ctx *gin.Context) {
 	common.ReplyOk(ctx, resp)
 }
 
-// @Summary      删除实验室成员
-// @Description  删除实验室成员
-// @Tags         Laboratory
-// @Accept       json
-// @Produce      json
-// @Param        lab_uuid     path      string  true  "实验室UUID"
-// @Param        member_uuid  path      string  true  "成员UUID"
-// @Success      200          {object}  common.Resp
-// @Failure      400          {object}  common.Resp
-// @Security     BearerAuth
-// @Router       /lab/member/{lab_uuid}/{member_uuid} [delete]
+// @Summary 删除实验室成员
+// @Description 从实验室中删除一个成员
+// @Tags Laboratory
+// @Accept json
+// @Produce json
+// @Param lab_uuid path string true "实验室UUID"
+// @Param member_uuid path string true "成员UUID"
+// @Success 200 {object} common.Resp{} "删除成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/member/{lab_uuid}/{member_uuid} [delete]
 func (l *EnvHandle) DelLabMember(ctx *gin.Context) {
 	req := &environment.DelLabMemberReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
@@ -196,16 +235,15 @@ func (l *EnvHandle) DelLabMember(ctx *gin.Context) {
 	common.ReplyOk(ctx)
 }
 
-// @Summary      创建邀请链接
-// @Description  创建实验室邀请链接
-// @Tags         Laboratory
-// @Accept       json
-// @Produce      json
-// @Param        lab_uuid  path      string  true  "实验室UUID"
-// @Success      200       {object}  common.Resp{data=environment.InviteResp}
-// @Failure      400       {object}  common.Resp
-// @Security     BearerAuth
-// @Router       /lab/invite/{lab_uuid} [post]
+// @Summary 创建邀请链接
+// @Description 为实验室创建邀请链接
+// @Tags Laboratory
+// @Accept json
+// @Produce json
+// @Param lab_uuid path string true "实验室UUID"
+// @Success 200 {object} common.Resp{data=environment.InviteResp} "创建成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/invite/{lab_uuid} [post]
 func (l *EnvHandle) CreateInvite(ctx *gin.Context) {
 	req := &environment.InviteReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
@@ -223,16 +261,15 @@ func (l *EnvHandle) CreateInvite(ctx *gin.Context) {
 	common.ReplyOk(ctx, resp)
 }
 
-// @Summary      接受邀请链接
-// @Description  接受实验室邀请链接
-// @Tags         Laboratory
-// @Accept       json
-// @Produce      json
-// @Param        uuid  path      string  true  "邀请UUID"
-// @Success      200   {object}  common.Resp
-// @Failure      400   {object}  common.Resp
-// @Security     BearerAuth
-// @Router       /lab/invite/{uuid} [get]
+// @Summary 接受邀请
+// @Description 通过邀请链接加入实验室
+// @Tags Laboratory
+// @Accept json
+// @Produce json
+// @Param uuid path string true "邀请链接UUID"
+// @Success 200 {object} common.Resp{} "接受成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/invite/{uuid} [get]
 func (l EnvHandle) AcceptInvite(ctx *gin.Context) {
 	req := &environment.AcceptInviteReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {

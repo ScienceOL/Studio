@@ -1,8 +1,12 @@
 package model
 
 import (
+	"fmt"
+
+	"github.com/scienceol/studio/service/internal/config"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 type DEVICETYPE string
@@ -11,9 +15,12 @@ const (
 	MATERIALREPO        DEVICETYPE = "repository"
 	MATERIALPLATE       DEVICETYPE = "plate"
 	MATERIALCONTAINER   DEVICETYPE = "container"
+	MATERIALRESOURCE    DEVICETYPE = "resource"
 	MATERIALDEVICE      DEVICETYPE = "device"
 	MATERIALWELL        DEVICETYPE = "well"
 	MATERIALTIP         DEVICETYPE = "tip"
+	MATERIALTIPRACK     DEVICETYPE = "tip_rack"
+	MATERIALTIPSPOT     DEVICETYPE = "tip_spot"
 	MATERIALDECK        DEVICETYPE = "deck"
 	MATERIALWORKSTATION DEVICETYPE = "workstation"
 )
@@ -21,9 +28,9 @@ const (
 // TODO: 字段是否有部分可以删除，或者是合并到一个 json 字段内
 type MaterialNode struct {
 	BaseModel
-	ParentID       int64                    `gorm:"type:bigint;index:idx_mn_p;uniqueIndex:idx_mn_ln,priority:3" json:"parent_id"`
-	LabID          int64                    `gorm:"type:bigint;not null;uniqueIndex:idx_mn_ln,priority:1" json:"lab_id"`
-	Name           string                   `gorm:"type:varchar(255);not null;uniqueIndex:idx_mn_ln,priority:2" json:"name"`
+	ParentID       int64                    `gorm:"type:bigint;index:idx_mn_p;uniqueIndex:idx_mn_lpn,priority:2" json:"parent_id"`
+	LabID          int64                    `gorm:"type:bigint;not null;uniqueIndex:idx_mn_lpn,priority:1" json:"lab_id"`
+	Name           string                   `gorm:"type:varchar(255);not null;uniqueIndex:idx_mn_lpn,priority:3" json:"name"`
 	DisplayName    string                   `gorm:"type:varchar(255);not null" json:"display_name"`
 	Description    *string                  `gorm:"type:text" json:"description"`
 	Status         string                   `gorm:"type:varchar(20);not null;default:'idle'" json:"status"`
@@ -36,9 +43,18 @@ type MaterialNode struct {
 	Pose           datatypes.JSONType[Pose] `gorm:"type:jsonb" json:"pose"`
 	Model          datatypes.JSON           `gorm:"type:jsonb" json:"model"`
 	Icon           string                   `gorm:"type:text" json:"icon"`
+	Extra          datatypes.JSON           `gorm:"type:jsonb" json:"extra"`
 	// Tags                   datatypes.JSONSlice[string] `gorm:"type:jsonb" json:"tags"` // label 标签
 
 	ResourceNodeTemplate *ResourceNodeTemplate `gorm:"-"`
+	EdgeUUID             uuid.UUID             `gorm:"-"`
+}
+
+func (m *MaterialNode) AfterFind(tx *gorm.DB) (err error) {
+	addr := config.Global().Storage.Addr
+	bucket := config.Global().Storage.Bucket
+	m.Icon = fmt.Sprintf("%s/%s/media/device_icon/%s", addr, bucket, m.Icon)
+	return nil
 }
 
 func (*MaterialNode) TableName() string {
@@ -55,4 +71,21 @@ type MaterialEdge struct {
 
 func (*MaterialEdge) TableName() string {
 	return "material_edge"
+}
+
+type MaterialLog struct {
+	BaseModel
+}
+
+// 开发机
+type MaterialMachine struct {
+	BaseModel
+	LabID     int64  `gorm:"type:bigint;not null;uniqueIndex:idx_mm_lum,priority:1" json:"lab_id"`
+	UserID    string `gorm:"type:varchar(120);not null;uniqueIndex:idx_mm_lum,priority:2" json:"user_id"`
+	ImageID   int64  `gorm:"type:bigint;not null;uniqueIndex:idx_mm_lum,priority:3" json:"image_id"`
+	MachineID int64  `gorm:"type:bigint;not null" json:"machine_id"`
+}
+
+func (*MaterialMachine) TableName() string {
+	return "material_machine"
 }

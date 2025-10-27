@@ -1,27 +1,33 @@
-package webapp
+package config
 
+// 规划环境变量
 type Database struct {
 	Host        string `mapstructure:"DATABASE_HOST" default:"localhost"`
 	Port        int    `mapstructure:"DATABASE_PORT" default:"5432"`
 	Name        string `mapstructure:"DATABASE_NAME" default:"studio"`
 	User        string `mapstructure:"DATABASE_USER" default:"postgres"`
-	Password    string `mapstructure:"DATABASE_PASSWORD" default:"postgres"`
+	Password    string `mapstructure:"DATABASE_PASSWORD" default:"studio"`
 	AutoMigrate bool   `mapstructure:"DATABASE_AUTO_MIGRATE" default:"true"`
 }
 
+type Storage struct {
+	Addr   string `mapstructure:"STORAGE_ADDR" default:"http://localhost:9000"`
+	Bucket string `mapstructure:"STORAGE_BUCKET" default:"studio"`
+}
+
 type Redis struct {
-	Host     string `mapstructure:"REDIS_HOST" default:"localhost"`
+	Host     string `mapstructure:"REDIS_HOST" default:"127.0.0.1"`
 	Port     int    `mapstructure:"REDIS_PORT" default:"6379"`
-	User     string `mapstructure:"REDIS_USER" `
 	Password string `mapstructure:"REDIS_PASSWORD"`
 	DB       int    `mapstructure:"REDIS_DB" default:"0"`
 }
 
 type Server struct {
-	Platform string `mapstructure:"PLATFORM" default:"sciol"` // linux、darwin、windows
-	Service  string `mapstructure:"SERVICE" default:"api"`    // api、schedule
-	Port     int    `mapstructure:"WEB_PORT" default:"48197"`
-	Env      string `mapstructure:"ENV" default:"dev"`
+	Platform     string `mapstructure:"PLATFORM" default:"sciol"`
+	Service      string `mapstructure:"SERVICE" default:"api"`
+	Port         int    `mapstructure:"WEB_PORT" default:"48197"`
+	SchedulePort int    `mapstructure:"SCHEDULE_PORT" default:"48198"`
+	Env          string `mapstructure:"ENV" default:"dev"`
 }
 
 type AuthSource string
@@ -31,15 +37,47 @@ const (
 	AuthBohr    AuthSource = "bohr"
 )
 
+type Auth struct {
+	AuthSource AuthSource `mapstructure:"OAUTH_SOURCE" default:"casdoor"`
+}
+
+type RPC struct {
+	Account  Account  `mapstructure:",squash"`
+	Bohr     Bohr     `mapstructure:",squash"`
+	BohrCore BohrCore `mapstructure:",squash"`
+	Sandbox  Sandbox  `mapstructure:",squash"`
+}
+
+// bohr core rpc 信息
+type BohrCore struct {
+	Addr string `mapstructure:"BOHR_CORE_ADDR" default:"http://127.0.0.1"`
+}
+
+// 中台 rpc 信息
+type Account struct {
+	Addr string `mapstructure:"ACCOUNT_ADDR" default:"http://127.0.0.1"`
+}
+
+// Bohr rpc 信息
+type Bohr struct {
+	Addr string `mapstructure:"BOHR_ADDR" default:"http://127.0.0.1"`
+}
+
+// 沙箱地址
+type Sandbox struct {
+	Addr   string `mapstructure:"SANDBOX_ADDR" default:"http://127.0.0.1"`
+	ApiKey string `mapstructure:"SANDBOX_APIKEY" default:"uni-lab-sandbox"`
+}
+
 type OAuth2 struct {
 	ClientID     string     `mapstructure:"OAUTH2_CLIENT_ID" default:"a387a4892ee19b1a2249"`
 	ClientSecret string     `mapstructure:"OAUTH2_CLIENT_SECRET" default:"f3167664b2c58bca53b04c61807a97db"`
 	Scopes       []string   `mapstructure:"OAUTH2_SCOPES" default:"[\"read\",\"write\",\"offline_access\"]"`
-	Addr         string     `mapstructure:"ADDR" default:"http://host.docker.internal:8000"`
-	TokenURL     string     `mapstructure:"OAUTH2_TOKEN_URL" default:"http://host.docker.internal:8000/api/login/oauth/access_token"`
-	UserInfoURL  string     `mapstructure:"OAUTH2_USERINFO_URL" default:"http://host.docker.internal:8000/api/get-account"`
+	Addr         string     `mapstructure:"ADDR" default:"http://localhost:8000"`
+	TokenURL     string     `mapstructure:"OAUTH2_TOKEN_URL" default:"http://localhost:8000/api/login/oauth/access_token"`
 	AuthURL      string     `mapstructure:"OAUTH2_AUTH_URL" default:"http://localhost:8000/login/oauth/authorize"`
 	RedirectURL  string     `mapstructure:"OAUTH2_REDIRECT_URL" default:"http://localhost:48197/api/auth/callback/casdoor"`
+	UserInfoURL  string     `mapstructure:"OAUTH2_USERINFO_URL" default:"http://localhost:8000/api/get-account"`
 	AuthSource   AuthSource `mapstructure:"OAUTH2_SOURCE" default:"casdoor"`
 }
 
@@ -48,25 +86,15 @@ type Log struct {
 	LogLevel string `mapstructure:"LOG_LEVEL" default:"info"`
 }
 
-type MQTT struct {
-	AccessKey  string `mapstructure:"MQTT_ACCESS_KEY" default:""`
-	SecretKey  string `mapstructure:"MQTT_SECRET_KEY" default:""`
-	InstanceID string `mapstructure:"MQTT_INSTANCEID" default:"mqtt-cn-kjp48jwyv01"`
-	Domain     string `mapstructure:"MQTT_DOMAIN" default:"mqtt-cn-kjp48jwyv01-server.mqtt.aliyuncs.com"`
-	Port       int16  `mapstructure:"MQTT_PORT" default:"5672"`
-	Topic      string `mapstructure:"MQTT_TOPIC" default:"labs"`
-	Gid        string `mapstructure:"MQTT_GID" default:"GID_share_test"`
-}
-
-type Trace struct {
-	Version         string `mapstructure:"TRACE_VERSION" default:"0.0.1"`
-	TraceEndpoint   string `mapstructure:"TRACE_TRACEENDPOINT" default:""`
-	MetricEndpoint  string `mapstructure:"TRACE_METRICENDPOINT" default:""`
-	TraceProject    string `mapstructure:"TRACE_TRACEPROJECT" default:""`
-	TraceInstanceID string `mapstructure:"TRACE_TRACEINSTANCEID" default:""`
-	TraceAK         string `mapstructure:"TRACE_TRACEAK" default:""`
-	TraceSK         string `mapstructure:"TRACE_TRACESK" default:""`
-}
+// type Trace struct {
+// 	Version         string `mapstructure:"TRACE_VERSION" default:"0.0.1"`
+// 	TraceEndpoint   string `mapstructure:"TRACE_TRACEENDPOINT" default:""`
+// 	MetricEndpoint  string `mapstructure:"TRACE_METRICENDPOINT" default:""`
+// 	TraceProject    string `mapstructure:"TRACE_TRACEPROJECT" default:""`
+// 	TraceInstanceID string `mapstructure:"TRACE_TRACEINSTANCEID" default:""`
+// 	TraceAK         string `mapstructure:"TRACE_TRACEAK" default:""`
+// 	TraceSK         string `mapstructure:"TRACE_TRACESK" default:""`
+// }
 
 // type Nacos struct {
 // 	Endpoint    string `mapstructure:"NACOS_ENDPOINT" default:"127.0.0.1"`

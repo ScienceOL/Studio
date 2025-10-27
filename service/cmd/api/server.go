@@ -12,7 +12,7 @@ import (
 	"time"
 
 	_ "github.com/scienceol/studio/service/docs" // 导入自动生成的 docs 包
-	"github.com/scienceol/studio/service/internal/configs/webapp"
+	"github.com/scienceol/studio/service/internal/config"
 	"github.com/scienceol/studio/service/pkg/core/notify/events"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
@@ -54,7 +54,7 @@ func initGlobalResource(_ *cobra.Command, _ []string) error {
 	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 	v.AutomaticEnv()
 
-	config := webapp.Config()
+	config := config.Global()
 	if err := v.Unmarshal(config); err != nil {
 		log.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func initGlobalResource(_ *cobra.Command, _ []string) error {
 }
 
 func initMigrate(cmd *cobra.Command, _ []string) error {
-	config := webapp.Config()
+	config := config.Global()
 	// 初始化数据库
 	db.InitPostgres(cmd.Context(), &db.Config{
 		Host:   config.Database.Host,
@@ -91,7 +91,7 @@ func initMigrate(cmd *cobra.Command, _ []string) error {
 }
 
 func initWeb(cmd *cobra.Command, _ []string) error {
-	config := webapp.Config()
+	config := config.Global()
 
 	// Automatically generate Swagger documentation upon startup.
 	logger.Infof(cmd.Context(), "📖 Attempting to generate Swagger documentation...")
@@ -136,14 +136,15 @@ func initWeb(cmd *cobra.Command, _ []string) error {
 }
 
 func newRouter(cmd *cobra.Command, _ []string) error {
+	configs := config.Global()
 	router := gin.Default()
 
 	web.NewRouter(cmd.Root().Context(), router)
-	port := webapp.Config().Server.Port
+	port := configs.Server.Port
 	addr := ":" + strconv.Itoa(port)
 
 	httpServer := http.Server{
-		Addr:              ":" + strconv.Itoa(webapp.Config().Server.Port),
+		Addr:              ":" + strconv.Itoa(configs.Server.Port),
 		Handler:           router,
 		ReadHeaderTimeout: 30 * time.Second,
 		WriteTimeout:      30 * time.Second,

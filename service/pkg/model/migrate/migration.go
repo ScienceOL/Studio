@@ -9,7 +9,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/scienceol/studio/service/internal/configs/webapp"
+	"github.com/scienceol/studio/service/internal/config"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/model"
@@ -28,7 +28,7 @@ func (MigrationRecord) TableName() string {
 }
 
 // HandleAutoMigration 处理自动迁移逻辑
-func HandleAutoMigration(ctx context.Context, config *webapp.WebGlobalConfig) error {
+func HandleAutoMigration(ctx context.Context, config *config.GlobalConfig) error {
 	if !config.Database.AutoMigrate {
 		logger.Infof(ctx, "Database auto-migration is disabled")
 		return nil

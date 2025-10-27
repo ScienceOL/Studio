@@ -77,10 +77,24 @@ func (w *Handle) WorkflowTemplateTags(ctx *gin.Context) {
 	}
 }
 
+// WorkflowTemplateTagsByLab 按实验室获取工作流模板标签
+func (w *Handle) WorkflowTemplateTagsByLab(ctx *gin.Context) {
+	req := &workflow.TemplateTagsReq{}
+	if err := ctx.ShouldBindUri(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+	if res, err := w.wService.WorkflowTemplateTagsByLab(ctx, req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx, res)
+	}
+}
+
 // 工作流模板列表
 func (w *Handle) WorkflowTemplateList(ctx *gin.Context) {
 	req := workflow.TemplateListReq{}
-	if err := ctx.ShouldBindUri(&req); err != nil {
+	if err := ctx.ShouldBindQuery(&req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
 		return
 	}
@@ -255,6 +269,42 @@ func (w *Handle) GetWorkflowDetail(ctx *gin.Context) {
 	}
 }
 
+// 导出工作流 JSON
+func (w *Handle) Export(ctx *gin.Context) {
+	req := &workflow.ExportReq{}
+	if err := ctx.ShouldBindQuery(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+	if req.UUID.IsNil() {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg("workflow uuid is empty"))
+		return
+	}
+	if res, err := w.wService.ExportWorkflow(ctx, req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx, res)
+	}
+}
+
+// 导入工作流 JSON
+func (w *Handle) Import(ctx *gin.Context) {
+	req := &workflow.ImportReq{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+	if req.TargetLabUUID.IsNil() || req.Data == nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg("target_lab_uuid or data is empty"))
+		return
+	}
+	if res, err := w.wService.ImportWorkflow(ctx, req); err != nil {
+		common.ReplyErr(ctx, err)
+	} else {
+		common.ReplyOk(ctx, res)
+	}
+}
+
 func (w *Handle) initMaterialWebSocket() {
 	w.wsClient.HandlePong(func(s *melody.Session) {
 		if ctx, ok := s.Get("ctx"); ok {
@@ -343,4 +393,26 @@ func (w *Handle) LabWorkflow(ctx *gin.Context) {
 	}); err != nil {
 		logger.Errorf(ctx, "workflow HandleRequestWithKeys err: %+v", err)
 	}
+}
+
+func (w *Handle) Duplicate(ctx *gin.Context) {
+	req := &workflow.DuplicateReq{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+
+	res, err := w.wService.DuplicateWorkflow(ctx, req)
+	common.Reply(ctx, err, res)
+}
+
+// RunWorkflow 通过 HTTP 启动工作流（无鉴权）
+func (w *Handle) RunWorkflow(ctx *gin.Context) {
+	req := &workflow.RunReq{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
+		return
+	}
+	taskUUID, err := w.wService.HttpRunWorkflow(ctx, req)
+	common.Reply(ctx, err, taskUUID)
 }

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/scienceol/studio/service/internal/configs/webapp"
+	"github.com/scienceol/studio/service/internal/config"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/model"
@@ -17,7 +17,7 @@ type casClient struct {
 }
 
 func NewCasClient() repo.Account {
-	conf := webapp.Config().OAuth2
+	conf := config.Global().OAuth2
 	return &casClient{
 		casDoorClient: resty.New().
 			EnableTrace().
@@ -26,7 +26,7 @@ func NewCasClient() repo.Account {
 }
 
 func NewLabAccess() repo.LabAccount {
-	conf := webapp.Config().OAuth2
+	conf := config.Global().OAuth2
 	return &casClient{
 		casDoorClient: resty.New().
 			EnableTrace().
@@ -36,7 +36,7 @@ func NewLabAccess() repo.LabAccount {
 
 func (c *casClient) CreateLabUser(ctx context.Context, user *model.LabInfo) error {
 	resData := &model.LabInfoResp{}
-	conf := webapp.Config().OAuth2
+	conf := config.Global().OAuth2
 	resp, err := c.casDoorClient.R().SetContext(ctx).
 		SetBody(user).
 		SetResult(resData).

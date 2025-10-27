@@ -41,16 +41,15 @@ func NewMaterialHandle(ctx context.Context) *Handle {
 	return h
 }
 
-// @Summary      创建实验室物料
-// @Description  创建实验室物料节点和连线
-// @Tags         Material
-// @Accept       json
-// @Produce      json
-// @Param        req  body      material.GraphNodeReq  true  "物料创建请求"
-// @Success      200  {object}  common.Resp
-// @Failure      400  {object}  common.Resp
-// @Security     BearerAuth
-// @Router       /lab/material [post]
+// @Summary 创建物料图
+// @Description 在实验室中创建物料图（节点与边）
+// @Tags Material
+// @Accept json
+// @Produce json
+// @Param material body material.GraphNodeReq true "物料图创建请求"
+// @Success 200 {object} common.Resp{} "创建成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/material [post]
 func (m *Handle) CreateLabMaterial(ctx *gin.Context) {
 	req := &material.GraphNodeReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -68,16 +67,204 @@ func (m *Handle) CreateLabMaterial(ctx *gin.Context) {
 	common.ReplyOk(ctx)
 }
 
-// @Summary      创建物料连线
-// @Description  创建物料节点之间的连接边
-// @Tags         Material
-// @Accept       json
-// @Produce      json
-// @Param        req  body      material.GraphEdge  true  "物料连线创建请求"
-// @Success      200  {object}  common.Resp
-// @Failure      400  {object}  common.Resp
-// @Security     BearerAuth
-// @Router       /lab/material/edge [post]
+// @Summary 边缘端创建物料
+// @Description 从边缘端创建物料（带 UUID 的节点）
+// @Tags Material
+// @Accept json
+// @Produce json
+// @Param material body material.CreateMaterialReq true "边缘端创建物料请求"
+// @Success 200 {object} common.Resp{data=material.CreateMaterialResp} "创建成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/material/edge/create [post]
+func (m *Handle) EdgeCreateMaterial(ctx *gin.Context) {
+	req := &material.CreateMaterialReq{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		logger.Errorf(ctx, "parse EdgeCreateMaterial param err: %+v", err.Error())
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+	resp, err := m.mService.EdgeCreateMaterial(ctx, req)
+
+	common.Reply(ctx, err, resp)
+}
+
+// @Summary 边缘端更新/插入物料
+// @Description 边缘端批量更新或插入物料
+// @Tags Material
+// @Accept json
+// @Produce json
+// @Param material body material.UpsertMaterialReq true "边缘端更新/插入物料请求"
+// @Success 200 {object} common.Resp{data=material.UpsertMaterialResp} "操作成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/material/edge/upsert [post]
+func (m *Handle) EdgeUpsertMaterial(ctx *gin.Context) {
+	req := &material.UpsertMaterialReq{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		logger.Errorf(ctx, "parse EdgeCreateMaterial param err: %+v", err.Error())
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+	resp, err := m.mService.EdgeUpsertMaterial(ctx, req)
+
+	common.Reply(ctx, err, resp)
+}
+
+// @Summary 边缘端创建物料连线
+// @Description 从边缘端创建物料之间的连线
+// @Tags Material
+// @Accept json
+// @Produce json
+// @Param edges body material.CreateMaterialEdgeReq true "创建连线请求"
+// @Success 200 {object} common.Resp{} "创建成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/material/edge/connection [post]
+func (m *Handle) EdgeCreateEdge(ctx *gin.Context) {
+	req := &material.CreateMaterialEdgeReq{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		logger.Errorf(ctx, "parse EdgeCreateMaterial param err: %+v", err.Error())
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+	err := m.mService.EdgeCreateEdge(ctx, req)
+
+	common.Reply(ctx, err)
+}
+
+// @Summary 保存物料图
+// @Description 保存当前实验室的物料图
+// @Tags Material
+// @Accept json
+// @Produce json
+// @Param material body material.SaveGrapReq true "保存物料图请求"
+// @Success 200 {object} common.Resp{} "保存成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/material/save [post]
+func (m *Handle) SaveMaterial(ctx *gin.Context) {
+	req := &material.SaveGrapReq{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		logger.Errorf(ctx, "parse CreateLabMaterial param err: %+v", err.Error())
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+	if err := m.mService.SaveMaterial(ctx, req); err != nil {
+		logger.Errorf(ctx, "CreateMaterial err: %+v", err)
+		common.ReplyErr(ctx, err)
+
+		return
+	}
+
+	common.ReplyOk(ctx)
+}
+
+// @Summary 查询物料
+// @Description 查询实验室物料
+// @Tags Material
+// @Accept json
+// @Produce json
+// @Param query query material.MaterialReq false "查询参数"
+// @Success 200 {object} common.Resp{data=material.MaterialResp} "查询成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/material/query [get]
+func (m *Handle) QueryMaterial(ctx *gin.Context) {
+	req := &material.MaterialReq{}
+	if err := ctx.ShouldBindQuery(req); err != nil {
+		logger.Errorf(ctx, "parse LabMaterial param err: %+v", err.Error())
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	resp, err := m.mService.LabMaterial(ctx, req)
+	common.Reply(ctx, err, resp)
+}
+
+// @Summary 按 UUID 查询物料
+// @Description 通过 UUID 列表查询物料信息
+// @Tags Material
+// @Accept json
+// @Produce json
+// @Param body body material.MaterialQueryReq true "物料 UUID 列表"
+// @Success 200 {object} common.Resp{data=material.MaterialQueryResp} "查询成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/material/query-by-uuid [post]
+func (m *Handle) QueryMaterialByUUID(ctx *gin.Context) {
+	req := &material.MaterialQueryReq{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		logger.Errorf(ctx, "parse QueryMaterialByUUID param err: %+v", err.Error())
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	resp, err := m.mService.EdgeQueryMaterial(ctx, req)
+	common.Reply(ctx, err, resp)
+}
+
+// @Summary 边缘端下载物料
+// @Description 边缘端下载物料图
+// @Tags Material
+// @Produce json
+// @Success 200 {object} common.Resp{data=material.DownloadMaterialResp} "下载成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/material/edge/download [get]
+func (m *Handle) EdgeDownloadMaterial(ctx *gin.Context) {
+	resp, err := m.mService.EdgeDownloadMaterial(ctx)
+	common.Reply(ctx, err, resp)
+}
+
+func (m *Handle) BatchUpdateMaterial(ctx *gin.Context) {
+	req := &material.UpdateMaterialReq{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		logger.Errorf(ctx, "parse BatchUpdateMaterial param err: %+v", err.Error())
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	err := m.mService.BatchUpdateUniqueName(ctx, req)
+	common.Reply(ctx, err)
+}
+
+func (m *Handle) ResourceList(ctx *gin.Context) {
+	req := &material.ResourceReq{}
+	if err := ctx.ShouldBindQuery(req); err != nil {
+		logger.Errorf(ctx, "parse BatchUpdateMaterial param err: %+v", err.Error())
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	resp, err := m.mService.ResourceList(ctx, req)
+	common.Reply(ctx, err, resp)
+}
+
+// @Summary 设备可用动作
+// @Description 获取设备对应的可用动作列表
+// @Tags Material
+// @Accept json
+// @Produce json
+// @Param lab_uuid query string true "实验室UUID"
+// @Param name query string true "设备名称"
+// @Success 200 {object} common.Resp{data=material.DeviceActionResp} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/material/actions [get]
+func (m *Handle) Actions(ctx *gin.Context) {
+	req := &material.DeviceActionReq{}
+	if err := ctx.ShouldBindQuery(req); err != nil {
+		logger.Errorf(ctx, "parse BatchUpdateMaterial param err: %+v", err.Error())
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	resp, err := m.mService.DeviceAction(ctx, req)
+	common.Reply(ctx, err, resp)
+}
+
+// @Summary 创建物料连线
+// @Description 创建两个物料节点之间的连线
+// @Tags Material
+// @Accept json
+// @Produce json
+// @Param edges body material.GraphEdge true "物料连线请求"
+// @Success 200 {object} common.Resp{} "创建成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/material/edge [post]
 func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
 	req := &material.GraphEdge{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -95,16 +282,6 @@ func (m *Handle) CreateMaterialEdge(ctx *gin.Context) {
 	common.ReplyOk(ctx)
 }
 
-// @Summary      下载物料数据
-// @Description  下载实验室物料配置图数据，返回JSON文件
-// @Tags         Material
-// @Accept       json
-// @Produce      application/json
-// @Param        lab_uuid  path      string  true  "实验室UUID"
-// @Success      200       {file}    string  "物料图数据JSON文件"
-// @Failure      400       {object}  common.Resp
-// @Security     BearerAuth
-// @Router       /lab/material/download/{lab_uuid} [get]
 func (m *Handle) DownloadMaterial(ctx *gin.Context) {
 	var err error
 	req := &material.DownloadMaterial{}
@@ -129,7 +306,7 @@ func (m *Handle) DownloadMaterial(ctx *gin.Context) {
 	data, err := json.Marshal(commonResp)
 	if err != nil {
 		logger.Errorf(ctx, "DownloadMaterial err: %+v", err)
-		common.ReplyErr(ctx, err)
+		common.ReplyErr(ctx, code.ParamErr.WithErr(err))
 		return
 	}
 
@@ -142,6 +319,25 @@ func (m *Handle) DownloadMaterial(ctx *gin.Context) {
 	// 创建Reader并发送数据
 	reader := bytes.NewReader(data)
 	ctx.DataFromReader(http.StatusOK, int64(len(data)), "application/json", reader, nil)
+}
+
+// @Summary 获取模板详情
+// @Description 获取物料模板详情
+// @Tags Material
+// @Produce json
+// @Param template_uuid path string true "模板UUID"
+// @Success 200 {object} common.Resp{data=material.TemplateResp} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/material/template/detail/{template_uuid} [get]
+func (m *Handle) Template(ctx *gin.Context) {
+	req := &material.TemplateReq{}
+	if err := ctx.ShouldBindUri(req); err != nil {
+		logger.Errorf(ctx, "MaterialTemplate err: %+v", err)
+		common.ReplyErr(ctx, code.ParamErr.WithErr(err))
+		return
+	}
+	resp, err := m.mService.GetMaterialTemplate(ctx, req)
+	common.Reply(ctx, err, resp)
 }
 
 func (m *Handle) initMaterialWebSocket() {
@@ -206,16 +402,6 @@ func (m *Handle) initMaterialWebSocket() {
 	})
 }
 
-// @Summary      物料WebSocket连接
-// @Description  建立实验室物料实时通信WebSocket连接，用于实时同步物料状态和操作
-// @Tags         Material
-// @Accept       json
-// @Produce      json
-// @Param        lab_uuid  path      string  true  "实验室UUID"
-// @Success      101       {string}  string  "WebSocket连接升级成功"
-// @Failure      400       {object}  common.Resp
-// @Security     BearerAuth
-// @Router       /lab/ws/material/{lab_uuid} [get]
 func (m *Handle) LabMaterial(ctx *gin.Context) {
 	req := &material.LabWS{}
 	var err error

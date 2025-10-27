@@ -34,6 +34,7 @@ type PayLoad struct {
 }
 
 type Claims struct {
+	Exp      int64   `json:"exp"`
 	Identity PayLoad `json:"identity"`
 	jwt.RegisteredClaims
 }
@@ -57,7 +58,6 @@ func ParseJWTWithPublicKey(tokenString, publicKeyPEM string, claims jwt.Claims) 
 		}
 		return publicKey, nil
 	})
-
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,6 @@ func ParseJWTWithSecret(tokenString, secret string, claims jwt.Claims) error {
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
 		return []byte(secret), nil
 	})
-
 	if err != nil {
 		return err
 	}

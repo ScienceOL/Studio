@@ -12,18 +12,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	s "github.com/scienceol/studio/service/internal/configs/schedule"
+	"github.com/scienceol/studio/service/internal/config"
 	"github.com/scienceol/studio/service/pkg/core/notify/events"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
-	"github.com/scienceol/studio/service/pkg/middleware/nacos"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
 	"github.com/scienceol/studio/service/pkg/middleware/trace"
 	"github.com/scienceol/studio/service/pkg/utils"
 	"github.com/scienceol/studio/service/pkg/web"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
 )
 
 func New() *cobra.Command {
@@ -48,7 +46,7 @@ func initGlobalResource(_ *cobra.Command, _ []string) error {
 	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 	v.AutomaticEnv()
 
-	config := s.Config()
+	config := config.Global()
 	if err := v.Unmarshal(config); err != nil {
 		log.Fatal(err)
 	}
@@ -68,59 +66,63 @@ func initGlobalResource(_ *cobra.Command, _ []string) error {
 }
 
 func initSchedule(cmd *cobra.Command, _ []string) error {
-	config := s.Config()
+	conf := config.Global()
 	// 初始化 nacos , 注意初始化时序，请勿在动态配置未初始化时候使用配置
-	nacos.MustInit(cmd.Context(), &nacos.Conf{
-		Endpoint:  config.Nacos.Endpoint,
-		User:      config.Nacos.User,
-		Password:  config.Nacos.Password,
-		Port:      config.Nacos.Port,
-		DataID:    config.Nacos.DataID,
-		Group:     config.Nacos.Group,
-		NeedWatch: config.Nacos.NeedWatch,
-	},
-		func(content []byte) error {
-			d := &s.DynamicConfig{}
-			if err := yaml.Unmarshal(content, d); err != nil {
-				logger.Errorf(cmd.Context(),
-					"Unmarshal nacos config fail dataID: %s, Group: %s, err: %+v",
-					config.Nacos.DataID, config.Nacos.Group, err)
-			}
+	// nacos.MustInit(cmd.Context(), &nacos.Conf{
+	// 	Endpoint:    conf.Nacos.Endpoint,
+	// 	User:        conf.Nacos.User,
+	// 	Password:    conf.Nacos.Password,
+	// 	Port:        conf.Nacos.Port,
+	// 	DataID:      conf.Nacos.DataID,
+	// 	Group:       conf.Nacos.Group,
+	// 	NeedWatch:   conf.Nacos.NeedWatch,
+	// 	NamespaceID: conf.Nacos.NamespaceID,
+	// 	AccessKey:   conf.Nacos.AccessKey,
+	// 	SecretKey:   conf.Nacos.SecretKey,
+	// 	RegionID:    conf.Nacos.RegionID,
+	// },
+	// 	func(content []byte) error {
+	// 		d := &config.DynamicConfig{}
+	// 		if err := yaml.Unmarshal(content, d); err != nil {
+	// 			logger.Errorf(cmd.Context(),
+	// 				"Unmarshal nacos config fail dataID: %s, Group: %s, err: %+v",
+	// 				conf.Nacos.DataID, conf.Nacos.Group, err)
+	// 		} else {
+	// 			conf.SetDynamic(d)
+	// 		}
+	// 		return nil
+	// 	})
 
-			config.DynamicConfig = d
-			return nil
-		})
-
-	// 初始化 trace
-	trace.InitTrace(cmd.Context(), &trace.InitConfig{
-		ServiceName:     fmt.Sprintf("%s-%s", config.Server.Service, config.Server.Platform),
-		Version:         config.Trace.Version,
-		TraceEndpoint:   config.Trace.TraceEndpoint,
-		MetricEndpoint:  config.Trace.MetricEndpoint,
-		TraceProject:    config.Trace.TraceProject,
-		TraceInstanceID: config.Trace.TraceInstanceID,
-		TraceAK:         config.Trace.TraceAK,
-		TraceSK:         config.Trace.TraceSK,
-	})
+	// // 初始化 trace
+	// trace.InitTrace(cmd.Context(), &trace.InitConfig{
+	// 	ServiceName:     fmt.Sprintf("%s-%s", conf.Server.Service, conf.Server.Platform),
+	// 	Version:         conf.Trace.Version,
+	// 	TraceEndpoint:   conf.Trace.TraceEndpoint,
+	// 	MetricEndpoint:  conf.Trace.MetricEndpoint,
+	// 	TraceProject:    conf.Trace.TraceProject,
+	// 	TraceInstanceID: conf.Trace.TraceInstanceID,
+	// 	TraceAK:         conf.Trace.TraceAK,
+	// 	TraceSK:         conf.Trace.TraceSK,
+	// })
 
 	// 初始化数据库
 	db.InitPostgres(cmd.Context(), &db.Config{
-		Host:   config.Database.Host,
-		Port:   config.Database.Port,
-		User:   config.Database.User,
-		PW:     config.Database.Password,
-		DBName: config.Database.Name,
+		Host:   conf.Database.Host,
+		Port:   conf.Database.Port,
+		User:   conf.Database.User,
+		PW:     conf.Database.Password,
+		DBName: conf.Database.Name,
 		LogConf: db.LogConf{
-			Level: config.Log.LogLevel,
+			Level: conf.Log.LogLevel,
 		},
 	})
 
 	// 初始化 redis
 	redis.InitRedis(cmd.Context(), &redis.Redis{
-		Host:     config.Redis.Host,
-		Port:     config.Redis.Port,
-		Password: config.Redis.Password,
-		DB:       config.Redis.DB,
+		Host:     conf.Redis.Host,
+		Port:     conf.Redis.Port,
+		Password: conf.Redis.Password,
+		DB:       conf.Redis.DB,
 	})
 
 	return nil
@@ -130,11 +132,11 @@ func newRouter(cmd *cobra.Command, _ []string) error {
 	router := gin.Default()
 
 	cancel := web.NewSchedule(cmd.Root().Context(), router)
-	port := s.Config().Server.Port
+	port := config.Global().Server.SchedulePort
 	addr := ":" + strconv.Itoa(port)
 
 	httpServer := http.Server{
-		Addr:              ":" + strconv.Itoa(s.Config().Server.Port),
+		Addr:              ":" + strconv.Itoa(port),
 		Handler:           router,
 		ReadHeaderTimeout: 30 * time.Second,
 		WriteTimeout:      30 * time.Second,
@@ -176,8 +178,6 @@ func newRouter(cmd *cobra.Command, _ []string) error {
 }
 
 func cleanSchedule(cmd *cobra.Command, _ []string) error {
-	// FIXME: 关系消息通知中心
-	// FIXME: 关闭 websocket
 	events.NewEvents().Close(cmd.Context())
 	redis.CloseRedis(cmd.Context())
 	db.ClosePostgres(cmd.Context())

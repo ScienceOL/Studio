@@ -21,6 +21,8 @@ type LaboratoryRepo interface {
 	ExecTx(ctx context.Context, fn func(ctx context.Context) error) error
 	Count(ctx context.Context, tableModel schema.Tabler, condition map[string]any) (int64, error)
 	DelData(ctx context.Context, tableModel schema.Tabler, condition map[string]any) error
+	GetData(ctx context.Context, data schema.Tabler, condition map[string]any, keys ...string) error
+	UpdateData(ctx context.Context, data any, condition map[string]any, keys ...string) error
 
 	CreateLaboratoryEnv(ctx context.Context, data *model.Laboratory) error
 	// 根据 uuid 获取实验室
@@ -56,5 +58,5 @@ type LaboratoryRepo interface {
 	// 根据实验室获取成员
 	GetLabByLabID(ctx context.Context, req *common.PageReqT[int64]) (*common.PageResp[[]*model.LaboratoryMember], error)
 	// 获取实验室成员数量
-	GetLabMemberCount(ctx context.Context, userID string, labIDs ...int64) map[int64]int64
+	GetLabMemberCount(ctx context.Context, labIDs ...int64) map[int64]int64
 }

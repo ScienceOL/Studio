@@ -135,7 +135,6 @@ func (e *envImpl) UpsertResourceNodeTemplate(ctx context.Context, datas []*model
 	statement := e.DBWithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{
 			{Name: "lab_id"},
-			{Name: "parent_id"},
 			{Name: "name"},
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
@@ -397,16 +396,11 @@ func (e *envImpl) getLabMemeber(ctx context.Context, query *gorm.DB, req *common
 	}, nil
 }
 
-func (e *envImpl) GetLabMemberCount(ctx context.Context, userID string, labIDs ...int64) map[int64]int64 {
-	if userID == "" {
-		return map[int64]int64{}
-	}
-
+func (e *envImpl) GetLabMemberCount(ctx context.Context, labIDs ...int64) map[int64]int64 {
 	datas := make([]*MemberCount, 0, 10)
 
 	query := e.DBWithContext(ctx).Table("laboratory_member").
-		Select("COUNT(user_id) as count, lab_id").
-		Where("user_id = ?", userID)
+		Select("COUNT(user_id) as count, lab_id")
 	if len(labIDs) > 0 {
 		query.Where("lab_id in ?", labIDs)
 	}

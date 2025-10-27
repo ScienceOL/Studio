@@ -9,7 +9,7 @@ import (
 	"time"
 
 	r "github.com/redis/go-redis/v9"
-	"github.com/scienceol/studio/service/internal/configs/webapp"
+	"github.com/scienceol/studio/service/internal/config"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/core/login"
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
@@ -159,7 +159,7 @@ func (c *casdoorLogin) Callback(ctx context.Context, req *login.CallbackReq) (*l
 	client := c.oauthConfig.Client(ctx, token)
 
 	// 获取用户信息
-	resp, err := client.Get(webapp.Config().OAuth2.UserInfoURL)
+	resp, err := client.Get(config.Global().OAuth2.UserInfoURL)
 	if err != nil {
 		logger.Errorf(ctx, "Failed to get user info: %v", err)
 		return nil, code.LoginGetUserInfoErr

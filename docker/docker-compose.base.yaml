@@ -6,6 +6,7 @@ services:
     ports:
       - '${WEB_PORT:-32234}:32234'
       - '${SERVICE_PORT:-48197}:48197'
+      - '${SCHEDULE_PORT:-48198}:48198'
       # - '${POSTGRES_PORT:-5432}:5432'
       # - '${REDIS_PORT:-6379}:6379'
     command: tail -f /dev/null
@@ -79,6 +80,34 @@ services:
       timeout: 5s
       retries: 10
       start_period: 15s
+    deploy:
+      replicas: 1
+
+  schedule:
+    image: registry.sciol.ac.cn/sciol/studio-service
+    pull_policy: if_not_present
+    network_mode: 'service:network-service'
+    restart: unless-stopped
+    working_dir: /app
+    build:
+      context: ../service
+      dockerfile: build/Dockerfile
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'wget --quiet --tries=1 --timeout=3 --spider http://localhost:48198/api/health',
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    command: ['./backend', 'schedule']
     deploy:
       replicas: 1
 
