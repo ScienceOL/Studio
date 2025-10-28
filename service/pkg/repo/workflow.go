@@ -64,7 +64,7 @@ type WorkflowRepo interface {
 	ID2UUID(ctx context.Context, tableModel schema.Tabler, ids ...int64) map[int64]uuid.UUID
 	GetWorkflowList(ctx context.Context, userID string, labID int64, page *common.PageReq) ([]*model.Workflow, int64, error)
 	ExecTx(ctx context.Context, fn func(ctx context.Context) error) error
-	UpsertNodes(ctx context.Context, nodes []*model.WorkflowNode) error
+	UpsertNodes(ctx context.Context, nodes []*model.WorkflowNode, keys ...string) error
 	UpsertEdge(ctx context.Context, edges []*model.WorkflowEdge) error
 	DuplicateEdge(ctx context.Context, edges []*model.WorkflowEdge) error
 	CreateJobs(ctx context.Context, datas []*model.WorkflowNodeJob) error

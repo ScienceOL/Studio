@@ -884,10 +884,11 @@ func (w *workflowImpl) batchSave(ctx context.Context, _ *melody.Session, b []byt
 			return code.SaveWorkflowNodeErr.WithMsg(err.Error())
 		}
 
+		// 删除掉，边的关系是实时保存的
 		// 保存边
-		if err := w.batchSaveEdge(txCtx, req.Data.Edges); err != nil {
-			return code.SaveWorkflowEdgeErr.WithMsg(err.Error())
-		}
+		// if err := w.batchSaveEdge(txCtx, req.Data.Edges); err != nil {
+		// 	return code.SaveWorkflowEdgeErr.WithMsg(err.Error())
+		// }
 		return nil
 	})
 	if err != nil {
@@ -1581,13 +1582,13 @@ func (w *workflowImpl) batchSaveNodes(ctx context.Context, nodes []*workflow.WSN
 			return nil, false, code.ParamErr.WithMsg("uuid is empty")
 		}
 		data := &model.WorkflowNode{
-			Icon:       node.Icon,
-			Pose:       node.Pose,
-			Param:      node.Param,
-			Footer:     node.Footer,
-			DeviceName: node.DeviceName,
-			Disabled:   node.Disabled,
-			Minimized:  node.Minimized,
+			// Icon:       node.Icon,
+			Pose: node.Pose,
+			// Param:      node.Param,
+			// Footer:     node.Footer,
+			// DeviceName: node.DeviceName,
+			// Disabled:   node.Disabled,
+			// Minimized:  node.Minimized,
 		}
 		data.UUID = node.UUID
 		data.UpdatedAt = time.Now()
@@ -1597,7 +1598,7 @@ func (w *workflowImpl) batchSaveNodes(ctx context.Context, nodes []*workflow.WSN
 		return err
 	}
 
-	return w.workflowStore.UpsertNodes(ctx, dbNodes)
+	return w.workflowStore.UpsertNodes(ctx, dbNodes, "pose", "updated_at")
 }
 
 func (w *workflowImpl) batchSaveEdge(ctx context.Context, edges []*workflow.WSEdge) error {

@@ -472,9 +472,24 @@ func (w *workflowImpl) GetNodeTemplateByUUID(ctx context.Context, templateUUID u
 	return template, nil
 }
 
-func (w *workflowImpl) UpsertNodes(ctx context.Context, nodes []*model.WorkflowNode) error {
+func (w *workflowImpl) UpsertNodes(ctx context.Context, nodes []*model.WorkflowNode, keys ...string) error {
 	if len(nodes) == 0 {
 		return nil
+	}
+
+	defaultKeys := []string{
+		"icon",
+		"pose",
+		"param",
+		"footer",
+		"device_name",
+		"disabled",
+		"minimized",
+		"updated_at",
+	}
+
+	if len(keys) > 0 {
+		defaultKeys = keys
 	}
 
 	if err := w.DBWithContext(ctx).Clauses(
@@ -484,16 +499,7 @@ func (w *workflowImpl) UpsertNodes(ctx context.Context, nodes []*model.WorkflowN
 					Name: "uuid",
 				},
 			},
-			DoUpdates: clause.AssignmentColumns([]string{
-				"icon",
-				"pose",
-				"param",
-				"footer",
-				"device_name",
-				"disabled",
-				"minimized",
-				"updated_at",
-			}),
+			DoUpdates: clause.AssignmentColumns(defaultKeys),
 		}).
 		Create(&nodes).Error; err != nil {
 
