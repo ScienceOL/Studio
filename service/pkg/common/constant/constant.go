@@ -15,5 +15,5 @@ const (
 
 // websocket
 const (
-	MaxMessageSize = 1024 * 1024 // 1M
+	MaxMessageSize = 10 * 1024 * 1024 // 10M
 )
