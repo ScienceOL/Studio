@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/scienceol/studio/service/pkg/common"
+	"github.com/scienceol/studio/service/pkg/model"
 )
 
 type EnvService interface {
@@ -17,5 +18,5 @@ type EnvService interface {
 	DelLabMember(ctx context.Context, req *DelLabMemberReq) error
 	CreateInvite(ctx context.Context, req *InviteReq) (*InviteResp, error)
 	AcceptInvite(ctx context.Context, req *AcceptInviteReq) error
-	// UserInfo(ctx context.Context) (*model.UserData, error)
+	UserInfo(ctx context.Context) (*model.UserData, error)
 }

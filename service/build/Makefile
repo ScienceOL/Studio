@@ -53,7 +53,7 @@ dev: ## 开发模式启动 (热重载)
 	else \
 		echo "✅ air 已存在，跳过安装"; \
 	fi
-	air -c .air.toml
+	air -c .air.web.toml
 
 .PHONY: dev-schedule
 dev-schedule: ## 开发模式启动 schedule (热重载)

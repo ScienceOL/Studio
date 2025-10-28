@@ -1,12 +1,12 @@
 # .air.schedule.toml
 root = "."
-tmp_dir = "tmp-schedule"
+tmp_dir = "tmp"
 
 [build]
   # Build schedule binary
-  cmd = "go build -o ./tmp/schedule ."
+  cmd = "go build -o ./tmp/schedule/schedule ."
   # Run schedule subcommand
-  bin = "./tmp/schedule"
+  bin = "./tmp/schedule/schedule"
   # Ensure the subcommand is 'schedule'
   args_bin = ["schedule"]
   include_ext = ["go", "tpl", "tmpl", "html"]

@@ -1274,6 +1274,40 @@ definitions:
       width:
         type: number
     type: object
+  model.UserData:
+    properties:
+      accessKey:
+        description: 只有实验室用户才会有这个值
+        type: string
+      accessSecret:
+        type: string
+      accessToken:
+        type: string
+      avatar:
+        type: string
+      displayName:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      org_id:
+        type: string
+      owner:
+        type: string
+      phone:
+        type: string
+      signupApplication:
+        type: string
+      status:
+        type: integer
+      type:
+        type: string
+      user_no:
+        type: string
+    type: object
 host: localhost:48197
 info:
   contact:
@@ -1946,6 +1980,26 @@ paths:
                   $ref: '#/definitions/code.ErrCode'
               type: object
       summary: 创建实验室资源
+      tags:
+      - Laboratory
+  /api/lab/user:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                code:
+                  $ref: '#/definitions/code.ErrCode'
+              type: object
+      summary: 获取用户信息
       tags:
       - Laboratory
   /api/v1/foo/hello:

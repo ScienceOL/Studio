@@ -4,9 +4,9 @@ tmp_dir = "tmp"
 
 [build]
   # The command to build your app
-  cmd = "go build -o ./tmp/api ."
+  cmd = "go build -o ./tmp/web/backend ."
   # The binary to run (arguments moved to args_bin so the subcommand executes)
-  bin = "./tmp/api"
+  bin = "./tmp/web/backend"
   # Arguments passed to the binary so it doesn't just print help and exit
   args_bin = ["apiserver"]
   # Watch these file extensions

@@ -736,3 +736,13 @@ func (l *lab) addLabMemeber(ctx context.Context, data *model.LaboratoryInvitatio
 		Role:   model.LaboratoryMemberNormal,
 	})
 }
+
+
+func (l *lab) UserInfo(ctx context.Context) (*model.UserData, error) {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return nil, code.UnLogin
+	}
+
+	return l.accountClient.GetUserInfo(ctx, userInfo.ID)
+}

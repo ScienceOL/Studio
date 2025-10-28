@@ -1083,6 +1083,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/lab/user": {
+            "get": {
+                "description": "获取当前用户信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Laboratory"
+                ],
+                "summary": "获取用户信息",
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/api/lab/{lab_uuid}": {
             "get": {
                 "description": "获取单个实验室的详细信息",
@@ -2843,6 +2878,57 @@ const docTemplate = `{
                 },
                 "width": {
                     "type": "number"
+                }
+            }
+        },
+        "model.UserData": {
+            "type": "object",
+            "properties": {
+                "accessKey": {
+                    "description": "只有实验室用户才会有这个值",
+                    "type": "string"
+                },
+                "accessSecret": {
+                    "type": "string"
+                },
+                "accessToken": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "org_id": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "signupApplication": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "user_no": {
+                    "type": "string"
                 }
             }
         }

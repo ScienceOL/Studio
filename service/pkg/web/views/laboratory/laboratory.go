@@ -286,3 +286,16 @@ func (l EnvHandle) AcceptInvite(ctx *gin.Context) {
 
 	common.ReplyOk(ctx)
 }
+
+// @Summary 获取用户信息
+// @Description 获取当前用户信息
+// @Tags Laboratory
+// @Accept json
+// @Produce json
+// @Success 200 {object} common.Resp{data=model.UserData} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /api/lab/user [get]
+func (l *EnvHandle) UserInfo(ctx *gin.Context) {
+	resp, err := l.envService.UserInfo(ctx)
+	common.Reply(ctx, err, resp)
+}
