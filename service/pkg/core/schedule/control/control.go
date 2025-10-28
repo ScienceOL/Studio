@@ -28,10 +28,10 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
+	"github.com/scienceol/studio/service/pkg/model"
 	"github.com/scienceol/studio/service/pkg/repo"
 	eStore "github.com/scienceol/studio/service/pkg/repo/environment"
 	mStore "github.com/scienceol/studio/service/pkg/repo/material"
-	"github.com/scienceol/studio/service/pkg/model"
 	s "github.com/scienceol/studio/service/pkg/repo/sandbox"
 	wfl "github.com/scienceol/studio/service/pkg/repo/workflow"
 	"github.com/scienceol/studio/service/pkg/utils"
@@ -94,7 +94,13 @@ func NewControl(ctx context.Context) schedule.Control {
 func (i *control) Connect(ctx context.Context) {
 	// edge 侧用户 websocket 连接
 	ginCtx := ctx.(*gin.Context)
-	labUser := auth.GetCurrentUser(ctx)
+	// 使用 Lab 鉴权（AK/SK），而不是普通用户鉴权
+	labUser := auth.GetLabUser(ctx)
+	if labUser == nil || labUser.AccessKey == "" || labUser.AccessSecret == "" {
+		logger.Warnf(ctx, "schedule control missing lab user or ak/sk")
+		common.ReplyErr(ginCtx, code.ParamErr.WithMsg("invalid ak/sk"))
+		return
+	}
 	lab, err := i.labStore.GetLabByAkSk(ctx, labUser.AccessKey, labUser.AccessSecret)
 	if err != nil {
 		logger.Warnf(ctx, "schedule control can not get lab access key: %s", labUser.AccessKey)

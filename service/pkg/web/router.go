@@ -73,21 +73,41 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 				labRouter.POST("", labHandle.CreateLabEnv)                                 // 创建实验室
 				labRouter.PATCH("", labHandle.UpdateLabEnv)                                // 更新实验室
 				labRouter.GET("/list", labHandle.LabList)                                  // 获取当前用户的所有实验室
+				labRouter.GET("/info/:uuid", labHandle.LabInfo)                            // 获取当前用户的所有实验室
 				labRouter.POST("/resource", labHandle.CreateLabResource)                   // 从 edge 侧创建资源
 				labRouter.GET("/member/:lab_uuid", labHandle.GetLabMemeber)                // 根据实验室获取当前实验室成员
 				labRouter.DELETE("/member/:lab_uuid/:member_uuid", labHandle.DelLabMember) // 删除实验室成员
 				labRouter.POST("/invite/:lab_uuid", labHandle.CreateInvite)                // 创建邀请链接
 				labRouter.GET("/invite/:uuid", labHandle.AcceptInvite)                     // 接受邀请链接
+				labRouter.GET("/user/info", labHandle.UserInfo)                            // 获取用户信息
 			}
 
 			{
-				materialHandle := material.NewMaterialHandle(ctx)
 				materialRouter := labRouter.Group("/material")
+				materialHandle := material.NewMaterialHandle(ctx)
 				materialRouter.POST("", materialHandle.CreateLabMaterial)                  //  创建物料 done
+				materialRouter.GET("", materialHandle.QueryMaterial)                       // edge 侧查询物料资源
+				materialRouter.PUT("", materialHandle.BatchUpdateMaterial)                 // edge 批量更新物料数据
+				materialRouter.POST("/save", materialHandle.SaveMaterial)                  //  保存物料
+				materialRouter.GET("/resource", materialHandle.ResourceList)               // 获取该实验室所有设备列表
+				materialRouter.GET("/device/actions", materialHandle.Actions)              // 获取实验室所有动作
 				materialRouter.POST("/edge", materialHandle.CreateMaterialEdge)            // 创建物料连线 done
 				materialRouter.GET("/download/:lab_uuid", materialHandle.DownloadMaterial) // 下载物料dag done
-
+				materialRouter.GET("/template/:template_uuid", materialHandle.Template)
 				// labRouter.GET("/ws/material/:lab_uuid", materialHandle.LabMaterial) // WARN: websocket 是否要放在统一的路由下
+
+				// 后续待优化, 单独拆出去。
+				{
+					// 实验室 edge 上报接口
+					edgeRouter := v1.Group("/edge", auth.Auth())
+					materialRouter := edgeRouter.Group("/material")
+					materialRouter.POST("", materialHandle.EdgeCreateMaterial)
+					materialRouter.PUT("", materialHandle.EdgeUpsertMaterial) // 更新 & 创建
+					materialRouter.POST("/edge", materialHandle.EdgeCreateEdge)
+					materialRouter.POST("/query", materialHandle.QueryMaterialByUUID)
+					materialRouter.GET("/download", materialHandle.EdgeDownloadMaterial)
+					// materialRouter.PATCH("", materialHandle.EdgeCreateMaterial)
+				}
 
 				wsRouter.GET("/material/:lab_uuid", materialHandle.LabMaterial)
 
@@ -102,10 +122,11 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 				{
 					// 工作流模板
 					tpl := workflowRouter.Group("/template")
-					tpl.GET("/detail/:uuid", workflowHandle.GetWorkflowDetail) // 获取工作流模板详情
-					tpl.PUT("/fork", workflowHandle.ForkTemplate)              // fork 工作流 TODO:
-					tpl.GET("/tags", workflowHandle.WorkflowTemplateTags)      // 获取工作流 tags done
-					tpl.GET("/list", workflowHandle.WorkflowTemplateList)      // 获取工作流模板列表 done
+					tpl.GET("/detail/:uuid", workflowHandle.GetWorkflowDetail)           // 获取工作流模板详情
+					tpl.PUT("/fork", workflowHandle.ForkTemplate)                        // fork 工作流 done
+					tpl.GET("/tags", workflowHandle.WorkflowTemplateTags)                // 获取工作流 tags done
+					tpl.GET("/tags/:lab_uuid", workflowHandle.WorkflowTemplateTagsByLab) // 按实验室获取工作流模板标签
+					tpl.GET("/list", workflowHandle.WorkflowTemplateList)                // 获取工作流模板列表 done
 				}
 				{
 					// 工作流节点模板
@@ -118,13 +139,16 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 				{
 					// 我的工作流
 					owner := workflowRouter.Group("owner")
-					owner.PATCH("", workflowHandle.UpdateWorkflow)        // 更新工作流 done
-					owner.POST("", workflowHandle.Create)                 // 创建工作流 done
-					owner.DELETE("/:uuid", workflowHandle.DelWrokflow)    // 删除自己创建的工作流 done
-					owner.GET("/list", workflowHandle.GetWorkflowList)    // 获取工作流列表  done
-					owner.GET("/export", workflowHandle.GetWorkflowList)  // 导出工作流 TODO:
-					owner.POST("/import", workflowHandle.GetWorkflowList) // 导入工作流 TODO:
+					owner.PATCH("", workflowHandle.UpdateWorkflow)     // 更新工作流 done
+					owner.POST("", workflowHandle.Create)              // 创建工作流 done
+					owner.DELETE("/:uuid", workflowHandle.DelWrokflow) //  删除自己创建的工作流 done
+					owner.GET("/list", workflowHandle.GetWorkflowList) // 获取工作流列表  done
+					owner.GET("/export", workflowHandle.Export)        // 导出工作流
+					owner.POST("/import", workflowHandle.Import)       // 导入工作流
+					owner.PUT("/duplicate", workflowHandle.Duplicate)  // 复制工作流
 				}
+
+				v1.PUT("/lab/run/workflow", workflowHandle.RunWorkflow)
 
 				workflowRouter.GET("/ws/workflow/:uuid", workflowHandle.LabWorkflow) // WARN: websocket 是否放在统一的路由下
 			}

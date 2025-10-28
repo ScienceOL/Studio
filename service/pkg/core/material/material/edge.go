@@ -13,13 +13,13 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/db"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
-	"github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/model"
+	"github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/utils"
 )
 
 func (m *materialImpl) EdgeCreateMaterial(ctx context.Context, req *material.CreateMaterialReq) ([]*material.CreateMaterialResp, error) {
-	labUser := auth.GetCurrentUser(ctx)
+	labUser := auth.GetLabUser(ctx)
 	if labUser == nil {
 		return nil, code.UnLogin
 	}
@@ -160,7 +160,7 @@ func (m *materialImpl) EdgeUpsertMaterial(ctx context.Context, req *material.Ups
 }
 
 func (m *materialImpl) upsertNode(ctx context.Context, mountID int64, req *material.UpsertMaterialReq) ([]*material.UpsertMaterialResp, error) {
-	labUser := auth.GetCurrentUser(ctx)
+	labUser := auth.GetLabUser(ctx)
 	if labUser == nil {
 		return nil, code.UnLogin
 	}
@@ -398,7 +398,7 @@ func (m *materialImpl) upsertNode(ctx context.Context, mountID int64, req *mater
 }
 
 func (m *materialImpl) upsertMaterialNode(ctx context.Context, req *material.UpsertMaterialReq) ([]*material.UpsertMaterialResp, error) {
-	labUser := auth.GetCurrentUser(ctx)
+	labUser := auth.GetLabUser(ctx)
 	// 构建 dag 结构
 
 	resTplNames := make([]string, 0, len(req.Nodes))
@@ -534,7 +534,7 @@ func (m *materialImpl) upsertMaterialNode(ctx context.Context, req *material.Ups
 }
 
 func (m *materialImpl) delUpsertMaterialNode(ctx context.Context, parentUUID uuid.UUID, parentID int64, req *material.UpsertMaterialReq) ([]*material.UpsertMaterialResp, error) {
-	labUser := auth.GetCurrentUser(ctx)
+	labUser := auth.GetLabUser(ctx)
 	dbNodes, err := m.materialStore.GetDescendants(ctx, labUser.LabID, parentID)
 	if err != nil {
 		return nil, err
@@ -686,7 +686,7 @@ func (m *materialImpl) delUpsertMaterialNode(ctx context.Context, parentUUID uui
 }
 
 func (m *materialImpl) EdgeCreateEdge(ctx context.Context, req *material.CreateMaterialEdgeReq) error {
-	labUser := auth.GetCurrentUser(ctx)
+	labUser := auth.GetLabUser(ctx)
 	if labUser == nil {
 		return code.UnLogin
 	}
@@ -758,7 +758,7 @@ func (m *materialImpl) EdgeCreateEdge(ctx context.Context, req *material.CreateM
 }
 
 func (m *materialImpl) EdgeQueryMaterial(ctx context.Context, req *material.MaterialQueryReq) (*material.MaterialQueryResp, error) {
-	labUser := auth.GetCurrentUser(ctx)
+	labUser := auth.GetLabUser(ctx)
 	if labUser == nil {
 		return nil, code.UnLogin
 	}

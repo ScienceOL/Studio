@@ -7,7 +7,7 @@ services:
       - '${WEB_PORT:-32234}:32234'
       - '${SERVICE_PORT:-48197}:48197'
       - '${SCHEDULE_PORT:-48198}:48198'
-      # - '${POSTGRES_PORT:-5432}:5432'
+      - '${POSTGRES_PORT:-5433}:5432'
       # - '${REDIS_PORT:-6379}:6379'
     command: tail -f /dev/null
     networks:
@@ -17,25 +17,26 @@ services:
     image: registry.sciol.ac.cn/library/postgres:16.8-alpine
     pull_policy: if_not_present
     network_mode: 'service:network-service'
-    restart: always
+    restart: unless-stopped
     environment:
+      POSTGRES_DB: ${DATABASE_NAME:-postgres}
       POSTGRES_USER: ${DATABASE_USER:-postgres}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-studio}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 5s
       timeout: 5s
       retries: 5
-    entrypoint: >
-      /bin/sh -c "
-        # 创建初始化脚本
-        mkdir -p /docker-entrypoint-initdb.d
-        echo 'CREATE DATABASE studio;' > /docker-entrypoint-initdb.d/init-databases.sql
-        echo 'CREATE DATABASE casdoor;' >> /docker-entrypoint-initdb.d/init-databases.sql
+    # entrypoint: >
+    #   /bin/sh -c "
+    #     # 创建初始化脚本
+    #     mkdir -p /docker-entrypoint-initdb.d
+    #     echo 'CREATE DATABASE studio;' > /docker-entrypoint-initdb.d/init-databases.sql
+    #     echo 'CREATE DATABASE casdoor;' >> /docker-entrypoint-initdb.d/init-databases.sql
 
-        # 启动原始的 PostgreSQL 入口点
-        exec /usr/local/bin/docker-entrypoint.sh postgres
-      "
+    #     # 启动原始的 PostgreSQL 入口点
+    #     exec /usr/local/bin/docker-entrypoint.sh postgres
+    #   "
     volumes:
       - db-data:/var/lib/postgresql/data
     attach: false
