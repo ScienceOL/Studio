@@ -1,4 +1,5 @@
-import { AuthUtils } from '@/lib/auth';
+import { AuthCore } from '@/core/authCore';
+import { AuthUtils } from '@/utils/auth';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -51,15 +52,8 @@ export default function AuthProvider({
     }
 
     const checkAuth = async () => {
-      const authenticated = AuthUtils.isAuthenticated?.();
-      if (!authenticated) {
-        const refreshed = AuthUtils.refreshToken
-          ? await AuthUtils.refreshToken()
-          : false;
-        setIsAuthenticated(refreshed);
-      } else {
-        setIsAuthenticated(true);
-      }
+      const authenticated = await AuthCore.checkAuthStatus();
+      setIsAuthenticated(authenticated);
       setIsChecking(false);
     };
     checkAuth();

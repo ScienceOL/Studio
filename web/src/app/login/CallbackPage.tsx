@@ -1,4 +1,4 @@
-import { AuthUtils } from '@/lib/auth';
+import { AuthUtils } from '@/utils/auth';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 

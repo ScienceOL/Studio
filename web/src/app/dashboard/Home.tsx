@@ -8,81 +8,191 @@ import GridLayout, { type Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
-// --- Static Widget Components ---
-const ArticlesWidget = () => (
-  <div className="flex h-full w-full items-center justify-center rounded-lg bg-blue-100 p-4 text-lg font-bold text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
-    Articles
-  </div>
-);
-const NewsWidget = () => (
-  <div className="flex h-full w-full items-center justify-center rounded-lg bg-green-100 p-4 text-lg font-bold text-green-800 dark:bg-green-900/50 dark:text-green-200">
-    News
-  </div>
-);
-const NodesWidget = () => (
-  <div className="flex h-full w-full items-center justify-center rounded-lg bg-red-100 p-4 text-lg font-bold text-red-800 dark:bg-red-900/50 dark:text-red-200">
-    Nodes
-  </div>
-);
-const NotificationsWidget = () => (
-  <div className="flex h-full w-full items-center justify-center rounded-lg bg-yellow-100 p-4 text-lg font-bold text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200">
-    Notifications
-  </div>
-);
-const TrendingTopicsWidget = () => (
-  <div className="flex h-full w-full items-center justify-center rounded-lg bg-purple-100 p-4 text-lg font-bold text-purple-800 dark:bg-purple-900/50 dark:text-purple-200">
-    Trending Topics
-  </div>
-);
-const UserActivityWidget = () => (
-  <div className="flex h-full w-full items-center justify-center rounded-lg bg-indigo-100 p-4 text-lg font-bold text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200">
-    User Activity
-  </div>
-);
-const WorkflowsWidget = () => (
-  <div className="flex h-full w-full items-center justify-center rounded-lg bg-pink-100 p-4 text-lg font-bold text-pink-800 dark:bg-pink-900/50 dark:text-pink-200">
-    Workflows
-  </div>
-);
+// --- Real Dashboard Sections ---
+import AddWidgetModal from './AddWidgetModal';
+import {
+  ArticlesSection,
+  type ArticleItem,
+  type ArticlesPageProps,
+} from './components/ArticlesSection';
+import { type NewsProps } from './components/NewsItem';
+import { NewsSection } from './components/NewsSection';
+import { type NodeTemplateProps } from './components/NodeItem';
+import { NodesSection } from './components/NodesSection';
+import { type NotificationProps } from './components/NotificationItem';
+import { NotificationsSection } from './components/NotificationsSection';
+import { TrendingTopicsSection } from './components/TrendingTopicsSection';
+import {
+  UserActivitySection,
+  type ActivityProps,
+} from './components/UserActivitySection';
+import {
+  WorkflowsSection,
+  type WorkflowPostProps,
+} from './components/WorkflowsSection';
+
+// --- Wrapper Widgets with sample data ---
+const ArticlesWidget = () => {
+  const sampleArticles: ArticlesPageProps = {
+    results: Array.from({ length: 6 }).map((_, i) => ({
+      uuid: `article-${i + 1}`,
+    })) as ArticleItem[],
+  };
+  return <ArticlesSection articles={sampleArticles} />;
+};
+
+const NewsWidget = () => {
+  const sampleNews: NewsProps[] = Array.from({ length: 6 }).map((_, i) => ({
+    id: i + 1,
+    title: `News Title ${i + 1}`,
+    content: 'This is a brief description of the news content.',
+    category: i % 2 === 0 ? 'Update' : 'Announcement',
+    created_at: new Date().toISOString(),
+    link: '/news',
+  }));
+  return <NewsSection news={sampleNews} />;
+};
+
+const NodesWidget = () => {
+  const sampleNodes: NodeTemplateProps[] = Array.from({ length: 8 }).map(
+    (_, i) => ({
+      name: `node-${i + 1}`,
+      version: `v${1 + i}.0.0`,
+      description: 'A sample node description.',
+      data: { header: `Node Header ${i + 1}` },
+      creator: { username: `user${i + 1}` },
+      updated_at: new Date().toISOString(),
+    })
+  );
+  return <NodesSection nodes={sampleNodes} />;
+};
+
+const NotificationsWidget = () => {
+  const sampleNotifications: NotificationProps[] = Array.from({
+    length: 5,
+  }).map((_, i) => ({
+    id: i + 1,
+    type: (
+      ['lab', 'device', 'alert', 'default'] as NotificationProps['type'][]
+    )[i % 4],
+    title: `Notification ${i + 1}`,
+    content: 'This is a notification message preview.',
+    isRead: i % 3 === 0,
+    timestamp: new Date().toISOString(),
+    link: '/notifications',
+  }));
+  return (
+    <NotificationsSection
+      notifications={sampleNotifications}
+      isAuthenticated={true}
+    />
+  );
+};
+
+const TrendingTopicsWidget = () => {
+  const topics = [
+    { name: 'AI', count: 120 },
+    { name: 'Robotics', count: 80 },
+    { name: 'Cloud', count: 65 },
+    { name: 'Data', count: 50 },
+  ];
+  return <TrendingTopicsSection topics={topics} />;
+};
+
+const UserActivityWidget = () => {
+  const activities: ActivityProps[] = Array.from({ length: 5 }).map((_, i) => ({
+    id: i + 1,
+    type: (['workflow', 'article', 'node', 'fork'] as ActivityProps['type'][])[
+      i % 4
+    ],
+    title: `Activity ${i + 1}`,
+    description: 'You performed an action recently.',
+    link: '/activity',
+    created_at: new Date().toISOString(),
+  }));
+  return <UserActivitySection activities={activities} isAuthenticated={true} />;
+};
+
+const WorkflowsWidget = () => {
+  const workflows: WorkflowPostProps[] = Array.from({ length: 3 }).map(
+    (_, i) => ({
+      workflow: { uuid: `workflow-${i + 1}` },
+    })
+  );
+  return <WorkflowsSection workflows={workflows} />;
+};
 
 // --- Widget Definitions ---
+type WidgetSize = 'small' | 'medium' | 'large';
+
+const SIZE_PRESET: Record<WidgetSize, { w: number; h: number }> = {
+  small: { w: 2, h: 2 },
+  medium: { w: 4, h: 2 },
+  large: { w: 6, h: 4 },
+};
+type WidgetCategory =
+  | 'Node'
+  | 'Workflow'
+  | 'Chat'
+  | 'Environment'
+  | 'UserActivity'
+  | 'Notification'
+  | 'Trending'
+  | 'Others';
+
+const WIDGET_CATEGORIES: { key: WidgetCategory; label: string }[] = [
+  { key: 'Node', label: 'Node' },
+  { key: 'Workflow', label: 'Workflow' },
+  { key: 'Chat', label: 'Chat' },
+  { key: 'Environment', label: 'Environment' },
+  { key: 'UserActivity', label: 'UserActivity' },
+  { key: 'Notification', label: 'Notification' },
+  { key: 'Trending', label: 'Trending' },
+  { key: 'Others', label: 'Others' },
+];
+
 const WIDGET_DEFINITIONS = {
   articles: {
-    w: 4,
-    h: 2,
     component: ArticlesWidget,
     name: 'Articles',
-    size: 'medium',
+    size: 'medium' as WidgetSize,
+    category: 'Others' as WidgetCategory,
   },
-  news: { w: 2, h: 2, component: NewsWidget, name: 'News', size: 'small' },
-  nodes: { w: 4, h: 2, component: NodesWidget, name: 'Nodes', size: 'medium' },
+  news: {
+    component: NewsWidget,
+    name: 'News',
+    size: 'small' as WidgetSize,
+    category: 'Others' as WidgetCategory,
+  },
+  nodes: {
+    component: NodesWidget,
+    name: 'Nodes',
+    size: 'medium' as WidgetSize,
+    category: 'Node' as WidgetCategory,
+  },
   notifications: {
-    w: 2,
-    h: 2,
     component: NotificationsWidget,
     name: 'Notifications',
-    size: 'small',
+    size: 'small' as WidgetSize,
+    category: 'Notification' as WidgetCategory,
   },
   'trending-topics': {
-    w: 2,
-    h: 2,
     component: TrendingTopicsWidget,
     name: 'Trending Topics',
-    size: 'small',
+    size: 'small' as WidgetSize,
+    category: 'Trending' as WidgetCategory,
   },
   'user-activity': {
-    w: 2,
-    h: 2,
     component: UserActivityWidget,
     name: 'User Activity',
-    size: 'small',
+    size: 'small' as WidgetSize,
+    category: 'UserActivity' as WidgetCategory,
   },
   workflows: {
-    w: 4,
-    h: 4,
     component: WorkflowsWidget,
     name: 'Workflows',
-    size: 'large',
+    size: 'large' as WidgetSize,
+    category: 'Workflow' as WidgetCategory,
   },
 };
 
@@ -93,56 +203,7 @@ interface Widget {
   type: WidgetType;
 }
 
-// --- Add Widget Modal ---
-const AddWidgetModal = ({
-  isOpen,
-  onClose,
-  onAddWidget,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onAddWidget: (type: WidgetType) => void;
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="flex h-[80vh] w-full max-w-4xl flex-col rounded-2xl bg-white shadow-xl dark:bg-neutral-800"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="flex shrink-0 items-center justify-between border-b p-4 dark:border-neutral-700">
-          <h2 className="text-xl font-bold">Add Widget</h2>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
-        </header>
-        <main className="flex-grow overflow-y-auto p-6">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {Object.entries(WIDGET_DEFINITIONS).map(([type, def]) => (
-              <div
-                key={type}
-                className="flex cursor-pointer flex-col items-center justify-center rounded-lg border p-4 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-700/50"
-                onClick={() => onAddWidget(type as WidgetType)}
-              >
-                <div className="mb-2 text-lg font-semibold">{def.name}</div>
-                <div className="capitalize text-neutral-500">
-                  {def.size} ({def.w}x{def.h})
-                </div>
-              </div>
-            ))}
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-};
+// (Modal extracted to standalone component)
 
 // --- Widget Toolbar ---
 const WidgetToolbar = ({ onRemove }: { onRemove: () => void }) => {
@@ -245,12 +306,18 @@ export default function DashboardHome() {
         type: type,
       };
 
+      const preset = SIZE_PRESET[newWidgetDef.size];
+
       const newLayoutItem: Layout = {
         i: newWidget.id,
-        x: (layout.length * newWidgetDef.w) % cols,
+        x: (layout.length * preset.w) % cols,
         y: Infinity, // Places it at the bottom
-        w: newWidgetDef.w,
-        h: newWidgetDef.h,
+        w: preset.w,
+        h: preset.h,
+        minW: preset.w,
+        maxW: preset.w,
+        minH: preset.h,
+        maxH: preset.h,
       };
 
       setWidgets((prev) => [...prev, newWidget]);
@@ -286,7 +353,21 @@ export default function DashboardHome() {
       <AddWidgetModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onAddWidget={addWidget}
+        onAddWidget={(type) => addWidget(type as WidgetType)}
+        categories={WIDGET_CATEGORIES}
+        items={Object.entries(WIDGET_DEFINITIONS).map(([type, def]) => {
+          const PreviewComp = def.component;
+          const preset = SIZE_PRESET[def.size];
+          return {
+            type,
+            name: def.name,
+            size: def.size,
+            w: preset.w,
+            h: preset.h,
+            category: def.category,
+            preview: <PreviewComp />,
+          };
+        })}
       />
 
       {widgets.length === 0 ? (
@@ -304,7 +385,7 @@ export default function DashboardHome() {
       ) : (
         <>
           <GridLayout
-            className="layout"
+            className="layout [&_.react-grid-placeholder]:rounded-lg [&_.react-grid-placeholder]:bg-indigo-500/15 dark:[&_.react-grid-placeholder]:bg-indigo-500/25"
             layout={layout}
             cols={cols}
             rowHeight={ROW_HEIGHT}
@@ -320,7 +401,7 @@ export default function DashboardHome() {
               return (
                 <div
                   key={widget.id}
-                  className="group relative overflow-hidden rounded-lg bg-white shadow-md dark:bg-neutral-800"
+                  className="group relative overflow-hidden rounded-lg bg-white shadow-md ring-1 ring-black/5 dark:bg-neutral-800 dark:ring-white/10"
                 >
                   <WidgetComponent />
                   <WidgetToolbar onRemove={() => removeWidget(widget.id)} />

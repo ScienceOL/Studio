@@ -1,6 +1,6 @@
+import { AuthUtils } from '@/utils/auth';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthUtils } from '@/lib/auth';
 
 export default function LoginPage() {
   const navigate = useNavigate();

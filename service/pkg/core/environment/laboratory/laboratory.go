@@ -359,105 +359,6 @@ func (l *lab) createHandle(ctx context.Context, res []*environment.Resource) err
 	return l.envStore.UpsertResourceHandleTemplate(ctx, resDeviceHandles)
 }
 
-// func (l *lab) createConfigInfo(ctx context.Context, res []*environment.Resource) error {
-// 	_, err := utils.FilterSliceWithErr(res, func(item *environment.Resource) ([]*model.ResourceNodeTemplate, bool, error) {
-// 		res, err1 := utils.FilterSliceWithErr(item.ConfigInfo, func(conf *environment.Config) ([]*model.ResourceNodeTemplate, bool, error) {
-// 			innerConfig := &environment.InnerBaseConfig{}
-// 			if err := json.Unmarshal(conf.Config, innerConfig); err != nil {
-// 				logger.Errorf(ctx, "CreateResource Unmarshal innerbaseconfig fail err: %+v", err)
-// 				return nil, false, err
-// 			}
-
-// 			pose := model.Pose{
-// 				Layout:   "2d",
-// 				Position: conf.Position,
-// 				Size: model.Size{
-// 					Width:  int(innerConfig.SizeX),
-// 					Height: int(innerConfig.SizeY),
-// 					Depth:  int(innerConfig.SizeZ),
-// 				},
-// 				Scale: model.Scale{},
-// 				Rotation: model.Rotation{
-// 					X: innerConfig.Rotation.X,
-// 					Y: innerConfig.Rotation.Y,
-// 					Z: innerConfig.Rotation.Z,
-// 				},
-// 			}
-
-// 			data := &model.ResourceNodeTemplate{
-// 				Name:         conf.ID,
-// 				ParentID:     utils.Ternary(conf.Parent == "", item.SelfDB.ID, 0),
-// 				LabID:        item.SelfDB.LabID,
-// 				UserID:       item.SelfDB.UserID,
-// 				Header:       conf.Name,
-// 				Footer:       "",
-// 				Version:      utils.Or(item.Version, "0.0.1"),
-// 				Icon:         "",
-// 				Description:  nil,
-// 				Model:        datatypes.JSON{},
-// 				Module:       "",
-// 				ResourceType: conf.Type,
-// 				Language:     "",
-// 				StatusTypes:  datatypes.JSON{},
-// 				Tags:         datatypes.JSONSlice[string]{},
-// 				DataSchema:   conf.Data,
-// 				ConfigSchema: conf.Config,
-// 				Pose:         datatypes.NewJSONType(pose),
-
-// 				ParentNode: item.SelfDB,
-// 				ParentName: conf.Parent,
-// 			}
-// 			return []*model.ResourceNodeTemplate{data}, true, nil
-// 		})
-
-// 		if err1 != nil {
-// 			logger.Errorf(ctx, "createConfigInfo err: %+v", err1)
-// 			return nil, false, err1
-// 		}
-
-// 		preBuildNodes := utils.FilterSlice(res, func(item *model.ResourceNodeTemplate) (*utils.Node[string, *model.ResourceNodeTemplate], bool) {
-// 			return &utils.Node[string, *model.ResourceNodeTemplate]{
-// 				Name:   item.Name,
-// 				Parent: item.ParentName,
-// 				Data:   item,
-// 			}, true
-// 		})
-
-// 		buildNodes, err := utils.BuildHierarchy(preBuildNodes)
-// 		if err != nil {
-// 			return nil, false, err
-// 		}
-
-// 		// FIXME: 是否还有优化空间
-// 		upsertNodeMap := make(map[string]*model.ResourceNodeTemplate)
-// 		for _, datas := range buildNodes {
-// 			for _, data := range datas {
-// 				if data.ParentName != "" {
-// 					parentNode, ok := upsertNodeMap[data.ParentName]
-// 					if ok {
-// 						data.ParentID = parentNode.ID
-// 					} else {
-// 						logger.Errorf(ctx, "can not found config info parent config: %+v", data)
-// 						return nil, false, code.ParamErr.WithMsg(fmt.Sprintf("can not found config info parent config: %+v", data))
-// 					}
-// 				}
-// 			}
-
-// 			if err := l.envStore.UpsertResourceNodeTemplate(ctx, datas); err != nil {
-// 				return nil, false, err
-// 			}
-
-// 			for _, data := range datas {
-// 				upsertNodeMap[data.Name] = data
-// 			}
-// 		}
-
-// 		return res, true, err
-// 	})
-
-// 	return err
-// }
-
 func (l *lab) createActionHandles(ctx context.Context, actions []*model.WorkflowNodeTemplate) error {
 	resHandles, _ := utils.FilterSliceWithErr(actions, func(item *model.WorkflowNodeTemplate) ([]*model.WorkflowHandleTemplate, bool, error) {
 		resHi, _ := utils.FilterSliceWithErr(item.Handles.Data().Input, func(h *model.Handle) ([]*model.WorkflowHandleTemplate, bool, error) {
@@ -736,7 +637,6 @@ func (l *lab) addLabMemeber(ctx context.Context, data *model.LaboratoryInvitatio
 		Role:   model.LaboratoryMemberNormal,
 	})
 }
-
 
 func (l *lab) UserInfo(ctx context.Context) (*model.UserData, error) {
 	userInfo := auth.GetCurrentUser(ctx)

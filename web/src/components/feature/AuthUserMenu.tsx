@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/store/authStore';
+import { useAuth } from '@/hooks/useAuth';
 import { Menu, MenuItem, MenuItems, Transition } from '@headlessui/react';
 import {
   BookOpenIcon,
@@ -54,7 +54,7 @@ export function AuthUserMenu({
   email,
   onOpenChange,
 }: AuthUserMenuProps<NavigationProps>) {
-  const logout = useAuthStore((s) => s.logout);
+  const { logout } = useAuth();
   const { t } = useTranslation('userPanel');
   const [isOpen, setIsOpen] = useState(false);
   const { isXyzenOpen } = useXyzen();

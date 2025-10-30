@@ -8,7 +8,7 @@ import Logo from '@/assets/Logo';
 
 import LangSwitch from '@/components/feature/LangSwitch';
 import { ThemeToggle } from '@/components/feature/ThemeToggle';
-import { useAuthStore } from '@/store/authStore';
+import { useAuth } from '@/hooks/useAuth';
 import { Bars3Icon } from '@heroicons/react/24/outline';
 import React, { useEffect, useState } from 'react';
 
@@ -26,9 +26,11 @@ const navigation = [
 ];
 
 export const RightSideStatus: React.FC<RightSideStatusProps> = () => {
-  const isLogged = useAuthStore((s) => s.isAuthenticated);
-  const userInfo = useAuthStore((s) => s.user);
-  const checkAuthStatus = useAuthStore((s) => s.checkAuthStatus);
+  const {
+    isAuthenticated: isLogged,
+    user: userInfo,
+    checkAuthStatus,
+  } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
