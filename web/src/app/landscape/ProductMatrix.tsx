@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import {
   SiProton,
   SiStmicroelectronics,
-  SiTensorflow,
   SiUnity,
   SiUnrealengine,
+  SiX,
 } from 'react-icons/si';
 
 export default function ProductMatrix() {
@@ -26,7 +26,7 @@ export default function ProductMatrix() {
     },
     {
       id: 'xyzen',
-      icon: SiTensorflow,
+      icon: SiX,
       color: 'text-amber-500',
       href: 'https://github.com/ScienceOL',
     },
@@ -56,8 +56,8 @@ export default function ProductMatrix() {
             transition: {
               delay: i * 0.1,
               duration: 0.5,
-              ease: "easeOut",
-            }
+              ease: 'easeOut',
+            },
           }}
           whileHover={{ y: -5, scale: 1.03 }}
           className="group relative cursor-pointer"

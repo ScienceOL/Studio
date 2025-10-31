@@ -7,6 +7,7 @@ import {
 
 import { GitHubIcon } from '@/assets/SocialIcons';
 import NavbarFullWidth from './NavbarFullWidth';
+import type { NavbarFullWidthProps } from './types';
 
 const resources = [
   {

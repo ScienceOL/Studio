@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import NavbarFullWidthFooter from './NavbarFullWidthFooter';
+import type { NavbarFullWidthProps } from './types';
 
 export default function NavbarFullWidth({
   buttonName,

@@ -11,6 +11,7 @@ import {
   CubeTransparentIcon,
   NewspaperIcon,
 } from '@heroicons/react/24/outline';
+import type { NavbarFullWidthColumnsProps } from './types';
 const resources = [
   {
     name: 'Spaces',

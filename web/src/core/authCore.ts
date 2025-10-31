@@ -9,6 +9,7 @@
  */
 
 import { authService } from '@/service/authService';
+import { configureApiClient } from '@/service/http/client';
 import { useAuthStore } from '@/store/authStore';
 import { AuthUtils, type UserInfo } from '@/utils/auth';
 
@@ -24,6 +25,13 @@ export class AuthCore {
 
     const store = useAuthStore.getState();
     store.setLoading(true);
+
+    // 注入 apiClient 依赖（只需要执行一次，重复调用也安全）
+    configureApiClient({
+      getAccessToken: () => AuthUtils.getAccessToken(),
+      refreshToken: () => AuthCore.refreshToken(),
+      onAuthFailure: () => AuthCore.logout(),
+    });
 
     try {
       // 1. 检查是否已认证

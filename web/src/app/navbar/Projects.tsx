@@ -9,6 +9,7 @@ import {
 } from '@/assets/Icons';
 import Logo from '@/assets/Logo';
 import NavbarFullWidthPreview from './NavbarFullWidthPreview';
+import type { NavbarFullWidthPreviewProps } from './types';
 
 const options = {
   'Molecule Dynamics': [
