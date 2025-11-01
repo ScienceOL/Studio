@@ -136,6 +136,8 @@ func (l *lab) UpdateLaboratoryEnv(ctx context.Context, req *environment.UpdateEn
 		UUID:        data.UUID,
 		Name:        data.Name,
 		Description: data.Description,
+		CreatedAt:   data.CreatedAt,
+		UpdatedAt:   data.UpdatedAt,
 	}, nil
 }
 
@@ -214,6 +216,8 @@ func (l *lab) LabInfo(ctx context.Context, req *environment.LabInfoReq) (*enviro
 		AccessKey:    "",
 		AccessSecret: "",
 		Status:       model.DELETED,
+		CreatedAt:    time.Time{},
+		UpdatedAt:    time.Time{},
 	}
 	if lab.Status == model.DELETED {
 		return resp, nil
@@ -235,6 +239,8 @@ func (l *lab) LabInfo(ctx context.Context, req *environment.LabInfoReq) (*enviro
 		resp.AccessKey = lab.AccessKey
 		resp.AccessSecret = lab.AccessSecret
 		resp.Status = lab.Status
+		resp.CreatedAt = lab.CreatedAt
+		resp.UpdatedAt = lab.UpdatedAt
 	}
 
 	return resp, nil
@@ -449,6 +455,9 @@ func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageMor
 			UserID:      lab.UserID,
 			Description: lab.Description,
 			MemberCount: labMemberMap[lab.ID],
+			IsAdmin:     lab.UserID == userInfo.ID,
+			CreatedAt:   lab.CreatedAt,
+			UpdatedAt:   lab.UpdatedAt,
 		}, true
 	})
 

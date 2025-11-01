@@ -15,7 +15,9 @@ import (
 )
 
 const (
-	MaxPageSize = 2000
+	MaxPageSize     = 2000
+	DefaultPageSize = 20
+	DefaultPage     = 1
 )
 
 type Error struct {
@@ -60,17 +62,22 @@ type PageReqT[T any] struct {
 	Data T `json:"data"`
 }
 
+// Normalize 规范化分页参数，设置默认值和上限
+// 应该在所有使用 PageReq 的地方调用此方法
 func (p *PageReq) Normalize() {
+	// 设置默认页码
+	if p.Page <= 0 {
+		p.Page = DefaultPage
+	}
+
+	// 设置默认每页大小
+	if p.PageSize <= 0 {
+		p.PageSize = DefaultPageSize
+	}
+
+	// 限制最大每页大小
 	if p.PageSize > MaxPageSize {
 		p.PageSize = MaxPageSize
-	}
-
-	if p.PageSize <= 0 {
-		p.PageSize = 1
-	}
-
-	if p.Page <= 0 {
-		p.Page = 1
 	}
 }
 

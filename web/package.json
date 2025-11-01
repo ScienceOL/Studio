@@ -29,6 +29,7 @@
     "framer-motion": "^12.23.24",
     "i18next": "^25.5.3",
     "i18next-browser-languagedetector": "^8.2.0",
+    "lucide-react": "^0.552.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-grid-layout": "^1.5.2",

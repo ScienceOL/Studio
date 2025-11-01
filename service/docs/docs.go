@@ -172,7 +172,12 @@ const docTemplate = `{
         },
         "/foo/auth": {
             "get": {
-                "description": "A simple hello world endpoint",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "A simple hello world endpoint that requires Bearer token authentication",
                 "consumes": [
                     "application/json"
                 ],
@@ -186,6 +191,13 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -218,8 +230,252 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/edge/material": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "边缘端批量更新或插入物料",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "边缘端更新/插入物料",
+                "parameters": [
+                    {
+                        "description": "边缘端更新/插入物料请求",
+                        "name": "material",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/material.UpsertMaterialReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "从边缘端创建物料（带 UUID 的节点）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "边缘端创建物料",
+                "parameters": [
+                    {
+                        "description": "边缘端创建物料请求",
+                        "name": "material",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/material.CreateMaterialReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/edge/material/download": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "边缘端下载物料图",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "边缘端下载物料",
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/edge/material/edge": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "从边缘端创建物料之间的连线",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "边缘端创建物料连线",
+                "parameters": [
+                    {
+                        "description": "创建连线请求",
+                        "name": "edges",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/material.CreateMaterialEdgeReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/edge/material/query": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "通过 UUID 列表查询物料信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "按 UUID 查询物料",
+                "parameters": [
+                    {
+                        "description": "物料 UUID 列表",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/material.MaterialQueryReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/v1/lab": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "创建一个新的实验室环境",
                 "consumes": [
                     "application/json"
@@ -264,6 +520,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "删除一个实验室环境",
                 "consumes": [
                     "application/json"
@@ -308,6 +569,11 @@ const docTemplate = `{
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "更新一个已存在的实验室环境",
                 "consumes": [
                     "application/json"
@@ -354,6 +620,11 @@ const docTemplate = `{
         },
         "/v1/lab/invite/{lab_uuid}": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "为实验室创建邀请链接",
                 "consumes": [
                     "application/json"
@@ -398,6 +669,11 @@ const docTemplate = `{
         },
         "/v1/lab/invite/{uuid}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "通过邀请链接加入实验室",
                 "consumes": [
                     "application/json"
@@ -442,6 +718,11 @@ const docTemplate = `{
         },
         "/v1/lab/list": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "获取当前用户的所有实验室",
                 "consumes": [
                     "application/json"
@@ -488,7 +769,111 @@ const docTemplate = `{
             }
         },
         "/v1/lab/material": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询实验室物料",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "查询物料",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "with_children",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "批量更新物料的唯一名称",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Material"
+                ],
+                "summary": "批量更新物料",
+                "parameters": [
+                    {
+                        "description": "批量更新物料请求",
+                        "name": "material",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/material.UpdateMaterialReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "在实验室中创建物料图（节点与边）",
                 "consumes": [
                     "application/json"
@@ -533,8 +918,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/lab/material/actions": {
+        "/v1/lab/material/device/actions": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "获取设备对应的可用动作列表",
                 "consumes": [
                     "application/json"
@@ -586,6 +976,11 @@ const docTemplate = `{
         },
         "/v1/lab/material/edge": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "创建两个物料节点之间的连线",
                 "consumes": [
                     "application/json"
@@ -630,179 +1025,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/lab/material/edge/connection": {
-            "post": {
-                "description": "从边缘端创建物料之间的连线",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Material"
-                ],
-                "summary": "边缘端创建物料连线",
-                "parameters": [
-                    {
-                        "description": "创建连线请求",
-                        "name": "edges",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/material.CreateMaterialEdgeReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/common.Resp"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "code": {
-                                            "$ref": "#/definitions/code.ErrCode"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/lab/material/edge/create": {
-            "post": {
-                "description": "从边缘端创建物料（带 UUID 的节点）",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Material"
-                ],
-                "summary": "边缘端创建物料",
-                "parameters": [
-                    {
-                        "description": "边缘端创建物料请求",
-                        "name": "material",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/material.CreateMaterialReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/common.Resp"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "code": {
-                                            "$ref": "#/definitions/code.ErrCode"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/lab/material/edge/download": {
+        "/v1/lab/material/resource": {
             "get": {
-                "description": "边缘端下载物料图",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Material"
-                ],
-                "summary": "边缘端下载物料",
-                "responses": {
-                    "200": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/common.Resp"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "code": {
-                                            "$ref": "#/definitions/code.ErrCode"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/lab/material/edge/upsert": {
-            "post": {
-                "description": "边缘端批量更新或插入物料",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Material"
-                ],
-                "summary": "边缘端更新/插入物料",
-                "parameters": [
+                "security": [
                     {
-                        "description": "边缘端更新/插入物料请求",
-                        "name": "material",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/material.UpsertMaterialReq"
-                        }
+                        "BearerAuth": []
                     }
                 ],
-                "responses": {
-                    "200": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/common.Resp"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "code": {
-                                            "$ref": "#/definitions/code.ErrCode"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/lab/material/query": {
-            "get": {
-                "description": "查询实验室物料",
+                "description": "获取实验室的所有资源（设备）列表",
                 "consumes": [
                     "application/json"
                 ],
@@ -812,63 +1042,20 @@ const docTemplate = `{
                 "tags": [
                     "Material"
                 ],
-                "summary": "查询物料",
+                "summary": "获取资源列表",
                 "parameters": [
                     {
                         "type": "string",
-                        "name": "id",
-                        "in": "query"
+                        "description": "实验室UUID",
+                        "name": "lab_uuid",
+                        "in": "query",
+                        "required": true
                     },
                     {
-                        "type": "boolean",
-                        "name": "with_children",
+                        "type": "string",
+                        "description": "资源类型",
+                        "name": "type",
                         "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/common.Resp"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "code": {
-                                            "$ref": "#/definitions/code.ErrCode"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/lab/material/query-by-uuid": {
-            "post": {
-                "description": "通过 UUID 列表查询物料信息",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Material"
-                ],
-                "summary": "按 UUID 查询物料",
-                "parameters": [
-                    {
-                        "description": "物料 UUID 列表",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/material.MaterialQueryReq"
-                        }
                     }
                 ],
                 "responses": {
@@ -895,6 +1082,11 @@ const docTemplate = `{
         },
         "/v1/lab/material/save": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "保存当前实验室的物料图",
                 "consumes": [
                     "application/json"
@@ -939,8 +1131,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/lab/material/template/detail/{template_uuid}": {
+        "/v1/lab/material/template/{template_uuid}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "获取物料模板详情",
                 "produces": [
                     "application/json"
@@ -982,6 +1179,11 @@ const docTemplate = `{
         },
         "/v1/lab/member/{lab_uuid}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "获取指定实验室的成员列表",
                 "consumes": [
                     "application/json"
@@ -1036,6 +1238,11 @@ const docTemplate = `{
         },
         "/v1/lab/member/{lab_uuid}/{member_uuid}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "从实验室中删除一个成员",
                 "consumes": [
                     "application/json"
@@ -1087,6 +1294,11 @@ const docTemplate = `{
         },
         "/v1/lab/resource": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "从边缘端创建实验室资源",
                 "consumes": [
                     "application/json"
@@ -1179,6 +1391,11 @@ const docTemplate = `{
         },
         "/v1/lab/user": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "获取当前用户信息",
                 "consumes": [
                     "application/json"
@@ -2022,6 +2239,11 @@ const docTemplate = `{
         },
         "/v1/lab/{lab_uuid}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "获取单个实验室的详细信息",
                 "consumes": [
                     "application/json"
@@ -2596,6 +2818,9 @@ const docTemplate = `{
                 "access_secret": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "is_admin": {
                     "type": "boolean"
                 },
@@ -2604,6 +2829,9 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/model.EnvironmentStatus"
+                },
+                "updated_at": {
+                    "type": "string"
                 },
                 "user_id": {
                     "type": "string"
@@ -2716,6 +2944,9 @@ const docTemplate = `{
         "environment.LaboratoryResp": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -2726,6 +2957,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 },
                 "user_id": {
@@ -3374,6 +3608,31 @@ const docTemplate = `{
                 }
             }
         },
+        "material.ResourceInfo": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "parent_uuid": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "material.ResourceResp": {
+            "type": "object",
+            "properties": {
+                "resource_name_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.ResourceInfo"
+                    }
+                }
+            }
+        },
         "material.SaveGrapReq": {
             "type": "object",
             "properties": {
@@ -3456,6 +3715,17 @@ const docTemplate = `{
                 },
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "material.UpdateMaterialReq": {
+            "type": "object",
+            "properties": {
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/material.Node"
+                    }
                 }
             }
         },

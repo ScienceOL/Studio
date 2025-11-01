@@ -33,7 +33,7 @@ export const ActivityItem = ({ activity }: ActivityItemProps) => {
       to={activity.link || '#'}
       className="flex items-start space-x-3 rounded-lg border border-neutral-100 p-3 transition-all hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50"
     >
-      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400">
         {getIcon()}
       </div>
       <div className="min-w-0 flex-1">

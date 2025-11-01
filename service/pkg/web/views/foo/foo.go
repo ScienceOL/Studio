@@ -22,13 +22,14 @@ func HandleTestAnomy(ctx *gin.Context) {
 	})
 }
 
-// HandleHelloWorld godoc
 // @Summary      Authenticated Test Endpoint
-// @Description  A simple hello world endpoint
+// @Description  A simple hello world endpoint that requires Bearer token authentication
 // @Tags         Test
 // @Accept       json
 // @Produce      json
+// @Security     BearerAuth
 // @Success      200  {object}  map[string]interface{}
+// @Failure      401  {object}  map[string]interface{}
 // @Router       /foo/auth [get]
 func HandleTestAuth(ctx *gin.Context) {
 	// 使用GetCurrentUser获取当前用户

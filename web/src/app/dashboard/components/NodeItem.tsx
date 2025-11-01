@@ -26,7 +26,7 @@ export const NodeItem = ({ node }: NodeItemProps) => {
   return (
     <Link
       to={nodeLink}
-      className="flex cursor-pointer items-start space-x-3 rounded-lg border border-neutral-100 p-3 transition-all duration-200 hover:translate-y-[-2px] hover:border-blue-200 hover:bg-blue-50 hover:shadow-md dark:border-neutral-800 dark:hover:border-blue-800 dark:hover:bg-neutral-800/70"
+      className="flex cursor-pointer items-start space-x-3 rounded-lg border border-neutral-100 p-3 transition-all duration-200 hover:translate-y-[-2px] hover:border-indigo-200 hover:bg-indigo-50 hover:shadow-md dark:border-neutral-800 dark:hover:border-indigo-800 dark:hover:bg-neutral-800/70"
     >
       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400">
         <CubeTransparentIcon className="h-5 w-5" />

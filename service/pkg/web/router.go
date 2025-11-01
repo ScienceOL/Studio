@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"fmt"
+	"time"
 
 	_ "github.com/scienceol/studio/service/docs" // 导入自动生成的 docs 包
 	swaggerfiles "github.com/swaggo/files"
@@ -31,7 +32,18 @@ func NewRouter(ctx context.Context, g *gin.Engine) {
 func installMiddleware(g *gin.Engine) {
 	g.ContextWithFallback = true
 	server := config.Global().Server
-	g.Use(cors.Default())
+	// g.Use(cors.Default())
+
+	// 配置 CORS，明确允许 authorization 请求头
+	g.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:32234", "http://localhost:*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"}, // 关键：添加 Authorization
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	g.Use(otelgin.Middleware(fmt.Sprintf("%s-%s",
 		server.Platform,
 		server.Service)))

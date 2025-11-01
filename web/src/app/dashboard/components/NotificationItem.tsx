@@ -54,10 +54,10 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
       default:
         return {
           icon: <DocumentTextIcon className="h-5 w-5" />,
-          bgColor: 'bg-blue-50 dark:bg-blue-900/20',
-          textColor: 'text-blue-600 dark:text-blue-400',
+          bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
+          textColor: 'text-indigo-600 dark:text-indigo-400',
           borderColor:
-            'group-hover:border-blue-300 dark:group-hover:border-blue-700',
+            'group-hover:border-indigo-300 dark:group-hover:border-indigo-700',
         };
     }
   };
@@ -82,7 +82,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
       className={`group flex items-start space-x-3 rounded-lg border ${
         notification.isRead
           ? 'border-neutral-100 dark:border-neutral-800'
-          : 'border-blue-100 dark:border-blue-900/30'
+          : 'border-indigo-100 dark:border-indigo-900/30'
       } p-3 transition-all duration-200 hover:translate-y-[-2px] hover:bg-neutral-50 hover:shadow-sm dark:hover:bg-neutral-800/70`}
     >
       <div
@@ -102,7 +102,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
             {notification.title}
           </h4>
           {!notification.isRead && (
-            <span className="ml-2 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500"></span>
+            <span className="ml-2 h-2 w-2 flex-shrink-0 rounded-full bg-indigo-500"></span>
           )}
         </div>
         {notification.content && (

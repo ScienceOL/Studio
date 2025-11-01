@@ -674,7 +674,7 @@ export function GalaxyLoading({
             >
               {tooltipInfo.title}
             </div>
-            <div className="text-[10px] text-gray-400 leading-relaxed">
+            <div className="text-[10px] text-neutral-400 leading-relaxed">
               {tooltipInfo.description}
             </div>
             {/* Left-pointing triangular indicator */}

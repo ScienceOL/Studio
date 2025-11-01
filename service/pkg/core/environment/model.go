@@ -1,6 +1,8 @@
 package environment
 
 import (
+	"time"
+
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/model"
@@ -52,6 +54,8 @@ type LaboratoryResp struct {
 	Description *string   `json:"description"`
 	MemberCount int64     `json:"member_count"`
 	IsAdmin     bool      `json:"is_admin"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type LabInfoResp struct {
@@ -62,6 +66,8 @@ type LabInfoResp struct {
 	AccessKey    string                  `json:"access_key"`
 	AccessSecret string                  `json:"access_secret"`
 	Status       model.EnvironmentStatus `json:"status"`
+	CreatedAt    time.Time               `json:"created_at"`
+	UpdatedAt    time.Time               `json:"updated_at"`
 }
 
 type RegAction struct {

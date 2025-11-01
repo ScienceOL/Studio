@@ -51,7 +51,7 @@ export const UserActivitySection = ({
           </p>
           <Link
             to="/login"
-            className="mt-3 inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+            className="mt-3 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800"
           >
             {t('Sign In')}
           </Link>

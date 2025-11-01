@@ -181,20 +181,22 @@ export default function LoginCallback() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h2 className="mt-6 text-3xl font-extrabold text-neutral-900 dark:text-white">
             OAuth2 登录回调
           </h2>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg px-8 py-6">
+        <div className="bg-white dark:bg-neutral-800 shadow rounded-lg px-8 py-6">
           <div className="text-center">
             {status === 'processing' && (
               <div className="space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-gray-600 dark:text-gray-400">{message}</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  {message}
+                </p>
               </div>
             )}
 
@@ -246,8 +248,8 @@ export default function LoginCallback() {
                     onClick={handleRetry}
                     className="
                       px-4 py-2 text-sm font-medium
-                      text-white bg-blue-600 border border-transparent rounded-md
-                      hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                      text-white bg-indigo-600 border border-transparent rounded-md
+                      hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
                       transition-colors
                     "
                   >
@@ -257,9 +259,9 @@ export default function LoginCallback() {
                     onClick={handleGoHome}
                     className="
                       px-4 py-2 text-sm font-medium
-                      text-gray-700 bg-gray-100 border border-gray-300 rounded-md
-                      hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
-                      dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600
+                      text-neutral-700 bg-neutral-100 border border-neutral-300 rounded-md
+                      hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500
+                      dark:text-neutral-300 dark:bg-neutral-700 dark:border-neutral-600 dark:hover:bg-neutral-600
                       transition-colors
                     "
                   >
@@ -272,11 +274,11 @@ export default function LoginCallback() {
         </div>
 
         <div className="text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
             如果长时间未响应，请{' '}
             <button
               onClick={handleRetry}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
+              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 underline"
             >
               重新登录
             </button>

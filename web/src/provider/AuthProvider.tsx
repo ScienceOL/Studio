@@ -115,10 +115,10 @@ export default function AuthProvider({
   // 正在检查认证状态
   if (isChecking) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-neutral-600 dark:text-neutral-400">
             正在验证身份...
           </p>
         </div>
@@ -133,17 +133,17 @@ export default function AuthProvider({
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center max-w-md relative overflow-hidden">
+        <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-lg p-8 text-center max-w-md relative overflow-hidden">
           {/* 进度条 */}
           <div
-            className="absolute top-0 left-0 h-1 bg-blue-600 transition-all duration-1000 ease-linear"
+            className="absolute top-0 left-0 h-1 bg-indigo-600 transition-all duration-1000 ease-linear"
             style={{ width: `${progress}%` }}
           />
 
-          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+          <h2 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
             访问的内容需要登录后才可以访问
           </h2>
-          <p className="mb-6 text-gray-600 dark:text-gray-300">
+          <p className="mb-6 text-neutral-600 dark:text-neutral-300">
             请先登录后再访问该页面
           </p>
 
@@ -158,7 +158,7 @@ export default function AuthProvider({
                   stroke="currentColor"
                   strokeWidth="4"
                   fill="none"
-                  className="text-gray-200 dark:text-gray-700"
+                  className="text-neutral-200 dark:text-neutral-700"
                 />
                 <circle
                   cx="40"
@@ -171,12 +171,12 @@ export default function AuthProvider({
                   strokeDashoffset={`${
                     2 * Math.PI * 36 * (1 - progress / 100)
                   }`}
-                  className="text-blue-600 transition-all duration-1000 ease-linear"
+                  className="text-indigo-600 transition-all duration-1000 ease-linear"
                   strokeLinecap="round"
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-2xl font-bold text-blue-600">
+                <span className="text-2xl font-bold text-indigo-600">
                   {countdown}
                 </span>
               </div>
@@ -184,7 +184,7 @@ export default function AuthProvider({
           </div>
 
           <button
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
             onClick={() => {
               if (timerRef.current) clearTimeout(timerRef.current);
               if (countdownIntervalRef.current)

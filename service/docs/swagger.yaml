@@ -499,12 +499,16 @@ definitions:
         type: string
       access_secret:
         type: string
+      created_at:
+        type: string
       is_admin:
         type: boolean
       name:
         type: string
       status:
         $ref: '#/definitions/model.EnvironmentStatus'
+      updated_at:
+        type: string
       user_id:
         type: string
       uuid:
@@ -577,6 +581,8 @@ definitions:
     type: object
   environment.LaboratoryResp:
     properties:
+      created_at:
+        type: string
       description:
         type: string
       is_admin:
@@ -584,6 +590,8 @@ definitions:
       member_count:
         type: integer
       name:
+        type: string
+      updated_at:
         type: string
       user_id:
         type: string
@@ -1013,6 +1021,22 @@ definitions:
       uuid:
         type: string
     type: object
+  material.ResourceInfo:
+    properties:
+      name:
+        type: string
+      parent_uuid:
+        type: string
+      uuid:
+        type: string
+    type: object
+  material.ResourceResp:
+    properties:
+      resource_name_list:
+        items:
+          $ref: '#/definitions/material.ResourceInfo'
+        type: array
+    type: object
   material.SaveGrapReq:
     properties:
       graph:
@@ -1068,6 +1092,13 @@ definitions:
         type: string
       version:
         type: string
+    type: object
+  material.UpdateMaterialReq:
+    properties:
+      nodes:
+        items:
+          $ref: '#/definitions/material.Node'
+        type: array
     type: object
   material.UpsertMaterialReq:
     properties:
@@ -1883,7 +1914,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: A simple hello world endpoint
+      description: A simple hello world endpoint that requires Bearer token authentication
       produces:
       - application/json
       responses:
@@ -1892,6 +1923,13 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
       summary: Authenticated Test Endpoint
       tags:
       - Test
@@ -1911,6 +1949,141 @@ paths:
       summary: 健康检查
       tags:
       - Health
+  /v1/edge/material:
+    post:
+      consumes:
+      - application/json
+      description: 从边缘端创建物料（带 UUID 的节点）
+      parameters:
+      - description: 边缘端创建物料请求
+        in: body
+        name: material
+        required: true
+        schema:
+          $ref: '#/definitions/material.CreateMaterialReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                code:
+                  $ref: '#/definitions/code.ErrCode'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 边缘端创建物料
+      tags:
+      - Material
+    put:
+      consumes:
+      - application/json
+      description: 边缘端批量更新或插入物料
+      parameters:
+      - description: 边缘端更新/插入物料请求
+        in: body
+        name: material
+        required: true
+        schema:
+          $ref: '#/definitions/material.UpsertMaterialReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                code:
+                  $ref: '#/definitions/code.ErrCode'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 边缘端更新/插入物料
+      tags:
+      - Material
+  /v1/edge/material/download:
+    get:
+      description: 边缘端下载物料图
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                code:
+                  $ref: '#/definitions/code.ErrCode'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 边缘端下载物料
+      tags:
+      - Material
+  /v1/edge/material/edge:
+    post:
+      consumes:
+      - application/json
+      description: 从边缘端创建物料之间的连线
+      parameters:
+      - description: 创建连线请求
+        in: body
+        name: edges
+        required: true
+        schema:
+          $ref: '#/definitions/material.CreateMaterialEdgeReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                code:
+                  $ref: '#/definitions/code.ErrCode'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 边缘端创建物料连线
+      tags:
+      - Material
+  /v1/edge/material/query:
+    post:
+      consumes:
+      - application/json
+      description: 通过 UUID 列表查询物料信息
+      parameters:
+      - description: 物料 UUID 列表
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/material.MaterialQueryReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                code:
+                  $ref: '#/definitions/code.ErrCode'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 按 UUID 查询物料
+      tags:
+      - Material
   /v1/lab:
     delete:
       consumes:
@@ -1935,6 +2108,8 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 删除实验室环境
       tags:
       - Laboratory
@@ -1961,6 +2136,8 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 更新实验室环境
       tags:
       - Laboratory
@@ -1987,6 +2164,8 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 创建实验室环境
       tags:
       - Laboratory
@@ -2017,6 +2196,8 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 获取实验室信息
       tags:
       - Laboratory
@@ -2043,6 +2224,8 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 创建邀请链接
       tags:
       - Laboratory
@@ -2069,6 +2252,8 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 接受邀请
       tags:
       - Laboratory
@@ -2096,10 +2281,40 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 获取实验室列表
       tags:
       - Laboratory
   /v1/lab/material:
+    get:
+      consumes:
+      - application/json
+      description: 查询实验室物料
+      parameters:
+      - in: query
+        name: id
+        type: string
+      - in: query
+        name: with_children
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                code:
+                  $ref: '#/definitions/code.ErrCode'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 查询物料
+      tags:
+      - Material
     post:
       consumes:
       - application/json
@@ -2123,10 +2338,40 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 创建物料图
       tags:
       - Material
-  /v1/lab/material/actions:
+    put:
+      consumes:
+      - application/json
+      description: 批量更新物料的唯一名称
+      parameters:
+      - description: 批量更新物料请求
+        in: body
+        name: material
+        required: true
+        schema:
+          $ref: '#/definitions/material.UpdateMaterialReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.Resp'
+            - properties:
+                code:
+                  $ref: '#/definitions/code.ErrCode'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 批量更新物料
+      tags:
+      - Material
+  /v1/lab/material/device/actions:
     get:
       consumes:
       - application/json
@@ -2154,6 +2399,8 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 设备可用动作
       tags:
       - Material
@@ -2181,120 +2428,26 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 创建物料连线
       tags:
       - Material
-  /v1/lab/material/edge/connection:
-    post:
-      consumes:
-      - application/json
-      description: 从边缘端创建物料之间的连线
-      parameters:
-      - description: 创建连线请求
-        in: body
-        name: edges
-        required: true
-        schema:
-          $ref: '#/definitions/material.CreateMaterialEdgeReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 请求参数错误
-          schema:
-            allOf:
-            - $ref: '#/definitions/common.Resp'
-            - properties:
-                code:
-                  $ref: '#/definitions/code.ErrCode'
-              type: object
-      summary: 边缘端创建物料连线
-      tags:
-      - Material
-  /v1/lab/material/edge/create:
-    post:
-      consumes:
-      - application/json
-      description: 从边缘端创建物料（带 UUID 的节点）
-      parameters:
-      - description: 边缘端创建物料请求
-        in: body
-        name: material
-        required: true
-        schema:
-          $ref: '#/definitions/material.CreateMaterialReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 请求参数错误
-          schema:
-            allOf:
-            - $ref: '#/definitions/common.Resp'
-            - properties:
-                code:
-                  $ref: '#/definitions/code.ErrCode'
-              type: object
-      summary: 边缘端创建物料
-      tags:
-      - Material
-  /v1/lab/material/edge/download:
-    get:
-      description: 边缘端下载物料图
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 请求参数错误
-          schema:
-            allOf:
-            - $ref: '#/definitions/common.Resp'
-            - properties:
-                code:
-                  $ref: '#/definitions/code.ErrCode'
-              type: object
-      summary: 边缘端下载物料
-      tags:
-      - Material
-  /v1/lab/material/edge/upsert:
-    post:
-      consumes:
-      - application/json
-      description: 边缘端批量更新或插入物料
-      parameters:
-      - description: 边缘端更新/插入物料请求
-        in: body
-        name: material
-        required: true
-        schema:
-          $ref: '#/definitions/material.UpsertMaterialReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 请求参数错误
-          schema:
-            allOf:
-            - $ref: '#/definitions/common.Resp'
-            - properties:
-                code:
-                  $ref: '#/definitions/code.ErrCode'
-              type: object
-      summary: 边缘端更新/插入物料
-      tags:
-      - Material
-  /v1/lab/material/query:
+  /v1/lab/material/resource:
     get:
       consumes:
       - application/json
-      description: 查询实验室物料
+      description: 获取实验室的所有资源（设备）列表
       parameters:
-      - in: query
-        name: id
+      - description: 实验室UUID
+        in: query
+        name: lab_uuid
+        required: true
         type: string
-      - in: query
-        name: with_children
-        type: boolean
+      - description: 资源类型
+        in: query
+        name: type
+        type: string
       produces:
       - application/json
       responses:
@@ -2307,34 +2460,9 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
-      summary: 查询物料
-      tags:
-      - Material
-  /v1/lab/material/query-by-uuid:
-    post:
-      consumes:
-      - application/json
-      description: 通过 UUID 列表查询物料信息
-      parameters:
-      - description: 物料 UUID 列表
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/material.MaterialQueryReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 请求参数错误
-          schema:
-            allOf:
-            - $ref: '#/definitions/common.Resp'
-            - properties:
-                code:
-                  $ref: '#/definitions/code.ErrCode'
-              type: object
-      summary: 按 UUID 查询物料
+      security:
+      - BearerAuth: []
+      summary: 获取资源列表
       tags:
       - Material
   /v1/lab/material/save:
@@ -2361,10 +2489,12 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 保存物料图
       tags:
       - Material
-  /v1/lab/material/template/detail/{template_uuid}:
+  /v1/lab/material/template/{template_uuid}:
     get:
       description: 获取物料模板详情
       parameters:
@@ -2385,6 +2515,8 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 获取模板详情
       tags:
       - Material
@@ -2417,6 +2549,8 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 获取实验室成员
       tags:
       - Laboratory
@@ -2448,6 +2582,8 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 删除实验室成员
       tags:
       - Laboratory
@@ -2475,6 +2611,8 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 创建实验室资源
       tags:
       - Laboratory
@@ -2522,6 +2660,8 @@ paths:
                 code:
                   $ref: '#/definitions/code.ErrCode'
               type: object
+      security:
+      - BearerAuth: []
       summary: 获取用户信息
       tags:
       - Laboratory

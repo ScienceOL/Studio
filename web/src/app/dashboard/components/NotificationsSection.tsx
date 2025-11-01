@@ -22,7 +22,7 @@ export const NotificationsSection = ({
           {t('Notifications')}
         </h2>
         {notifications.some((n) => !n.isRead) && (
-          <span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs font-medium text-white">
+          <span className="rounded-full bg-indigo-500 px-2 py-0.5 text-xs font-medium text-white">
             {notifications.filter((n) => !n.isRead).length}
           </span>
         )}
@@ -49,7 +49,7 @@ export const NotificationsSection = ({
           </p>
           <Link
             to="/login"
-            className="mt-3 inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+            className="mt-3 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800"
           >
             {t('Sign In')}
           </Link>

@@ -49,23 +49,61 @@ function toAxiosHeaders(h: unknown): AxiosHeaders {
 
 // 请求拦截：附加 Authorization 头
 apiClient.interceptors.request.use((request) => {
+  console.group(
+    `🚀 API Request: ${request.method?.toUpperCase()} ${request.url}`
+  );
+  console.log('📍 Full URL:', `${request.baseURL}${request.url}`);
+  console.log('📋 Headers:', request.headers);
+  console.log('📦 Data:', request.data);
+  console.log('🔍 Params:', request.params);
+
   try {
     const token = deps.getAccessToken?.();
     if (token) {
+      console.log('🔑 Token found:', token.substring(0, 20) + '...');
       const axHeaders = toAxiosHeaders(request.headers);
       axHeaders.set('Authorization', `Bearer ${token}`);
       request.headers = axHeaders;
+      console.log('✅ Authorization header added');
+    } else {
+      console.log('⚠️ No token available');
     }
-  } catch {
+  } catch (err) {
+    console.error('❌ Error adding token:', err);
     // 静默失败，交由服务端处理未鉴权
   }
+
+  console.groupEnd();
   return request;
 });
 
 // 响应拦截：统一处理 401/403，尝试刷新并重放原请求
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.group(
+      `✅ API Response: ${response.config.method?.toUpperCase()} ${
+        response.config.url
+      }`
+    );
+    console.log('📊 Status:', response.status, response.statusText);
+    console.log('📋 Headers:', response.headers);
+    console.log('📦 Data:', response.data);
+    console.groupEnd();
+    return response;
+  },
   async (error: AxiosError) => {
+    console.group(
+      `❌ API Error: ${error.config?.method?.toUpperCase()} ${
+        error.config?.url
+      }`
+    );
+    console.log('📊 Status:', error.response?.status);
+    console.log('📋 Response Headers:', error.response?.headers);
+    console.log('📦 Response Data:', error.response?.data);
+    console.log('🔍 Error Message:', error.message);
+    console.log('🌐 Network Error:', !error.response);
+    console.groupEnd();
+
     const status = error.response?.status;
     const original = error.config as RetriableRequestConfig | undefined;
 

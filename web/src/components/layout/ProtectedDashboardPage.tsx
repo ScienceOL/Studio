@@ -1,5 +1,5 @@
 import DashboardLayout from '@/app/dashboard';
-import AuthProvider from '@/provider/AuthProvider';
+import Providers from '@/provider';
 
 /**
  * 受保护的 Dashboard 布局包装器
@@ -8,8 +8,8 @@ import AuthProvider from '@/provider/AuthProvider';
  */
 export default function ProtectedDashboardLayout() {
   return (
-    <AuthProvider>
+    <Providers>
       <DashboardLayout />
-    </AuthProvider>
+    </Providers>
   );
 }

@@ -118,7 +118,7 @@ NavbarFullWidthPreviewProps) {
                     )}
                     // className={clsx(
                     //   'w-full rounded-xl bg-transparent',
-                    //   'ring-white/60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2',
+                    //   'ring-white/60 ring-offset-2 ring-offset-indigo-400 focus:outline-none focus:ring-2',
                     // )}
                   >
                     {posts.map((item) => (

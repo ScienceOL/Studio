@@ -105,7 +105,7 @@
 /* 全局背景色设置，防止滚动时出现白色 */
 html,
 body {
-  @apply bg-gray-50 dark:bg-neutral-900;
+  @apply bg-neutral-50 dark:bg-neutral-900;
   min-height: 100vh;
 }
 
