@@ -38,7 +38,7 @@ func NewLogin() *Login {
 // @Param frontend_callback_url query string false "前端回调地址"
 // @Success 302 {string} string "重定向到OAuth2授权页面"
 // @Header 302 {string} Location "重定向的授权URL地址"
-// @Router /api/auth/login [get]
+// @Router /auth/login [get]
 func (l *Login) Login(ctx *gin.Context) {
 	req := &ls.LoginReq{}
 	// 从查询参数获取前端回调地址（可选）
@@ -63,7 +63,7 @@ func (l *Login) Login(ctx *gin.Context) {
 // @Success 200 {object} common.Resp{data=ls.RefreshTokenResp} "刷新令牌成功 code=0"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "参数错误 code = 1011"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "刷新 token 失败 code = 1002"
-// @Router /api/auth/refresh [post]
+// @Router /auth/refresh [post]
 func (l *Login) Refresh(ctx *gin.Context) {
 	// 从请求中获取刷新令牌
 	req := &ls.RefreshTokenReq{}
@@ -91,7 +91,7 @@ func (l *Login) Refresh(ctx *gin.Context) {
 // @Param state query string true "防CSRF攻击的状态码"
 // @Success 302 {string} string "重定向到前端"
 // @Failure 302 {string} string "重定向到前端错误页面"
-// @Router /api/auth/callback/casdoor [get]
+// @Router /auth/callback/casdoor [get]
 func (l *Login) Callback(ctx *gin.Context) {
 	req := &ls.CallbackReq{}
 	if err := ctx.ShouldBindQuery(req); err != nil {

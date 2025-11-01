@@ -24,7 +24,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/auth/callback/casdoor": {
+        "/auth/callback/casdoor": {
             "get": {
                 "description": "处理OAuth2授权回调",
                 "consumes": [
@@ -63,7 +63,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/auth/login": {
+        "/auth/login": {
             "get": {
                 "description": "检查服务运行状态",
                 "consumes": [
@@ -100,7 +100,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/auth/refresh": {
+        "/auth/refresh": {
             "post": {
                 "description": "刷新OAuth2令牌",
                 "consumes": [
@@ -146,7 +146,55 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/health": {
+        "/foo": {
+            "get": {
+                "description": "A simple test endpoint that does not require authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Test"
+                ],
+                "summary": "Anonymous Test Endpoint",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/foo/auth": {
+            "get": {
+                "description": "A simple hello world endpoint",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Test"
+                ],
+                "summary": "Authenticated Test Endpoint",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
             "get": {
                 "description": "检查服务运行状态",
                 "consumes": [
@@ -170,7 +218,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab": {
+        "/v1/lab": {
             "post": {
                 "description": "创建一个新的实验室环境",
                 "consumes": [
@@ -304,7 +352,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/invite/{lab_uuid}": {
+        "/v1/lab/invite/{lab_uuid}": {
             "post": {
                 "description": "为实验室创建邀请链接",
                 "consumes": [
@@ -348,7 +396,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/invite/{uuid}": {
+        "/v1/lab/invite/{uuid}": {
             "get": {
                 "description": "通过邀请链接加入实验室",
                 "consumes": [
@@ -392,7 +440,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/list": {
+        "/v1/lab/list": {
             "get": {
                 "description": "获取当前用户的所有实验室",
                 "consumes": [
@@ -439,7 +487,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/material": {
+        "/v1/lab/material": {
             "post": {
                 "description": "在实验室中创建物料图（节点与边）",
                 "consumes": [
@@ -485,7 +533,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/material/actions": {
+        "/v1/lab/material/actions": {
             "get": {
                 "description": "获取设备对应的可用动作列表",
                 "consumes": [
@@ -536,7 +584,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/material/edge": {
+        "/v1/lab/material/edge": {
             "post": {
                 "description": "创建两个物料节点之间的连线",
                 "consumes": [
@@ -582,7 +630,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/material/edge/connection": {
+        "/v1/lab/material/edge/connection": {
             "post": {
                 "description": "从边缘端创建物料之间的连线",
                 "consumes": [
@@ -628,7 +676,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/material/edge/create": {
+        "/v1/lab/material/edge/create": {
             "post": {
                 "description": "从边缘端创建物料（带 UUID 的节点）",
                 "consumes": [
@@ -674,7 +722,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/material/edge/download": {
+        "/v1/lab/material/edge/download": {
             "get": {
                 "description": "边缘端下载物料图",
                 "produces": [
@@ -706,7 +754,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/material/edge/upsert": {
+        "/v1/lab/material/edge/upsert": {
             "post": {
                 "description": "边缘端批量更新或插入物料",
                 "consumes": [
@@ -752,7 +800,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/material/query": {
+        "/v1/lab/material/query": {
             "get": {
                 "description": "查询实验室物料",
                 "consumes": [
@@ -799,7 +847,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/material/query-by-uuid": {
+        "/v1/lab/material/query-by-uuid": {
             "post": {
                 "description": "通过 UUID 列表查询物料信息",
                 "consumes": [
@@ -845,7 +893,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/material/save": {
+        "/v1/lab/material/save": {
             "post": {
                 "description": "保存当前实验室的物料图",
                 "consumes": [
@@ -891,7 +939,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/material/template/detail/{template_uuid}": {
+        "/v1/lab/material/template/detail/{template_uuid}": {
             "get": {
                 "description": "获取物料模板详情",
                 "produces": [
@@ -932,7 +980,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/member/{lab_uuid}": {
+        "/v1/lab/member/{lab_uuid}": {
             "get": {
                 "description": "获取指定实验室的成员列表",
                 "consumes": [
@@ -986,7 +1034,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/member/{lab_uuid}/{member_uuid}": {
+        "/v1/lab/member/{lab_uuid}/{member_uuid}": {
             "delete": {
                 "description": "从实验室中删除一个成员",
                 "consumes": [
@@ -1037,7 +1085,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/resource": {
+        "/v1/lab/resource": {
             "post": {
                 "description": "从边缘端创建实验室资源",
                 "consumes": [
@@ -1083,7 +1131,53 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/user": {
+        "/v1/lab/run/workflow": {
+            "put": {
+                "description": "通过 HTTP 启动工作流任务，返回任务 UUID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "启动工作流（无鉴权）",
+                "parameters": [
+                    {
+                        "description": "启动请求",
+                        "name": "workflow",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/workflow.RunReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/user": {
             "get": {
                 "description": "获取当前用户信息",
                 "consumes": [
@@ -1118,7 +1212,815 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/lab/{lab_uuid}": {
+        "/v1/lab/workflow/node/template/detail/{uuid}": {
+            "get": {
+                "description": "获取节点模板的详细信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "节点模板详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "模板UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/node/template/list": {
+            "get": {
+                "description": "获取实验室下的节点模板列表，支持按名称、标签和分页过滤",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "节点模板列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "lab_uuid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "tags",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/node/template/tags/{lab_uuid}": {
+            "get": {
+                "description": "获取指定实验室的节点模板标签列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "节点模板标签",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "实验室UUID",
+                        "name": "lab_uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/owner": {
+            "post": {
+                "description": "在指定实验室创建新的工作流",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "创建工作流",
+                "parameters": [
+                    {
+                        "description": "工作流创建请求",
+                        "name": "workflow",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/workflow.CreateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "更新我创建的工作流（名称、发布状态、描述等）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "更新工作流",
+                "parameters": [
+                    {
+                        "description": "工作流更新请求",
+                        "name": "workflow",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/workflow.UpdateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/owner/duplicate": {
+            "put": {
+                "description": "在目标实验室中复制现有工作流（自动匹配节点模板）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "复制工作流",
+                "parameters": [
+                    {
+                        "description": "复制请求",
+                        "name": "workflow",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/workflow.DuplicateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/owner/export": {
+            "get": {
+                "description": "导出工作流为可跨实验室导入的 JSON 数据",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "导出工作流",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "uuid",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/owner/import": {
+            "post": {
+                "description": "将导出的工作流 JSON 导入到目标实验室",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "导入工作流",
+                "parameters": [
+                    {
+                        "description": "导入请求",
+                        "name": "workflow",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/workflow.ImportReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/owner/list": {
+            "get": {
+                "description": "获取我创建的工作流列表（滚动加载）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "工作流列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "lab_uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/owner/{uuid}": {
+            "delete": {
+                "description": "删除我创建的工作流",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "删除工作流",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "工作流UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/task/download/{uuid}": {
+            "get": {
+                "description": "下载指定工作流的任务列表为 CSV 文件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "下载工作流任务",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "工作流UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/task/{uuid}": {
+            "get": {
+                "description": "获取指定工作流的任务列表（滚动分页）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "工作流任务列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "工作流UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/template/detail/{uuid}": {
+            "get": {
+                "description": "获取工作流的节点与边详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "工作流详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "工作流UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/template/fork": {
+            "put": {
+                "description": "将已有工作流模板 Fork 到目标实验室",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "Fork 工作流模板",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "source_workflow_uuid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "target_lab_uuid",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/template/list": {
+            "get": {
+                "description": "获取工作流模板列表，支持按标签与分页过滤",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "工作流模板列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "lab_uuid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "tags",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/template/tags": {
+            "get": {
+                "description": "获取全局工作流模板标签列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "工作流模板标签",
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/workflow/ws/workflow/{uuid}": {
+            "get": {
+                "description": "连接到指定工作流的 WebSocket 会话，用于实时编辑与运行",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflow"
+                ],
+                "summary": "工作流 WebSocket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "工作流UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "$ref": "#/definitions/code.ErrCode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/lab/{lab_uuid}": {
             "get": {
                 "description": "获取单个实验室的详细信息",
                 "consumes": [
@@ -1163,30 +2065,6 @@ const docTemplate = `{
                                     }
                                 }
                             ]
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/foo/hello": {
-            "get": {
-                "description": "A simple hello world endpoint",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "foo"
-                ],
-                "summary": "Hello World",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
                         }
                     }
                 }
@@ -2931,6 +3809,695 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.WorkflowNodeType": {
+            "type": "string",
+            "enum": [
+                "Group",
+                "ILab",
+                "py_script"
+            ],
+            "x-enum-varnames": [
+                "WorkflowNodeGroup",
+                "WorkflowNodeILab",
+                "WorkflowPyScript"
+            ]
+        },
+        "model.WorkflowTaskStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "running",
+                "canceled",
+                "failed",
+                "successed",
+                "timeout"
+            ],
+            "x-enum-varnames": [
+                "WorkflowTaskStatusPending",
+                "WorkflowTaskStatusRunnig",
+                "WorkflowTaskStatusCanceled",
+                "WorkflowTaskStatusFailed",
+                "WorkflowTaskStatusSuccessed",
+                "WorkflowTaskStatusTimeout"
+            ]
+        },
+        "workflow.CreateReq": {
+            "type": "object",
+            "required": [
+                "lab_uuid"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "lab_uuid": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.CreateResp": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.DetailResp": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "edges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/workflow.WSEdge"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/workflow.WSNode"
+                    }
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.DuplicateError": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "type": "string"
+                },
+                "source_template_name": {
+                    "type": "string"
+                },
+                "target_template_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.DuplicateReq": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "source_uuid": {
+                    "type": "string"
+                },
+                "target_lab_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.DuplicateRes": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/workflow.DuplicateError"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.ExportData": {
+            "type": "object",
+            "properties": {
+                "edges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/workflow.ExportEdge"
+                    }
+                },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/workflow.ExportNode"
+                    }
+                },
+                "published": {
+                    "type": "boolean"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "workflow_name": {
+                    "type": "string"
+                },
+                "workflow_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.ExportEdge": {
+            "type": "object",
+            "properties": {
+                "source_handle_io": {
+                    "type": "string"
+                },
+                "source_handle_key": {
+                    "description": "句柄以可匹配字段导出（导入时用 handle_key + io_type 匹配目标模板的句柄）",
+                    "type": "string"
+                },
+                "source_node_uuid": {
+                    "type": "string"
+                },
+                "target_handle_io": {
+                    "type": "string"
+                },
+                "target_handle_key": {
+                    "type": "string"
+                },
+                "target_node_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.ExportNode": {
+            "type": "object",
+            "properties": {
+                "device_name": {
+                    "type": "string"
+                },
+                "disabled": {
+                    "type": "boolean"
+                },
+                "footer": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "lab_node_type": {
+                    "type": "string"
+                },
+                "minimized": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "param": {
+                    "type": "object"
+                },
+                "parent_uuid": {
+                    "type": "string"
+                },
+                "pose": {
+                    "type": "object"
+                },
+                "resource_name": {
+                    "type": "string"
+                },
+                "template_name": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.WorkflowNodeType"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.ImportReq": {
+            "type": "object",
+            "required": [
+                "data",
+                "target_lab_uuid"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/workflow.ExportData"
+                },
+                "target_lab_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.ListResp": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "published": {
+                    "type": "boolean"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.ListResult": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/workflow.ListResp"
+                    }
+                },
+                "has_more": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "workflow.NodeHandle": {
+            "type": "object",
+            "properties": {
+                "data_key": {
+                    "description": "数据键",
+                    "type": "string"
+                },
+                "data_source": {
+                    "description": "数据源",
+                    "type": "string"
+                },
+                "display_name": {
+                    "description": "显示名称",
+                    "type": "string"
+                },
+                "handle_key": {
+                    "description": "handle键",
+                    "type": "string"
+                },
+                "io_type": {
+                    "description": "输入输出类型",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "数据类型",
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.NodeTemplateDetailResp": {
+            "type": "object",
+            "properties": {
+                "class": {
+                    "description": "类名",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "feedback": {
+                    "description": "反馈参数",
+                    "type": "object"
+                },
+                "footer": {
+                    "type": "string"
+                },
+                "goal": {
+                    "description": "目标参数",
+                    "type": "object"
+                },
+                "goal_default": {
+                    "description": "默认目标参数",
+                    "type": "object"
+                },
+                "handles": {
+                    "description": "handle列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/workflow.NodeHandle"
+                    }
+                },
+                "header": {
+                    "type": "string"
+                },
+                "icon": {
+                    "description": "图标",
+                    "type": "string"
+                },
+                "lab_name": {
+                    "description": "实验室名称",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "模板名称",
+                    "type": "string"
+                },
+                "result": {
+                    "description": "结果参数",
+                    "type": "object"
+                },
+                "schema": {
+                    "description": "数据模式",
+                    "type": "object"
+                },
+                "type": {
+                    "description": "类型",
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.RunReq": {
+            "type": "object",
+            "required": [
+                "workflow_uuid"
+            ],
+            "properties": {
+                "workflow_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.TaskPageMore": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/workflow.TaskResp"
+                    }
+                },
+                "has_more": {
+                    "type": "boolean"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "workflow.TaskResp": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "finished_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.WorkflowTaskStatus"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.TemplateHandleResp": {
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "type": "string"
+                },
+                "handle_key": {
+                    "type": "string"
+                },
+                "io_type": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.TemplateListPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/workflow.TemplateListResp"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "workflow.TemplateListRes": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.TemplateListResp": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "footer": {
+                    "description": "底部信息",
+                    "type": "string"
+                },
+                "handles": {
+                    "description": "handle名字列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/workflow.TemplateHandleResp"
+                    }
+                },
+                "header": {
+                    "description": "头部信息",
+                    "type": "string"
+                },
+                "lab_name": {
+                    "description": "实验室名字",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "模板名称（从device_action name字段取）",
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.UpdateReq": {
+            "type": "object",
+            "required": [
+                "uuid"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "published": {
+                    "type": "boolean"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.WSEdge": {
+            "type": "object",
+            "properties": {
+                "source_handle_uuid": {
+                    "type": "string"
+                },
+                "source_node_uuid": {
+                    "type": "string"
+                },
+                "target_handle_uuid": {
+                    "type": "string"
+                },
+                "target_node_uuid": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.WSNode": {
+            "type": "object",
+            "properties": {
+                "device_name": {
+                    "type": "string"
+                },
+                "disabled": {
+                    "type": "boolean"
+                },
+                "footer": {
+                    "type": "string"
+                },
+                "handles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/workflow.WSNodeHandle"
+                    }
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "lab_node_type": {
+                    "type": "string"
+                },
+                "minimized": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "param": {
+                    "type": "object"
+                },
+                "parent_uuid": {
+                    "type": "string"
+                },
+                "pose": {
+                    "type": "object"
+                },
+                "schema": {
+                    "type": "object"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.WorkflowNodeType"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.WSNodeHandle": {
+            "type": "object",
+            "properties": {
+                "data_key": {
+                    "type": "string"
+                },
+                "data_source": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "handle_key": {
+                    "type": "string"
+                },
+                "io_type": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "workflow.WorkflowTemplateListPage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/workflow.TemplateListRes"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
         }
     },
     "securityDefinitions": {
@@ -2947,7 +4514,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:48197",
-	BasePath:         "/api/v1",
+	BasePath:         "/api",
 	Schemes:          []string{"http"},
 	Title:            "ScienceOL Studio API",
 	Description:      "Studio 实验室管理系统 API",

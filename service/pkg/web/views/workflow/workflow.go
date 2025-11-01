@@ -38,8 +38,17 @@ func NewWorkflowHandle(ctx context.Context) *Handle {
 	return h
 }
 
-// 工作流模板列表
+// @Summary 节点模板列表
+// @Description 获取实验室下的节点模板列表，支持按名称、标签和分页过滤
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param req query workflow.TplPageReq false "查询与分页参数"
+// @Success 200 {object} common.Resp{data=TemplateListPage} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/node/template/list [get]
 func (w *Handle) TemplateList(ctx *gin.Context) {
+
 	req := workflow.TplPageReq{}
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -52,7 +61,17 @@ func (w *Handle) TemplateList(ctx *gin.Context) {
 	}
 }
 
+// @Summary 节点模板标签
+// @Description 获取指定实验室的节点模板标签列表
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param lab_uuid path string true "实验室UUID"
+// @Success 200 {object} common.Resp{data=[]string} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/node/template/tags/{lab_uuid} [get]
 func (w *Handle) TemplateTags(ctx *gin.Context) {
+
 	req := workflow.TemplateTagsReq{}
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -68,8 +87,16 @@ func (w *Handle) TemplateTags(ctx *gin.Context) {
 // 工作流模板详情
 func (w *Handle) TemplateDetail(ctx *gin.Context) {}
 
-// 工作流模板 tags
+// @Summary 工作流模板标签
+// @Description 获取全局工作流模板标签列表
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Success 200 {object} common.Resp{data=[]string} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/template/tags [get]
 func (w *Handle) WorkflowTemplateTags(ctx *gin.Context) {
+
 	if res, err := w.wService.WorkflowTemplateTags(ctx); err != nil {
 		common.ReplyErr(ctx, err)
 	} else {
@@ -79,6 +106,15 @@ func (w *Handle) WorkflowTemplateTags(ctx *gin.Context) {
 
 // WorkflowTemplateTagsByLab 按实验室获取工作流模板标签
 func (w *Handle) WorkflowTemplateTagsByLab(ctx *gin.Context) {
+	// @Summary 按实验室获取工作流模板标签
+	// @Description 根据实验室UUID获取该实验室下可用的工作流模板标签
+	// @Tags Workflow
+	// @Accept json
+	// @Produce json
+	// @Param lab_uuid path string true "实验室UUID"
+	// @Success 200 {object} common.Resp{data=[]string} "获取成功"
+	// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+	// @Router /v1/lab/workflow/template/tags/{lab_uuid} [get]
 	req := &workflow.TemplateTagsReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -91,8 +127,17 @@ func (w *Handle) WorkflowTemplateTagsByLab(ctx *gin.Context) {
 	}
 }
 
-// 工作流模板列表
+// @Summary 工作流模板列表
+// @Description 获取工作流模板列表，支持按标签与分页过滤
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param req query workflow.TemplateListReq false "查询与分页参数"
+// @Success 200 {object} common.Resp{data=WorkflowTemplateListPage} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/template/list [get]
 func (w *Handle) WorkflowTemplateList(ctx *gin.Context) {
+
 	req := workflow.TemplateListReq{}
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -106,8 +151,17 @@ func (w *Handle) WorkflowTemplateList(ctx *gin.Context) {
 	}
 }
 
-// 工作流模板 fork
+// @Summary Fork 工作流模板
+// @Description 将已有工作流模板 Fork 到目标实验室
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param req query workflow.ForkReq true "Fork 请求参数"
+// @Success 200 {object} common.Resp{} "操作成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/template/fork [put]
 func (w *Handle) ForkTemplate(ctx *gin.Context) {
+
 	req := &workflow.ForkReq{}
 	if err := ctx.ShouldBindQuery(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -121,8 +175,18 @@ func (w *Handle) ForkTemplate(ctx *gin.Context) {
 	}
 }
 
-// 获取工作流 task 列表
+// @Summary 工作流任务列表
+// @Description 获取指定工作流的任务列表（滚动分页）
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param uuid path string true "工作流UUID"
+// @Param req query common.PageReq false "分页参数"
+// @Success 200 {object} common.Resp{data=TaskPageMore} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/task/{uuid} [get]
 func (w *Handle) TaskList(ctx *gin.Context) {
+
 	req := workflow.TaskReq{}
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -141,8 +205,17 @@ func (w *Handle) TaskList(ctx *gin.Context) {
 	}
 }
 
-// 下载 task
+// @Summary 下载工作流任务
+// @Description 下载指定工作流的任务列表为 CSV 文件
+// @Tags Workflow
+// @Accept json
+// @Produce text/csv
+// @Param uuid path string true "工作流UUID"
+// @Success 200 {file} file "CSV 文件"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/task/download/{uuid} [get]
 func (w *Handle) DownloadTask(ctx *gin.Context) {
+
 	req := workflow.TaskDownloadReq{}
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -164,8 +237,17 @@ func (w *Handle) DownloadTask(ctx *gin.Context) {
 
 // 节点模板列表，节点模板分类
 
-// 节点模板详情
+// @Summary 节点模板详情
+// @Description 获取节点模板的详细信息
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param uuid path string true "模板UUID"
+// @Success 200 {object} common.Resp{data=workflow.NodeTemplateDetailResp} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/node/template/detail/{uuid} [get]
 func (w *Handle) NodeTemplateDetail(ctx *gin.Context) {
+
 	req := &workflow.NodeTemplateReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -184,8 +266,17 @@ func (w *Handle) NodeTemplateDetail(ctx *gin.Context) {
 	}
 }
 
-// 节点模板编辑
+// @Summary 更新工作流
+// @Description 更新我创建的工作流（名称、发布状态、描述等）
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param workflow body workflow.UpdateReq true "工作流更新请求"
+// @Success 200 {object} common.Resp{} "更新成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/owner [patch]
 func (w *Handle) UpdateWorkflow(ctx *gin.Context) {
+
 	req := &workflow.UpdateReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -204,8 +295,17 @@ func (w *Handle) UpdateWorkflow(ctx *gin.Context) {
 	}
 }
 
-// 删除工作流
-func (w *Handle) DelWrokflow(ctx *gin.Context) {
+// @Summary 删除工作流
+// @Description 删除我创建的工作流
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param uuid path string true "工作流UUID"
+// @Success 200 {object} common.Resp{} "删除成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/owner/{uuid} [delete]
+func (w *Handle) DelWorkflow(ctx *gin.Context) {
+
 	req := &workflow.DelReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -219,8 +319,17 @@ func (w *Handle) DelWrokflow(ctx *gin.Context) {
 	}
 }
 
-// 我创建的工作流
+// @Summary 创建工作流
+// @Description 在指定实验室创建新的工作流
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param workflow body workflow.CreateReq true "工作流创建请求"
+// @Success 200 {object} common.Resp{data=workflow.CreateResp} "创建成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/owner [post]
 func (w *Handle) Create(ctx *gin.Context) {
+
 	req := &workflow.CreateReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -234,8 +343,17 @@ func (w *Handle) Create(ctx *gin.Context) {
 	}
 }
 
-// GetWorkflowList 获取工作流列表
+// @Summary 工作流列表
+// @Description 获取我创建的工作流列表（滚动加载）
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param req query workflow.ListReq false "查询与分页参数"
+// @Success 200 {object} common.Resp{data=workflow.ListResult} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/owner/list [get]
 func (w *Handle) GetWorkflowList(ctx *gin.Context) {
+
 	req := &workflow.ListReq{}
 	if err := ctx.ShouldBindQuery(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -249,8 +367,17 @@ func (w *Handle) GetWorkflowList(ctx *gin.Context) {
 	}
 }
 
-// GetWorkflowDetail 获取工作流详情
+// @Summary 工作流详情
+// @Description 获取工作流的节点与边详情
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param uuid path string true "工作流UUID"
+// @Success 200 {object} common.Resp{data=workflow.DetailResp} "获取成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/template/detail/{uuid} [get]
 func (w *Handle) GetWorkflowDetail(ctx *gin.Context) {
+
 	req := &workflow.DetailReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -269,8 +396,17 @@ func (w *Handle) GetWorkflowDetail(ctx *gin.Context) {
 	}
 }
 
-// 导出工作流 JSON
+// @Summary 导出工作流
+// @Description 导出工作流为可跨实验室导入的 JSON 数据
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param req query workflow.ExportReq true "导出请求参数"
+// @Success 200 {object} common.Resp{data=workflow.ExportData} "导出成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/owner/export [get]
 func (w *Handle) Export(ctx *gin.Context) {
+
 	req := &workflow.ExportReq{}
 	if err := ctx.ShouldBindQuery(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -287,8 +423,17 @@ func (w *Handle) Export(ctx *gin.Context) {
 	}
 }
 
-// 导入工作流 JSON
+// @Summary 导入工作流
+// @Description 将导出的工作流 JSON 导入到目标实验室
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param workflow body workflow.ImportReq true "导入请求"
+// @Success 200 {object} common.Resp{data=workflow.CreateResp} "导入成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/owner/import [post]
 func (w *Handle) Import(ctx *gin.Context) {
+
 	req := &workflow.ImportReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -371,8 +516,17 @@ func (w *Handle) initMaterialWebSocket() {
 	})
 }
 
-// 工作流 websocket
+// @Summary 工作流 WebSocket
+// @Description 连接到指定工作流的 WebSocket 会话，用于实时编辑与运行
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param uuid path string true "工作流UUID"
+// @Success 200 {object} common.Resp{} "连接成功（协议升级）"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/ws/workflow/{uuid} [get]
 func (w *Handle) LabWorkflow(ctx *gin.Context) {
+
 	req := &workflow.NodeTemplateReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
 		logger.Errorf(ctx, "unmarshal uuid err: %+v", err)
@@ -395,7 +549,17 @@ func (w *Handle) LabWorkflow(ctx *gin.Context) {
 	}
 }
 
+// @Summary 复制工作流
+// @Description 在目标实验室中复制现有工作流（自动匹配节点模板）
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param workflow body workflow.DuplicateReq true "复制请求"
+// @Success 200 {object} common.Resp{data=workflow.DuplicateRes} "复制成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/workflow/owner/duplicate [put]
 func (w *Handle) Duplicate(ctx *gin.Context) {
+
 	req := &workflow.DuplicateReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))
@@ -406,8 +570,17 @@ func (w *Handle) Duplicate(ctx *gin.Context) {
 	common.Reply(ctx, err, res)
 }
 
-// RunWorkflow 通过 HTTP 启动工作流（无鉴权）
+// @Summary 启动工作流（无鉴权）
+// @Description 通过 HTTP 启动工作流任务，返回任务 UUID
+// @Tags Workflow
+// @Accept json
+// @Produce json
+// @Param workflow body workflow.RunReq true "启动请求"
+// @Success 200 {object} common.Resp{data=uuid.UUID} "启动成功"
+// @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router /v1/lab/run/workflow [put]
 func (w *Handle) RunWorkflow(ctx *gin.Context) {
+
 	req := &workflow.RunReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		common.ReplyErr(ctx, code.ParamErr.WithMsg(err.Error()))

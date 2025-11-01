@@ -1338,6 +1338,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tanstack/query-core@npm:5.90.5":
+  version: 5.90.5
+  resolution: "@tanstack/query-core@npm:5.90.5"
+  checksum: 10c0/3b9460cc10d494357a30ddd3138f2a831611d14b5b8ce3587daa17a078d63945fcdf419864d9dc8e1249aa89b512003d2f134977c64ceccdbdfdd79f1f7e0a34
+  languageName: node
+  linkType: hard
+
 "@tanstack/react-query@npm:^5.83.0":
   version: 5.90.2
   resolution: "@tanstack/react-query@npm:5.90.2"
@@ -1346,6 +1353,17 @@ __metadata:
   peerDependencies:
     react: ^18 || ^19
   checksum: 10c0/22e76626a59890409858521b0e42b49219126a4ea5ed79eaa48a267959175dfdd28b30b9b03a415dccf703d95c18100a9d8917679818f6d2adc26d6c5f96a4d6
+  languageName: node
+  linkType: hard
+
+"@tanstack/react-query@npm:^5.90.5":
+  version: 5.90.5
+  resolution: "@tanstack/react-query@npm:5.90.5"
+  dependencies:
+    "@tanstack/query-core": "npm:5.90.5"
+  peerDependencies:
+    react: ^18 || ^19
+  checksum: 10c0/b2450259e40afc2aec5e455414f204c511ec98ebbbd25963316ab72b25758722ee424ed51210bd6863f78f03ae414e18571879f9d70a022e11049f3f04ef5ce2
   languageName: node
   linkType: hard
 
@@ -6072,6 +6090,7 @@ __metadata:
     "@sciol/xyzen": "npm:^0.3.4"
     "@tailwindcss/postcss": "npm:^4.1.14"
     "@tailwindcss/vite": "npm:^4.1.14"
+    "@tanstack/react-query": "npm:^5.90.5"
     "@types/node": "npm:^24.6.2"
     "@types/react": "npm:^19.2.0"
     "@types/react-dom": "npm:^19.2.0"

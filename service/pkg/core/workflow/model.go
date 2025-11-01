@@ -72,18 +72,18 @@ type TemplateHandleResp struct {
 // 节点详情响应
 type NodeTemplateDetailResp struct {
 	UUID        uuid.UUID      `json:"uuid"`
-	Name        string         `json:"name"`         // 模板名称
-	Class       string         `json:"class"`        // 类名
-	Type        string         `json:"type"`         // 类型
-	Icon        string         `json:"icon"`         // 图标
-	Schema      datatypes.JSON `json:"schema"`       // 数据模式
-	Goal        datatypes.JSON `json:"goal"`         // 目标参数
-	GoalDefault datatypes.JSON `json:"goal_default"` // 默认目标参数
-	Feedback    datatypes.JSON `json:"feedback"`     // 反馈参数
-	Result      datatypes.JSON `json:"result"`       // 结果参数
-	LabName     string         `json:"lab_name"`     // 实验室名称
-	CreatedAt   string         `json:"created_at"`   // 创建时间
-	Handles     []*NodeHandle  `json:"handles"`      // handle列表
+	Name        string         `json:"name"`                              // 模板名称
+	Class       string         `json:"class"`                             // 类名
+	Type        string         `json:"type"`                              // 类型
+	Icon        string         `json:"icon"`                              // 图标
+	Schema      datatypes.JSON `json:"schema" swaggertype:"object"`       // 数据模式
+	Goal        datatypes.JSON `json:"goal" swaggertype:"object"`         // 目标参数
+	GoalDefault datatypes.JSON `json:"goal_default" swaggertype:"object"` // 默认目标参数
+	Feedback    datatypes.JSON `json:"feedback" swaggertype:"object"`     // 反馈参数
+	Result      datatypes.JSON `json:"result" swaggertype:"object"`       // 结果参数
+	LabName     string         `json:"lab_name"`                          // 实验室名称
+	CreatedAt   string         `json:"created_at"`                        // 创建时间
+	Handles     []*NodeHandle  `json:"handles"`                           // handle列表
 	Header      string         `json:"header"`
 	Footer      string         `json:"footer"`
 }
@@ -151,9 +151,9 @@ type WSNode struct {
 	Status       string                         `json:"status"`
 	Type         model.WorkflowNodeType         `json:"type"`
 	Icon         string                         `json:"icon"`
-	Pose         datatypes.JSONType[model.Pose] `json:"pose"`
-	Param        datatypes.JSON                 `json:"param"`
-	Schema       datatypes.JSON                 `json:"schema"`
+	Pose         datatypes.JSONType[model.Pose] `json:"pose" swaggertype:"object"`
+	Param        datatypes.JSON                 `json:"param" swaggertype:"object"`
+	Schema       datatypes.JSON                 `json:"schema" swaggertype:"object"`
 	Handles      []*WSNodeHandle                `json:"handles"`
 	Footer       string                         `json:"footer"`
 	DeviceName   *string                        `json:"device_name,omitempty"`
@@ -181,7 +181,7 @@ type WSTemplate struct {
 	DisplayName   string         `json:"display_name"`
 	Header        string         `json:"header"`
 	Footer        *string        `json:"footer"`
-	Schema        datatypes.JSON `json:"schema"`
+	Schema        datatypes.JSON `json:"schema" swaggertype:"object"`
 	ExecuteScript string         `json:"execute_script"`
 	NodeType      string         `json:"node_type"`
 	Icon          string         `json:"icon"`
@@ -207,8 +207,8 @@ type WSCreateNode struct {
 	ParentUUID   uuid.UUID                      `json:"parent_uuid"`
 	Type         model.WorkflowNodeType         `json:"type"`
 	Icon         string                         `json:"icon"`
-	Pose         datatypes.JSONType[model.Pose] `json:"pose"`
-	Param        *datatypes.JSON                `json:"param,omitempty"`
+	Pose         datatypes.JSONType[model.Pose] `json:"pose" swaggertype:"object"`
+	Param        *datatypes.JSON                `json:"param,omitempty" swaggertype:"object"`
 	Footer       string                         `json:"footer"`
 	Name         string                         `json:"name"`
 }
@@ -219,8 +219,8 @@ type WSUpdateNode struct {
 	Status     *string                         `json:"status,omitempty"`
 	Type       *model.WorkflowNodeType         `json:"type,omitempty"`
 	Icon       *string                         `json:"icon,omitempty"`
-	Pose       *datatypes.JSONType[model.Pose] `json:"pose,omitempty"`
-	Param      *datatypes.JSON                 `json:"param,omitempty"`
+	Pose       *datatypes.JSONType[model.Pose] `json:"pose,omitempty" swaggertype:"object"`
+	Param      *datatypes.JSON                 `json:"param,omitempty" swaggertype:"object"`
 	Footer     *string                         `json:"footer,omitempty"`
 	Name       *string                         `json:"name,omitempty"`
 	Disabled   *bool                           `json:"disabled,omitempty"`
@@ -353,8 +353,8 @@ type ExportNode struct {
 	Name        string                         `json:"name"`
 	Type        model.WorkflowNodeType         `json:"type"`
 	Icon        string                         `json:"icon"`
-	Pose        datatypes.JSONType[model.Pose] `json:"pose"`
-	Param       datatypes.JSON                 `json:"param"`
+	Pose        datatypes.JSONType[model.Pose] `json:"pose" swaggertype:"object"`
+	Param       datatypes.JSON                 `json:"param" swaggertype:"object"`
 	Footer      string                         `json:"footer"`
 	DeviceName  *string                        `json:"device_name,omitempty"`
 	Disabled    bool                           `json:"disabled"`

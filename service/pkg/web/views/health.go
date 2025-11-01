@@ -8,7 +8,7 @@ import "github.com/gin-gonic/gin"
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{} "返回成功状态"
-// @Router /api/health [get]
+// @Router /health [get]
 func Health(g *gin.Context) {
 	g.JSON(200, map[string]any{
 		"success": "ok",

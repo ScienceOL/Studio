@@ -9,22 +9,30 @@ import (
 )
 
 // HandleHelloWorld godoc
-// @Summary      Hello World
-// @Description  A simple hello world endpoint
-// @Tags         foo
+// @Summary      Anonymous Test Endpoint
+// @Description  A simple test endpoint that does not require authentication
+// @Tags         Test
 // @Accept       json
 // @Produce      json
 // @Success      200  {object}  map[string]interface{}
-// @Router       /api/v1/foo/hello [get]
-func HandleHelloWorld(ctx *gin.Context) {
+// @Router       /foo [get]
+func HandleTestAnomy(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "This is an anonymous test endpoint",
+	})
+}
+
+// HandleHelloWorld godoc
+// @Summary      Authenticated Test Endpoint
+// @Description  A simple hello world endpoint
+// @Tags         Test
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}
+// @Router       /foo/auth [get]
+func HandleTestAuth(ctx *gin.Context) {
 	// 使用GetCurrentUser获取当前用户
 	user := auth.GetCurrentUser(ctx)
-	if user == nil {
-		// 由于已经使用了RequireAuth中间件，这种情况正常不会发生
-		ctx.JSON(http.StatusForbidden, gin.H{
-			"error": "Forbidden: Not authenticated",
-		})
-	}
 
 	logger.Infof(ctx.Request.Context(), "User %v is authenticated", user)
 

@@ -27,7 +27,7 @@ func NewEnvironment() *EnvHandle {
 // @Param lab body environment.LaboratoryEnvReq true "实验室环境创建请求"
 // @Success 200 {object} common.Resp{data=environment.LaboratoryEnvResp} "创建成功"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
-// @Router /api/lab [post]
+// @Router /v1/lab [post]
 func (l *EnvHandle) CreateLabEnv(ctx *gin.Context) {
 	req := &environment.LaboratoryEnvReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -54,7 +54,7 @@ func (l *EnvHandle) CreateLabEnv(ctx *gin.Context) {
 // @Param lab body environment.UpdateEnvReq true "实验室环境更新请求"
 // @Success 200 {object} common.Resp{data=environment.LaboratoryResp} "更新成功"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
-// @Router /api/lab [patch]
+// @Router /v1/lab [patch]
 func (l *EnvHandle) UpdateLabEnv(ctx *gin.Context) {
 	req := &environment.UpdateEnvReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -81,7 +81,7 @@ func (l *EnvHandle) UpdateLabEnv(ctx *gin.Context) {
 // @Param lab body environment.DelLabReq true "删除实验室请求"
 // @Success 200 {object} common.Resp{} "删除成功"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
-// @Router /api/lab [delete]
+// @Router /v1/lab [delete]
 func (l *EnvHandle) DelLabEnv(ctx *gin.Context) {
 	req := &environment.DelLabReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -102,7 +102,7 @@ func (l *EnvHandle) DelLabEnv(ctx *gin.Context) {
 // @Param page query common.PageReq false "分页参数"
 // @Success 200 {object} common.Resp{data=environment.LaboratoryListResp} "获取成功"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
-// @Router /api/lab/list [get]
+// @Router /v1/lab/list [get]
 func (l *EnvHandle) LabList(ctx *gin.Context) {
 	req := &common.PageReq{}
 	if err := ctx.ShouldBindQuery(req); err != nil {
@@ -130,7 +130,7 @@ func (l *EnvHandle) LabList(ctx *gin.Context) {
 // @Param with_member query bool false "是否包含成员列表"
 // @Success 200 {object} common.Resp{data=environment.LabInfoResp} "获取成功"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
-// @Router /api/lab/{lab_uuid} [get]
+// @Router /v1/lab/{lab_uuid} [get]
 func (l *EnvHandle) LabInfo(ctx *gin.Context) {
 	req := &environment.LabInfoReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
@@ -157,7 +157,7 @@ func (l *EnvHandle) LabInfo(ctx *gin.Context) {
 // @Param resource body environment.ResourceReq true "资源请求"
 // @Success 200 {object} common.Resp{} "创建成功"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
-// @Router /api/lab/resource [post]
+// @Router /v1/lab/resource [post]
 func (l *EnvHandle) CreateLabResource(ctx *gin.Context) {
 	req := &environment.ResourceReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -185,7 +185,7 @@ func (l *EnvHandle) CreateLabResource(ctx *gin.Context) {
 // @Param page query common.PageReq false "分页参数"
 // @Success 200 {object} common.Resp{data=environment.LabMemberListResp} "获取成功"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
-// @Router /api/lab/member/{lab_uuid} [get]
+// @Router /v1/lab/member/{lab_uuid} [get]
 func (l *EnvHandle) GetLabMemeber(ctx *gin.Context) {
 	req := &environment.LabMemberReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
@@ -217,7 +217,7 @@ func (l *EnvHandle) GetLabMemeber(ctx *gin.Context) {
 // @Param member_uuid path string true "成员UUID"
 // @Success 200 {object} common.Resp{} "删除成功"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
-// @Router /api/lab/member/{lab_uuid}/{member_uuid} [delete]
+// @Router /v1/lab/member/{lab_uuid}/{member_uuid} [delete]
 func (l *EnvHandle) DelLabMember(ctx *gin.Context) {
 	req := &environment.DelLabMemberReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
@@ -243,7 +243,7 @@ func (l *EnvHandle) DelLabMember(ctx *gin.Context) {
 // @Param lab_uuid path string true "实验室UUID"
 // @Success 200 {object} common.Resp{data=environment.InviteResp} "创建成功"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
-// @Router /api/lab/invite/{lab_uuid} [post]
+// @Router /v1/lab/invite/{lab_uuid} [post]
 func (l *EnvHandle) CreateInvite(ctx *gin.Context) {
 	req := &environment.InviteReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
@@ -269,7 +269,7 @@ func (l *EnvHandle) CreateInvite(ctx *gin.Context) {
 // @Param uuid path string true "邀请链接UUID"
 // @Success 200 {object} common.Resp{} "接受成功"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
-// @Router /api/lab/invite/{uuid} [get]
+// @Router /v1/lab/invite/{uuid} [get]
 func (l EnvHandle) AcceptInvite(ctx *gin.Context) {
 	req := &environment.AcceptInviteReq{}
 	if err := ctx.ShouldBindUri(req); err != nil {
@@ -294,7 +294,7 @@ func (l EnvHandle) AcceptInvite(ctx *gin.Context) {
 // @Produce json
 // @Success 200 {object} common.Resp{data=model.UserData} "获取成功"
 // @Failure 200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
-// @Router /api/lab/user [get]
+// @Router /v1/lab/user [get]
 func (l *EnvHandle) UserInfo(ctx *gin.Context) {
 	resp, err := l.envService.UserInfo(ctx)
 	common.Reply(ctx, err, resp)

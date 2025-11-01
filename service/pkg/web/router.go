@@ -29,7 +29,6 @@ func NewRouter(ctx context.Context, g *gin.Engine) {
 }
 
 func installMiddleware(g *gin.Engine) {
-	// TODO: trace 中间件
 	g.ContextWithFallback = true
 	server := config.Global().Server
 	g.Use(cors.Default())
@@ -44,24 +43,29 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 	api.GET("/health", views.Health)
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-	// 登录模块
+	// Test
+	{
+		fooGroup := api.Group("/foo")
+		fooGroup.GET("", foo.HandleTestAnomy)
+		fooGroup.GET("/auth", auth.Auth(), foo.HandleTestAuth)
+	}
+
+	// Auth
 	{
 		l := login.NewLogin()
 		// 设置认证相关路由
 		authGroup := api.Group("/auth")
-		// 登录路由 - 使用改进版处理器
+		// 登录路由
 		authGroup.GET("/login", l.Login)
-		// OAuth2 回调处理路由 - 使用改进版处理器
+		// OAuth2 回调处理路由
 		authGroup.GET("/callback/casdoor", l.Callback)
 		// 刷新令牌路由
 		authGroup.POST("/refresh", l.Refresh)
 	}
 
+	// V1 API
 	{
 		v1 := api.Group("/v1")
-		// 测试路由
-		fooGroup := v1.Group("/foo")
-		fooGroup.GET("/hello", auth.Auth(), foo.HandleHelloWorld)
 		wsRouter := v1.Group("/ws", auth.Auth())
 
 		// 环境相关
@@ -141,7 +145,7 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 					owner := workflowRouter.Group("owner")
 					owner.PATCH("", workflowHandle.UpdateWorkflow)     // 更新工作流 done
 					owner.POST("", workflowHandle.Create)              // 创建工作流 done
-					owner.DELETE("/:uuid", workflowHandle.DelWrokflow) //  删除自己创建的工作流 done
+					owner.DELETE("/:uuid", workflowHandle.DelWorkflow) //  删除自己创建的工作流 done
 					owner.GET("/list", workflowHandle.GetWorkflowList) // 获取工作流列表  done
 					owner.GET("/export", workflowHandle.Export)        // 导出工作流
 					owner.POST("/import", workflowHandle.Import)       // 导入工作流
