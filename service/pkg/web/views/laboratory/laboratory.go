@@ -208,6 +208,9 @@ func (l *EnvHandle) GetLabMemeber(ctx *gin.Context) {
 		return
 	}
 
+	// 统一规范化分页参数（设置默认值）
+	req.Normalize()
+
 	resp, err := l.envService.LabMemberList(ctx, req)
 	if err != nil {
 		logger.Errorf(ctx, "GetLabMemeber err: %+v", err)

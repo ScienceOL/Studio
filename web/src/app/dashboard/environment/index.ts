@@ -3,8 +3,8 @@
  */
 
 // 页面组件
-export { default as Environment } from '../Environment';
-export { default as EnvironmentDetail } from '../EnvironmentDetail';
+export { default as EnvironmentDetail } from './EnvironmentDetail';
+export { default as EnvironmentPage } from './EnvironmentPage';
 
 // Hooks
 export * from '@/hooks/queries/useEnvironmentQueries';

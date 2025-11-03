@@ -2,16 +2,25 @@
 
 export interface Material {
   uuid: string;
-  lab_uuid: string;
-  name: string;
-  id?: string; // device_id，实际是数据库的 name
-  type: string;
-  class?: string; // 类名
-  status?: string;
+  lab_uuid?: string;
+  id: string; // 唯一标识，主键（对应后端的 id 字段）
+  name: string; // 设备名称（device_id，用于 action 执行）
+  type: string; // 类型：device/resource
+  class?: string; // 资源类名，对应 ResourceTemplate.name（例如 gripper.mock）
+  status?: string; // 状态：active/inactive 等
   parent_uuid?: string; // 父节点 UUID
+  parent?: string | null; // 父节点 ID（对应后端的 parent 字段）
+  children?: string[]; // 子节点 ID 列表
+  position?: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  config?: Record<string, unknown>; // 配置信息
+  data?: Record<string, unknown>; // 数据信息
   properties?: Record<string, unknown>;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   [key: string]: unknown;
 }
 
@@ -149,17 +158,29 @@ export interface ResourceTemplate {
   uuid: string;
   name: string;
   resource_type: string;
-  type?: string;
+  language?: string;
   icon?: string;
-  description?: string;
+  description?: string | null;
   tags?: string[];
   version?: string;
   module?: string;
-  language?: string;
   model?: Record<string, unknown>;
-  header?: string;
-  footer?: string;
+  data_schema?: Record<string, unknown>;
+  config_schema?: Record<string, unknown>;
+  actions?: DeviceActionInfo[];
+  material_count?: number;
   created_at?: string;
   updated_at?: string;
   [key: string]: unknown;
+}
+
+// 设备动作信息
+export interface DeviceActionInfo {
+  name: string;
+  type: string;
+  schema?: Record<string, unknown>;
+  goal?: Record<string, unknown>;
+  goal_default?: Record<string, unknown>;
+  feedback?: Record<string, unknown>;
+  result?: Record<string, unknown>;
 }

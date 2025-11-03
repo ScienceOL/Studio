@@ -19,6 +19,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/web/views/workflow"
 
 	"github.com/scienceol/studio/service/pkg/web/views"
+	"github.com/scienceol/studio/service/pkg/web/views/action"
 	"github.com/scienceol/studio/service/pkg/web/views/foo"
 	"github.com/scienceol/studio/service/pkg/web/views/login"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -101,14 +102,15 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 			{
 				materialRouter := labRouter.Group("/material")
 				materialHandle := material.NewMaterialHandle(ctx)
-				materialRouter.POST("", materialHandle.CreateLabMaterial)                  //  创建物料 done
-				materialRouter.GET("", materialHandle.QueryMaterial)                       // edge 侧查询物料资源
-				materialRouter.PUT("", materialHandle.BatchUpdateMaterial)                 // edge 批量更新物料数据
-				materialRouter.POST("/save", materialHandle.SaveMaterial)                  //  保存物料
-				materialRouter.GET("/resource", materialHandle.ResourceList)               // 获取该实验室所有设备列表
-				materialRouter.GET("/device/actions", materialHandle.Actions)              // 获取实验室所有动作
-				materialRouter.POST("/edge", materialHandle.CreateMaterialEdge)            // 创建物料连线 done
-				materialRouter.GET("/download/:lab_uuid", materialHandle.DownloadMaterial) // 下载物料dag done
+				materialRouter.POST("", materialHandle.CreateLabMaterial)                      //  创建物料 done
+				materialRouter.GET("", materialHandle.QueryMaterial)                           // edge 侧查询物料资源
+				materialRouter.PUT("", materialHandle.BatchUpdateMaterial)                     // edge 批量更新物料数据
+				materialRouter.POST("/save", materialHandle.SaveMaterial)                      //  保存物料
+				materialRouter.GET("/resource", materialHandle.ResourceList)                   // 获取该实验室所有设备列表（简化版）
+				materialRouter.GET("/resource/templates", materialHandle.ResourceTemplateList) // 获取资源模板详细信息（包含 actions）
+				materialRouter.GET("/device/actions", materialHandle.Actions)                  // 获取实验室所有动作
+				materialRouter.POST("/edge", materialHandle.CreateMaterialEdge)                // 创建物料连线 done
+				materialRouter.GET("/download/:lab_uuid", materialHandle.DownloadMaterial)     // 下载物料dag done
 				materialRouter.GET("/template/:template_uuid", materialHandle.Template)
 				// labRouter.GET("/ws/material/:lab_uuid", materialHandle.LabMaterial) // WARN: websocket 是否要放在统一的路由下
 
@@ -127,6 +129,14 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 
 				wsRouter.GET("/material/:lab_uuid", materialHandle.LabMaterial)
 
+			}
+
+			{
+				// 动作执行
+				actionHandle := action.NewActionHandle(ctx)
+				actionRouter := labRouter.Group("/action")
+				actionRouter.POST("/run", actionHandle.RunAction)               // 手动执行设备动作
+				actionRouter.GET("/result/:uuid", actionHandle.GetActionResult) // 查询动作执行结果
 			}
 
 			{
@@ -166,7 +176,7 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 
 				v1.PUT("/lab/run/workflow", workflowHandle.RunWorkflow)
 
-				workflowRouter.GET("/ws/workflow/:uuid", workflowHandle.LabWorkflow) // WARN: websocket 是否放在统一的路由下
+				workflowRouter.GET("/ws/workflow/:uuid", workflowHandle.LabWorkflow) // TODO: websocket 放在统一的路由下
 			}
 		}
 	}

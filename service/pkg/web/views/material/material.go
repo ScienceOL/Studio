@@ -263,6 +263,28 @@ func (m *Handle) ResourceList(ctx *gin.Context) {
 	common.Reply(ctx, err, resp)
 }
 
+// @Summary 	资源模板列表（详细）
+// @Description 获取实验室所有资源模板的详细信息，包括图标、描述、动作列表等
+// @Tags 		Material
+// @Accept 		json
+// @Produce 	json
+// @Security 	BearerAuth
+// @Param 		lab_uuid query string true "实验室UUID"
+// @Success 	200 {object} common.Resp{data=material.ResourceTemplateResp} "获取成功"
+// @Failure 	200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router 		/v1/lab/material/resource/templates [get]
+func (m *Handle) ResourceTemplateList(ctx *gin.Context) {
+	req := &material.ResourceTemplateReq{}
+	if err := ctx.ShouldBindQuery(req); err != nil {
+		logger.Errorf(ctx, "parse ResourceTemplateList param err: %+v", err.Error())
+		common.ReplyErr(ctx, code.ParamErr, err.Error())
+		return
+	}
+
+	resp, err := m.mService.ResourceTemplateList(ctx, req)
+	common.Reply(ctx, err, resp)
+}
+
 // @Summary 	设备可用动作
 // @Description 获取设备对应的可用动作列表
 // @Tags 		Material

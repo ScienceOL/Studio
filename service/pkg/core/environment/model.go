@@ -153,15 +153,11 @@ type DelLabMemberReq struct {
 }
 
 type LabMemberResp struct {
-	UUID        uuid.UUID                  `json:"uuid"`
-	UserID      string                     `json:"user_id"`
-	LabID       int64                      `json:"lab_id"`
-	DisplayName string                     `json:"display_name"`
-	Email       string                     `json:"email"`
-	Phone       string                     `json:"phone"`
-	Name        string                     `json:"name"`
-	Role        model.LaboratoryMemberRole `json:"role"`
-	IsAdmin     bool                       `json:"is_admin"`
+	UUID    uuid.UUID                  `json:"uuid"`
+	UserID  string                     `json:"user_id"`
+	LabID   int64                      `json:"lab_id"`
+	Role    model.LaboratoryMemberRole `json:"role"`
+	IsAdmin bool                       `json:"is_admin"`
 }
 
 type InviteReq struct {

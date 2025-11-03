@@ -41,6 +41,7 @@ func (m *materialImpl) createEdgeNodes(ctx context.Context, labData *model.UserD
 	}
 
 	resourceNodes := make([]*model.ResourceNodeTemplate, 0, len(resTplNames))
+	logger.Warnf(ctx, "&&&&&&&&&&&&& labData: %d", labData.LabID)
 	err := m.envStore.FindDatas(ctx, &resourceNodes, map[string]any{
 		"lab_id": labData.LabID,
 		"name":   resTplNames,
@@ -51,6 +52,8 @@ func (m *materialImpl) createEdgeNodes(ctx context.Context, labData *model.UserD
 
 	// 强制校验资源模板是否存在
 	if len(resourceNodes) != len(resTplNames) {
+		logger.Infof(ctx, "=============== length of resourceNodes %d", len(resourceNodes))
+		logger.Infof(ctx, "############### Print resTplNames, %s", resTplNames)
 		return nil, code.ResNotExistErr
 	}
 

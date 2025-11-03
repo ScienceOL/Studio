@@ -54,7 +54,7 @@ import {
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function Environment() {
+export default function EnvironmentPage() {
   const navigate = useNavigate();
   const environment = useEnvironment();
 
@@ -123,7 +123,6 @@ export default function Environment() {
   };
 
   // ========== 渲染 ==========
-
   return (
     <div className="container mx-auto py-8 px-4 space-y-6">
       {/* 头部 */}
@@ -322,8 +321,9 @@ export default function Environment() {
       <Dialog
         open={environment.isCreateDialogOpen}
         onOpenChange={environment.setCreateDialogOpen}
+        size="md"
       >
-        <DialogContent className="bg-white mx-4 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+        <DialogContent className="bg-white m-4 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
           <DialogHeader className="space-y-3">
             <DialogTitle className="text-xl text-neutral-900 dark:text-neutral-100">
               创建实验室
@@ -391,6 +391,7 @@ export default function Environment() {
       <Dialog
         open={environment.isCredentialsDialogOpen}
         onOpenChange={environment.setCredentialsDialogOpen}
+        size="md"
       >
         <DialogContent className="bg-white mx-4 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
           <DialogHeader className="space-y-3">

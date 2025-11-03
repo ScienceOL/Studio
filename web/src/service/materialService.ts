@@ -51,10 +51,21 @@ export const materialService = {
     return res.data;
   },
 
-  // 获取实验室所有设备列表
+  // 获取实验室所有设备列表（简化版）
   async getResourceList(params: { lab_uuid: string }) {
     const res = await apiClient.get(
       `${config.apiBaseUrl}/api/v1/lab/material/resource`,
+      {
+        params,
+      }
+    );
+    return res.data;
+  },
+
+  // 获取资源模板详细信息（包含 actions、schema 等）
+  async getResourceTemplates(params: { lab_uuid: string }) {
+    const res = await apiClient.get(
+      `${config.apiBaseUrl}/api/v1/lab/material/resource/templates`,
       {
         params,
       }

@@ -10,6 +10,7 @@
  */
 
 import { environmentService } from '@/service';
+import { materialService } from '@/service/materialService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // ============= Query Keys =============
@@ -49,6 +50,7 @@ export function useLabDetail(uuid: string, enabled = true) {
     queryFn: () => environmentService.getLabInfo(uuid),
     enabled: !!uuid && enabled,
     staleTime: 60000, // 1分钟
+    select: (data) => data?.data,
   });
 }
 
@@ -61,6 +63,7 @@ export function useLabMembers(labUuid: string, enabled = true) {
     queryFn: () => environmentService.getLabMembers(labUuid),
     enabled: !!labUuid && enabled,
     staleTime: 30000,
+    select: (data) => data?.data || [],
   });
 }
 
@@ -72,6 +75,32 @@ export function useUserInfo() {
     queryKey: environmentKeys.userInfo(),
     queryFn: () => environmentService.getUserInfo(),
     staleTime: 5 * 60 * 1000, // 5分钟
+  });
+}
+
+/**
+ * 获取实验室的资源模板列表
+ */
+export function useResourceTemplates(labUuid: string, enabled = true) {
+  return useQuery({
+    queryKey: [...environmentKeys.detail(labUuid), 'resource-templates'],
+    queryFn: () => materialService.getResourceTemplates({ lab_uuid: labUuid }),
+    enabled: !!labUuid && enabled,
+    staleTime: 60000, // 1分钟
+    select: (data) => data?.data?.templates || [],
+  });
+}
+
+/**
+ * 获取实验室的物料列表
+ */
+export function useMaterials(labUuid: string, enabled = true) {
+  return useQuery({
+    queryKey: [...environmentKeys.detail(labUuid), 'materials'],
+    queryFn: () => materialService.downloadMaterial(labUuid),
+    enabled: !!labUuid && enabled,
+    staleTime: 30000, // 30秒
+    select: (data) => data?.data?.nodes || [],
   });
 }
 

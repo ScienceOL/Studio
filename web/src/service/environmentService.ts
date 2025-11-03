@@ -53,11 +53,18 @@ export const environmentService = {
   },
 
   // 获取实验室成员
-  async getLabMembers(labUuid: string) {
+  async getLabMembers(labUuid: string, params?: PaginationParams) {
+    // 统一规范化分页参数
+    const normalizedParams = normalizePaginationParams(params);
     const res = await apiClient.get(
-      `${config.apiBaseUrl}/api/v1/lab/member/${labUuid}`
+      `${config.apiBaseUrl}/api/v1/lab/member/${labUuid}`,
+      {
+        params: normalizedParams,
+      }
     );
-    return res.data;
+    // 后端返回的是分页数据: { data: LabMemberResp[], total, page, page_size }
+    // 这里直接返回 data 数组
+    return res.data?.data || [];
   },
 
   // 删除实验室成员

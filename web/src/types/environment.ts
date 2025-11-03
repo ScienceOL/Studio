@@ -3,10 +3,15 @@
 export interface Lab {
   uuid: string;
   name: string;
-  description?: string;
-  owner_uuid: string;
+  user_id: string;
+  is_admin: boolean;
+  access_key: string;
+  access_secret: string;
+  status: string;
   created_at: string;
   updated_at: string;
+  description?: string;
+  owner_uuid?: string;
   [key: string]: unknown;
 }
 
@@ -25,12 +30,14 @@ export interface UpdateLabRequest {
 
 export interface LabMember {
   uuid: string;
-  lab_uuid: string;
-  user_uuid: string;
+  user_id: string;
+  lab_id: number;
   role: string;
+  is_admin: boolean;
+  lab_uuid?: string;
+  user_uuid?: string;
   username?: string;
-  email?: string;
-  created_at: string;
+  created_at?: string;
 }
 
 export interface CreateInviteRequest {
@@ -73,10 +80,6 @@ export interface LabMemberResponse {
   uuid: string;
   user_id: string;
   lab_id: number;
-  display_name: string;
-  email: string;
-  phone: string;
-  name: string;
   role: string;
   is_admin: boolean;
   [key: string]: unknown;

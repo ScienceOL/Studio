@@ -809,6 +809,8 @@ func (m *materialImpl) createNodes(ctx context.Context, labData *model.Laborator
 
 	// 强制校验资源模板是否存在
 	if len(resourceNodes) != len(resTplNames) {
+		logger.Infof(ctx, "=============== length of resourceNodes %d", len(resourceNodes))
+		logger.Infof(ctx, "############### Print resTplNames, %s", resTplNames)
 		return code.ResNotExistErr
 	}
 
@@ -2574,6 +2576,107 @@ func (m *materialImpl) ResourceList(ctx context.Context, req *material.ResourceR
 				UUID:       n.UUID,
 				Name:       n.Name,
 				ParentUUID: parentIDMap[n.ParentID],
+			}, true
+		}),
+	}, nil
+}
+
+func (m *materialImpl) ResourceTemplateList(ctx context.Context, req *material.ResourceTemplateReq) (*material.ResourceTemplateResp, error) {
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		return nil, code.UnLogin
+	}
+
+	var labID int64
+	if userInfo.LabID == 0 {
+		labID = m.materialStore.UUID2ID(ctx, &model.Laboratory{}, req.LabUUID)[req.LabUUID]
+	} else {
+		labID = userInfo.LabID
+	}
+
+	count, err := m.envStore.Count(ctx, &model.LaboratoryMember{}, map[string]any{
+		"lab_id":  labID,
+		"user_id": userInfo.ID,
+	})
+	if err != nil || count == 0 {
+		return nil, code.NoPermission
+	}
+
+	if labID == 0 {
+		return nil, code.LabNotFound
+	}
+
+	// 获取所有资源模板
+	templates, err := m.envStore.GetAllResourceTemplateByLabID(ctx, labID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(templates) == 0 {
+		return &material.ResourceTemplateResp{Templates: []*material.ResourceTemplateInfo{}}, nil
+	}
+
+	// 获取每个模板的动作列表
+	templateIDs := utils.FilterUniqSlice(templates, func(t *model.ResourceNodeTemplate) (int64, bool) {
+		return t.ID, true
+	})
+
+	workflowNodes := make([]*model.WorkflowNodeTemplate, 0, len(templateIDs)*5)
+	if err := m.envStore.FindDatas(ctx, &workflowNodes, map[string]any{
+		"resource_node_id": templateIDs,
+	}, "resource_node_id", "name", "type", "schema", "goal", "goal_default", "feedback", "result"); err != nil {
+		return nil, err
+	}
+
+	// 按 resource_node_id 分组动作
+	actionMap := make(map[int64][]*material.ActionInfo)
+	for _, node := range workflowNodes {
+		actionMap[node.ResourceNodeID] = append(actionMap[node.ResourceNodeID], &material.ActionInfo{
+			Name:        node.Name,
+			Type:        node.Type,
+			Schema:      node.Schema,
+			Goal:        node.Goal,
+			GoalDefault: node.GoalDefault,
+			Feedback:    node.Feedback,
+			Result:      node.Result,
+		})
+	}
+
+	// 统计每个模板实例化的物料数量
+	materialCounts := make(map[int64]int)
+	materialNodes := make([]*model.MaterialNode, 0)
+	if err := m.materialStore.FindDatas(ctx, &materialNodes, map[string]any{
+		"lab_id":           labID,
+		"resource_node_id": templateIDs,
+	}, "resource_node_id"); err != nil {
+		logger.Errorf(ctx, "ResourceTemplateList find materials err: %+v", err)
+		// 不影响主流程，继续执行
+	} else {
+		for _, node := range materialNodes {
+			materialCounts[node.ResourceNodeID]++
+		}
+	}
+
+	// 构建返回结果
+	return &material.ResourceTemplateResp{
+		Templates: utils.FilterSlice(templates, func(t *model.ResourceNodeTemplate) (*material.ResourceTemplateInfo, bool) {
+			return &material.ResourceTemplateInfo{
+				UUID:          t.UUID,
+				Name:          t.Name,
+				Icon:          t.Icon,
+				Description:   t.Description,
+				ResourceType:  t.ResourceType,
+				Language:      t.Language,
+				Version:       t.Version,
+				Module:        t.Module,
+				Model:         t.Model,
+				DataSchema:    t.DataSchema,
+				ConfigSchema:  t.ConfigSchema,
+				Tags:          t.Tags,
+				Actions:       actionMap[t.ID],
+				MaterialCount: materialCounts[t.ID],
+				CreatedAt:     t.CreatedAt.Format("2006-01-02 15:04:05"),
+				UpdatedAt:     t.UpdatedAt.Format("2006-01-02 15:04:05"),
 			}, true
 		}),
 	}, nil

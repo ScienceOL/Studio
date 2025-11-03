@@ -2,6 +2,7 @@ package casdoor
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/go-resty/resty/v2"
@@ -10,15 +11,18 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/model"
 	"github.com/scienceol/studio/service/pkg/repo"
+	"gorm.io/gorm"
 )
 
 type casClient struct {
 	casDoorClient *resty.Client
+	repo.IDOrUUIDTranslate
 }
 
 func NewCasClient() repo.Account {
 	conf := config.Global().OAuth2
 	return &casClient{
+		IDOrUUIDTranslate: repo.NewBaseDB(),
 		casDoorClient: resty.New().
 			EnableTrace().
 			SetBaseURL(conf.Addr),
@@ -28,6 +32,7 @@ func NewCasClient() repo.Account {
 func NewLabAccess() repo.LabAccount {
 	conf := config.Global().OAuth2
 	return &casClient{
+		IDOrUUIDTranslate: repo.NewBaseDB(),
 		casDoorClient: resty.New().
 			EnableTrace().
 			SetBaseURL(conf.Addr),
@@ -79,14 +84,33 @@ func (c *casClient) GetLabUserInfo(ctx context.Context, req *model.LabAkSk) (*mo
 		return nil, code.CasDoorQueryLabUserErr
 	}
 
-	return resData.Data, nil
+	// 查表获取 LabID 和 LabUUID
+	labData := &model.Laboratory{}
+	if err := c.DBWithContext(ctx).
+		Where("access_key = ? and access_secret = ?",
+			req.AccessKey, req.AccessSecret).
+		Select("id", "uuid").
+		Take(labData).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, code.RecordNotFound
+		}
+
+		logger.Errorf(ctx, "GetLabUserInfo fail err: %+v", err)
+		return nil, err
+	}
+
+	return &model.UserData{
+		ID:      resData.Data.ID,
+		LabID:   labData.ID,
+		LabUUID: labData.UUID,
+	}, nil
 }
 
 func (c *casClient) DelLabUserInfo(_ context.Context, _ *model.LabAkSk) error {
 	panic("not impl")
 }
 
-func (c *casClient) BatchGetUserInfo(ctx context.Context, uesrIDs []string) ([]*model.UserData, error) {
+func (c *casClient) BatchGetUserInfo(ctx context.Context, userIDs []string) ([]*model.UserData, error) {
 	panic("not impl")
 }
 

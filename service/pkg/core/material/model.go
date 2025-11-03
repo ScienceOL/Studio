@@ -393,6 +393,47 @@ type ResourceResp struct {
 	ResourceNameList []*ResourceInfo `json:"resource_name_list"`
 }
 
+// ResourceTemplateReq 获取资源模板详细信息的请求
+type ResourceTemplateReq struct {
+	LabUUID uuid.UUID `json:"lab_uuid" form:"lab_uuid" uri:"lab_uuid" binding:"required"`
+}
+
+// ResourceTemplateInfo 资源模板详细信息
+type ResourceTemplateInfo struct {
+	UUID          uuid.UUID      `json:"uuid"`
+	Name          string         `json:"name"`
+	Icon          string         `json:"icon"`
+	Description   *string        `json:"description"`
+	ResourceType  string         `json:"resource_type"`
+	Language      string         `json:"language"`
+	Version       string         `json:"version"`
+	Module        string         `json:"module"`
+	Model         datatypes.JSON `json:"model" swaggertype:"object"`
+	DataSchema    datatypes.JSON `json:"data_schema" swaggertype:"object"`
+	ConfigSchema  datatypes.JSON `json:"config_schema" swaggertype:"object"`
+	Tags          []string       `json:"tags"`
+	Actions       []*ActionInfo  `json:"actions"`        // 该资源支持的动作列表
+	MaterialCount int            `json:"material_count"` // 该资源实例化的物料数量
+	CreatedAt     string         `json:"created_at"`
+	UpdatedAt     string         `json:"updated_at"`
+}
+
+// ActionInfo 动作信息
+type ActionInfo struct {
+	Name        string         `json:"name"`
+	Type        string         `json:"type"`
+	Schema      datatypes.JSON `json:"schema" swaggertype:"object"`
+	Goal        datatypes.JSON `json:"goal" swaggertype:"object"`
+	GoalDefault datatypes.JSON `json:"goal_default" swaggertype:"object"`
+	Feedback    datatypes.JSON `json:"feedback" swaggertype:"object"`
+	Result      datatypes.JSON `json:"result" swaggertype:"object"`
+}
+
+// ResourceTemplateResp 资源模板列表响应
+type ResourceTemplateResp struct {
+	Templates []*ResourceTemplateInfo `json:"templates"`
+}
+
 type DeviceActionReq struct {
 	LabUUID uuid.UUID `json:"lab_uuid" uri:"lab_uuid" form:"lab_uuid" binding:"required"`
 	Name    string    `json:"name" uri:"name" form:"name" binding:"required"`

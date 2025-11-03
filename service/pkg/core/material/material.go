@@ -19,6 +19,7 @@ type Service interface {
 	DownloadMaterial(ctx context.Context, req *DownloadMaterial) (*GraphNodeReq, error)
 	GetMaterialTemplate(ctx context.Context, req *TemplateReq) (*TemplateResp, error)
 	ResourceList(ctx context.Context, req *ResourceReq) (*ResourceResp, error)
+	ResourceTemplateList(ctx context.Context, req *ResourceTemplateReq) (*ResourceTemplateResp, error)
 	DeviceAction(ctx context.Context, req *DeviceActionReq) (*DeviceActionResp, error)
 
 	// 开发机相关

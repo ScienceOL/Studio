@@ -499,12 +499,18 @@ func (l *lab) LabMemberList(ctx context.Context, req *environment.LabMemberReq) 
 		return nil, err
 	}
 
-	resp := utils.FilterSlice(labMembers.Data, func(l *model.LaboratoryMember) (*environment.LabMemberResp, bool) {
+	// 获取实验室所有者信息用于判断是否为管理员
+	labData, _ := l.envStore.GetLabByUUID(ctx, req.LabUUID)
+
+	resp := utils.FilterSlice(labMembers.Data, func(member *model.LaboratoryMember) (*environment.LabMemberResp, bool) {
+		isAdmin := labData != nil && labData.UserID == member.UserID
+
 		return &environment.LabMemberResp{
-			UUID:   l.UUID,
-			UserID: l.UserID,
-			LabID:  l.LabID,
-			Role:   l.Role,
+			UUID:    member.UUID,
+			UserID:  member.UserID,
+			LabID:   member.LabID,
+			Role:    member.Role,
+			IsAdmin: isAdmin,
 		}, true
 	})
 

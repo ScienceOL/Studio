@@ -7,12 +7,20 @@ import clsx from 'clsx';
 import { Fragment, type ReactNode } from 'react';
 
 interface DialogProps {
+  size?: 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: ReactNode;
+  className?: string;
 }
 
-export function Dialog({ open, onOpenChange, children }: DialogProps) {
+export function Dialog({
+  open,
+  onOpenChange,
+  children,
+  size,
+  className,
+}: DialogProps) {
   return (
     <Transition show={open} as={Fragment}>
       <HeadlessDialog
@@ -41,7 +49,21 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <HeadlessDialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-0 text-left align-middle shadow-xl transition-all dark:bg-neutral-900 dark:border dark:border-neutral-800">
+            <HeadlessDialog.Panel
+              className={clsx(
+                'w-full transform overflow-hidden rounded-2xl bg-white p-0 text-left align-middle shadow-xl transition-all dark:bg-neutral-900 dark:border dark:border-neutral-800',
+                {
+                  'max-w-md': size === 'md',
+                  'max-w-lg': size === 'lg',
+                  'max-w-xl': size === 'xl',
+                  'max-w-2xl': size === '2xl',
+                  'max-w-3xl': size === '3xl',
+                  'max-w-4xl': size === '4xl',
+                  'max-w-5xl': size === '5xl',
+                },
+                className
+              )}
+            >
               {children}
             </HeadlessDialog.Panel>
           </Transition.Child>
