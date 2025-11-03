@@ -285,7 +285,7 @@ export default function ActionPanel({
                         <button
                           key={idx}
                           onClick={() => handleActionClick(action)}
-                          className="w-full text-left p-3 rounded-lg border transition-colors bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 hover:border-indigo-200 dark:hover:border-indigo-800 group"
+                          className="w-full text-left p-3 rounded-lg border truncate transition-colors bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 hover:border-indigo-200 dark:hover:border-indigo-800 group"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
@@ -296,7 +296,9 @@ export default function ActionPanel({
                                 variant="secondary"
                                 className="mt-1 text-xs"
                               >
-                                {action.type}
+                                <span className=" truncate w-64">
+                                  {action.type}
+                                </span>
                               </Badge>
                             </div>
                             <ChevronRight className="h-4 w-4 text-neutral-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />

@@ -37,9 +37,9 @@ func installMiddleware(g *gin.Engine) {
 
 	// 配置 CORS，明确允许 authorization 请求头
 	g.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:32234", "http://localhost:*"},
+		AllowOrigins:     []string{"http://localhost:32234", "http://localhost:*", "https://sciol.ac.cn", "https://*.sciol.ac.cn"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"}, // 关键：添加 Authorization
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,

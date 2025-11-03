@@ -62,7 +62,7 @@ CardDescription.displayName = 'CardDescription';
 
 const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={clsx('p-6 pt-0', className)} {...props} />
+    <div ref={ref} className={clsx('p-6 pt-0 custom-scrollbar', className)} {...props} />
   )
 );
 CardContent.displayName = 'CardContent';
