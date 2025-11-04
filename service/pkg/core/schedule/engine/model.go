@@ -6,15 +6,17 @@ import (
 
 	"github.com/olahol/melody"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
-	"github.com/scienceol/studio/service/pkg/repo"
+	"github.com/scienceol/studio/service/pkg/core/notify"
 	"github.com/scienceol/studio/service/pkg/model"
+	"github.com/scienceol/studio/service/pkg/repo"
 	"gorm.io/datatypes"
 )
 
 type TaskParam struct {
-	Session *melody.Session
-	Cancle  context.CancelFunc
-	Sandbox repo.Sandbox
+	Session    *melody.Session
+	Cancle     context.CancelFunc
+	Sandbox    repo.Sandbox
+	BoardEvent notify.MsgCenter
 }
 
 type WorkflowInfo struct {

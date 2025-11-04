@@ -23,6 +23,7 @@ import {
   ArrowLeft,
   Box,
   Bug,
+  ClipboardList,
   Info,
   Layers,
   Zap,
@@ -32,6 +33,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ActionDebugPanel,
+  ActionLogsPanel,
   ActionPanel,
   DetailsPanel,
   MaterialsPanel,
@@ -48,6 +50,7 @@ const TABS_CONFIG: Array<{
   { icon: Box, label: 'Templates' },
   { icon: Layers, label: 'Materials' },
   { icon: Zap, label: 'Actions' },
+  { icon: ClipboardList, label: 'Logs' },
   { icon: Bug, label: 'Debug' },
 ];
 
@@ -181,6 +184,11 @@ export default function EnvironmentDetail() {
               isLoadingMaterials={isLoadingMaterials}
               isLoadingResources={isLoadingResources}
             />
+          </TabPanel>
+
+          {/* Logs 面板 */}
+          <TabPanel>
+            <ActionLogsPanel labUuid={labUuid} />
           </TabPanel>
 
           {/* Debug 面板 */}

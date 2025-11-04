@@ -137,6 +137,9 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 				actionRouter := labRouter.Group("/action")
 				actionRouter.POST("/run", actionHandle.RunAction)               // 手动执行设备动作
 				actionRouter.GET("/result/:uuid", actionHandle.GetActionResult) // 查询动作执行结果
+
+				// WebSocket 放在独立的 wsRouter 下
+				wsRouter.GET("/action/:task_uuid", actionHandle.ActionWebSocket) // WebSocket 实时状态更新
 			}
 
 			{

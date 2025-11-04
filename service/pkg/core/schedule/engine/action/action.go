@@ -14,8 +14,8 @@ import (
 	"github.com/scienceol/studio/service/pkg/core/schedule/engine"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
-	"github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/model"
+	"github.com/scienceol/studio/service/pkg/repo"
 	"github.com/scienceol/studio/service/pkg/utils"
 )
 
@@ -41,12 +41,13 @@ type actionEngine struct {
 
 func NewActionTask(ctx context.Context, param *engine.TaskParam) engine.Task {
 	d := &actionEngine{
-		session: param.Session,
-		cancel:  param.Cancle,
-		ctx:     ctx,
-		wg:      sync.WaitGroup{},
-		rClient: redis.GetClient(),
-		sanbox:  param.Sandbox,
+		session:    param.Session,
+		cancel:     param.Cancle,
+		ctx:        ctx,
+		wg:         sync.WaitGroup{},
+		rClient:    redis.GetClient(),
+		sanbox:     param.Sandbox,
+		boardEvent: param.BoardEvent,
 	}
 	d.stepFuncs = append(d.stepFuncs,
 		d.loadData, // 加载运行数据
@@ -262,6 +263,9 @@ func (d *actionEngine) GetStatus(_ context.Context) error {
 }
 
 func (d *actionEngine) OnJobUpdate(ctx context.Context, data *engine.JobData) error {
+	// 广播状态更新（包括 running 状态）
+	d.boardMsg(ctx, data)
+
 	if data.Status == "running" {
 		return nil
 	}
@@ -334,4 +338,23 @@ func (d *actionEngine) InitDeviceActionStatus(ctx context.Context, key engine.Ac
 
 func (d *actionEngine) DelStatus(ctx context.Context, key engine.ActionKey) {
 	d.actionStatus.Delete(key)
+}
+
+func (d *actionEngine) boardMsg(ctx context.Context, jobData *engine.JobData) {
+	if d.boardEvent == nil {
+		return
+	}
+
+	if err := d.boardEvent.Broadcast(context.Background(), &notify.SendMsg{
+		Channel:      "action-run",
+		TaskUUID:     d.job.TaskUUID,
+		LabUUID:      d.job.LabUUID,
+		WorkflowUUID: d.job.WorkflowUUID,
+		UserID:       d.job.UserID,
+		UUID:         d.job.TaskUUID,
+		Data:         jobData,
+		Timestamp:    time.Now().Unix(),
+	}); err != nil {
+		logger.Errorf(ctx, "action board msg fail err: %+v", err)
+	}
 }

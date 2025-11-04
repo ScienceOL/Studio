@@ -21,6 +21,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { config } from '@/configs';
 import apiClient from '@/service/http/client';
+import { getAuthenticatedWsUrl } from '@/service/ws/client';
+import { useActionLogStore } from '@/store/actionLogStore';
 import type { DeviceActionInfo, Material } from '@/types/material';
 import Editor, { loader } from '@monaco-editor/react';
 import {
@@ -33,7 +35,8 @@ import {
   XCircle,
 } from 'lucide-react';
 import * as monaco from 'monaco-editor';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import useWebSocket, { ReadyState } from 'react-use-websocket';
 
 // 配置 Monaco Editor
 loader.config({ monaco });
@@ -75,41 +78,48 @@ export default function ActionRunnerDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isQuerying, setIsQuerying] = useState(false);
   const [error, setError] = useState<string>('');
+  const [wsUrl, setWsUrl] = useState<string | null>(null);
+  const [executionLogs, setExecutionLogs] = useState<
+    Array<{
+      timestamp: string;
+      message: string;
+      type: 'info' | 'success' | 'error' | 'warning';
+    }>
+  >([]);
 
-  // 检测系统主题
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return (
-      document.documentElement.classList.contains('dark') ||
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    );
-  });
+  // 使用 ref 追踪上一次的状态，避免触发重渲染
+  const lastStatusRef = useRef<string>('');
 
-  // 监听主题变化
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  // 日志管理
+  const { addLog, updateLog } = useActionLogStore();
 
-    const updateTheme = () => {
-      setIsDarkMode(
-        document.documentElement.classList.contains('dark') ||
-          window.matchMedia('(prefers-color-scheme: dark)').matches
-      );
-    };
+  // 添加执行日志 - 使用 useCallback 稳定引用
+  const addExecutionLog = useCallback(
+    (
+      message: string,
+      type: 'info' | 'success' | 'error' | 'warning' = 'info'
+    ) => {
+      setExecutionLogs((prev) => [
+        ...prev,
+        {
+          timestamp: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+          message,
+          type,
+        },
+      ]);
+    },
+    []
+  );
 
-    const observer = new MutationObserver(updateTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery.addEventListener('change', updateTheme);
-
-    return () => {
-      observer.disconnect();
-      mediaQuery.removeEventListener('change', updateTheme);
-    };
-  }, []);
+  // 使用 react-use-websocket hook
+  const { lastMessage, readyState } = useWebSocket(
+    wsUrl,
+    {
+      shouldReconnect: () => false, // 不自动重连，任务完成后手动关闭
+      reconnectAttempts: 0,
+    },
+    !!wsUrl // 只有当 wsUrl 不为 null 时才连接
+  );
 
   // 当 action 变化时，自动填充默认参数
   useEffect(() => {
@@ -126,6 +136,8 @@ export default function ActionRunnerDialog({
     setResult(null);
     setTaskUuid('');
     setError('');
+    setExecutionLogs([]);
+    lastStatusRef.current = '';
   }, [action]);
 
   // 从 schema 生成示例参数
@@ -225,6 +237,10 @@ export default function ActionRunnerDialog({
       class: material.class,
     });
 
+    // 添加日志
+    addExecutionLog(`准备执行动作: ${action.name}`, 'info');
+    addExecutionLog(`设备 ID: ${material.id}`, 'info');
+
     // 发送请求
     setIsLoading(true);
     try {
@@ -237,6 +253,18 @@ export default function ActionRunnerDialog({
         const uuid = response.data.data?.task_uuid;
         setTaskUuid(uuid);
         console.log('任务已创建', `任务 UUID: ${uuid}`);
+        addExecutionLog(`✓ 任务创建成功: ${uuid}`, 'success');
+
+        // 记录日志（异步）
+        await addLog({
+          taskUuid: uuid,
+          labUuid: labUuid,
+          deviceId: material.id,
+          deviceName: material.name,
+          actionName: action.name,
+          status: 'pending',
+          startTime: new Date().toISOString(),
+        });
 
         // 通知父组件执行已开始
         if (onExecutionComplete) {
@@ -246,14 +274,27 @@ export default function ActionRunnerDialog({
           });
         }
 
-        // 自动查询结果
-        setTimeout(() => queryResult(uuid), 2000);
+        // 连接 WebSocket 接收实时状态更新（带认证 token）
+        const authenticatedWsUrl = getAuthenticatedWsUrl(
+          `/api/v1/ws/action/${uuid}`
+        );
+        console.log('连接 WebSocket:', authenticatedWsUrl);
+        addExecutionLog('正在连接 WebSocket 获取实时状态...', 'info');
+        setWsUrl(authenticatedWsUrl);
       } else {
-        setError(`请求失败: ${response.data.msg || '未知错误'}`);
+        const errMsg =
+          response.data?.msg ||
+          response.data?.error?.msg ||
+          response.data?.message ||
+          response.data?.error?.message ||
+          '未知错误';
+        setError(`请求失败: ${errMsg}`);
+        addExecutionLog(`✗ 请求失败: ${errMsg}`, 'error');
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : '未知错误';
       setError(`网络错误: ${message}`);
+      addExecutionLog(`✗ 网络错误: ${message}`, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -288,7 +329,13 @@ export default function ActionRunnerDialog({
           });
         }
       } else {
-        setError(`查询失败: ${response.data.msg || '未知错误'}`);
+        const errMsg =
+          response.data?.msg ||
+          response.data?.error?.msg ||
+          response.data?.message ||
+          response.data?.error?.message ||
+          '未知错误';
+        setError(`查询失败: ${errMsg}`);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : '未知错误';
@@ -297,6 +344,189 @@ export default function ActionRunnerDialog({
       setIsQuerying(false);
     }
   };
+
+  // 处理 WebSocket 消息
+  useEffect(() => {
+    if (!lastMessage) return;
+
+    try {
+      const data = JSON.parse(lastMessage.data);
+      console.log(
+        '收到 WebSocket 消息 - 完整结构:',
+        JSON.stringify(data, null, 2)
+      );
+      console.log('data.code:', data.code);
+      console.log('data.data:', data.data);
+      console.log('data.data?.data:', data.data?.data);
+      console.log('data.data?.data?.action:', data.data?.data?.action);
+
+      // 尝试多种可能的消息结构
+      let jobData = null;
+
+      // 结构1: data.data.data.data (嵌套4层)
+      if (
+        data.code === 0 &&
+        data.data?.data?.action === 'action_status_update'
+      ) {
+        jobData = data.data.data.data;
+        console.log('匹配结构1 (4层嵌套)');
+      }
+      // 结构2: data.data.data (嵌套3层)
+      else if (
+        data.code === 0 &&
+        data.data?.action === 'action_status_update'
+      ) {
+        jobData = data.data.data;
+        console.log('匹配结构2 (3层嵌套)');
+      }
+      // 结构3: data.data (嵌套2层)
+      else if (data.code === 0 && data.action === 'action_status_update') {
+        jobData = data.data;
+        console.log('匹配结构3 (2层嵌套)');
+      }
+      // 结构4: 直接在 data 中
+      else if (data.action === 'action_status_update') {
+        jobData = data;
+        console.log('匹配结构4 (1层)');
+      }
+
+      if (jobData) {
+        console.log('解析到的 jobData:', jobData);
+
+        // 检查状态是否变化
+        const statusChanged = jobData.status !== lastStatusRef.current;
+
+        // 只在状态变化时添加日志，避免重复日志导致性能问题
+        if (statusChanged) {
+          const statusEmojiMap: Record<string, string> = {
+            pending: '⏳',
+            running: '▶️',
+            success: '✓',
+            failed: '✗',
+            fail: '✗',
+          };
+          const statusEmoji = statusEmojiMap[jobData.status] || '●';
+
+          addExecutionLog(
+            `${statusEmoji} 状态: ${jobData.status}`,
+            jobData.status === 'success'
+              ? 'success'
+              : jobData.status === 'failed' || jobData.status === 'fail'
+              ? 'error'
+              : jobData.status === 'running'
+              ? 'warning'
+              : 'info'
+          );
+        }
+
+        // 更新结果
+        const newResult: ActionResult = {
+          job_id: jobData.job_id,
+          task_id: jobData.task_id,
+          device_id: jobData.device_id,
+          action_name: jobData.action_name,
+          status: jobData.status,
+          feedback_data: jobData.feedback_data,
+          return_info: jobData.return_info,
+        };
+
+        setResult(newResult);
+
+        // 只在状态变化时更新日志存储，避免频繁更新（异步）
+        if (statusChanged) {
+          const now = new Date().toISOString();
+          const isCompleted =
+            jobData.status === 'success' ||
+            jobData.status === 'failed' ||
+            jobData.status === 'fail';
+
+          // 异步更新，不阻塞 UI
+          updateLog(taskUuid, {
+            status: jobData.status,
+            statusUpdate: {
+              status: jobData.status,
+              timestamp: now,
+              feedbackData: jobData.feedback_data,
+              returnInfo: jobData.return_info,
+            },
+            ...(isCompleted && {
+              endTime: now,
+              finalResult: {
+                jobId: jobData.job_id,
+                feedbackData: jobData.feedback_data,
+                returnInfo: jobData.return_info,
+              },
+            }),
+          }).catch((err) => {
+            console.error('更新日志失败:', err);
+          });
+
+          // 更新引用，避免重复处理
+          lastStatusRef.current = jobData.status;
+        }
+
+        // 通知父组件
+        if (onExecutionComplete) {
+          onExecutionComplete({
+            task_uuid: taskUuid,
+            status: jobData.status,
+            result: newResult,
+          });
+        }
+
+        // 如果任务完成，断开 WebSocket
+        const isCompleted =
+          jobData.status === 'success' ||
+          jobData.status === 'failed' ||
+          jobData.status === 'fail';
+
+        if (isCompleted) {
+          console.log('任务完成，断开 WebSocket');
+          addExecutionLog(
+            '任务执行完成',
+            jobData.status === 'success' ? 'success' : 'error'
+          );
+          setWsUrl(null);
+        }
+      } else {
+        console.warn('未匹配到任何消息结构，原始消息:', data);
+        addExecutionLog('⚠ 收到未识别的消息格式', 'warning');
+      }
+    } catch (err) {
+      console.error('解析 WebSocket 消息失败:', err);
+      addExecutionLog(
+        `✗ 消息解析失败: ${err instanceof Error ? err.message : String(err)}`,
+        'error'
+      );
+    }
+  }, [lastMessage, taskUuid, onExecutionComplete, updateLog, addExecutionLog]);
+
+  // 监听 WebSocket 连接状态
+  useEffect(() => {
+    const statusText = {
+      [ReadyState.CONNECTING]: '连接中...',
+      [ReadyState.OPEN]: '已连接',
+      [ReadyState.CLOSING]: '断开中...',
+      [ReadyState.CLOSED]: '已断开',
+      [ReadyState.UNINSTANTIATED]: '未实例化',
+    }[readyState];
+
+    console.log('WebSocket 状态:', statusText);
+
+    if (readyState === ReadyState.OPEN && wsUrl) {
+      addExecutionLog('✓ WebSocket 连接成功', 'success');
+    } else if (readyState === ReadyState.CLOSED && wsUrl) {
+      setError('WebSocket 连接已关闭');
+      addExecutionLog('WebSocket 连接已关闭', 'warning');
+    }
+  }, [readyState, wsUrl, addExecutionLog]);
+
+  // 对话框关闭时断开 WebSocket
+  useEffect(() => {
+    if (!open) {
+      setWsUrl(null);
+    }
+  }, [open]);
 
   // 复制到剪贴板
   const copyToClipboard = (text: string) => {
@@ -362,7 +592,7 @@ export default function ActionRunnerDialog({
                   showFoldingControls: 'mouseover',
                   glyphMargin: true,
                 }}
-                theme={isDarkMode ? 'vs-dark' : 'vs'}
+                theme={'vs-dark'}
               />
             </div>
           </div>
@@ -391,7 +621,7 @@ export default function ActionRunnerDialog({
                     defaultLanguage="json"
                     value={paramJson}
                     onChange={(value) => setParamJson(value || '{}')}
-                    theme={isDarkMode ? 'vs-dark' : 'vs'}
+                    theme={'vs-dark'}
                     options={{
                       minimap: { enabled: false },
                       fontSize: 13,
@@ -483,6 +713,36 @@ export default function ActionRunnerDialog({
                 </div>
               )}
 
+              {/* 执行日志 */}
+              {executionLogs.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                    执行日志
+                  </Label>
+                  <div className="max-h-40 overflow-y-auto bg-neutral-900 dark:bg-neutral-950 rounded-lg border border-neutral-700 dark:border-neutral-800 p-3 space-y-1.5 font-mono text-xs">
+                    {executionLogs.map((log, index) => (
+                      <div
+                        key={index}
+                        className={`flex items-start gap-2 ${
+                          log.type === 'error'
+                            ? 'text-red-400'
+                            : log.type === 'success'
+                            ? 'text-green-400'
+                            : log.type === 'warning'
+                            ? 'text-yellow-400'
+                            : 'text-neutral-300'
+                        }`}
+                      >
+                        <span className="text-neutral-500 shrink-0">
+                          [{log.timestamp}]
+                        </span>
+                        <span className="break-all">{log.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* 执行结果 */}
               {result && (
                 <div className="space-y-3 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-lg border border-neutral-200 dark:border-neutral-800">
@@ -549,7 +809,7 @@ export default function ActionRunnerDialog({
                           automaticLayout: true,
                           folding: false,
                         }}
-                        theme={isDarkMode ? 'vs-dark' : 'vs'}
+                        theme={'vs-dark'}
                       />
                     </div>
                   </div>
@@ -582,7 +842,7 @@ export default function ActionRunnerDialog({
                             showFoldingControls: 'mouseover',
                             glyphMargin: true,
                           }}
-                          theme={isDarkMode ? 'vs-dark' : 'vs'}
+                          theme={'vs-dark'}
                         />
                       </div>
                     </div>

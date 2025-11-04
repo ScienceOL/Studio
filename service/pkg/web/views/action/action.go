@@ -3,28 +3,54 @@ package action
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"github.com/olahol/melody"
 	r "github.com/redis/go-redis/v9"
 	"github.com/scienceol/studio/service/internal/config"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
+	"github.com/scienceol/studio/service/pkg/common/constant"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
+	"github.com/scienceol/studio/service/pkg/core/notify"
+	"github.com/scienceol/studio/service/pkg/core/notify/events"
 	"github.com/scienceol/studio/service/pkg/core/schedule/engine"
-	"github.com/scienceol/studio/service/pkg/core/schedule/engine/action"
+	actionEngine "github.com/scienceol/studio/service/pkg/core/schedule/engine/action"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
 )
 
+const (
+	ActionRunChannel notify.Action = "action-run"
+)
+
 type Handle struct {
-	rClient *r.Client
+	rClient    *r.Client
+	wsClient   *melody.Melody
+	boardEvent notify.MsgCenter
 }
 
 func NewActionHandle(ctx context.Context) *Handle {
-	return &Handle{
-		rClient: redis.GetClient(),
+	wsClient := melody.New()
+	wsClient.Config.MaxMessageSize = constant.MaxMessageSize
+
+	h := &Handle{
+		rClient:    redis.GetClient(),
+		wsClient:   wsClient,
+		boardEvent: events.NewEvents(),
 	}
+
+	// 注册通知处理
+	if err := h.boardEvent.Registry(ctx, ActionRunChannel, h.HandleNotify); err != nil {
+		logger.Errorf(ctx, "register action notify failed: %+v", err)
+	}
+
+	h.initActionWebSocket()
+	return h
 }
 
 // @Summary 		执行设备动作
@@ -38,7 +64,7 @@ func NewActionHandle(ctx context.Context) *Handle {
 // @Failure 		200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
 // @Router 			/v1/lab/action/run [post]
 func (h *Handle) RunAction(ctx *gin.Context) {
-	req := &action.RunActionReq{}
+	req := &actionEngine.RunActionReq{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		logger.Errorf(ctx, "parse RunAction param err: %+v", err.Error())
 		common.ReplyErr(ctx, code.ParamErr, err.Error())
@@ -63,13 +89,17 @@ func (h *Handle) RunAction(ctx *gin.Context) {
 		return
 	}
 
+	// 打印当前时间
+	now := time.Now()
+	logger.Infof(ctx, "RunAction request received at: %s", now.Format(time.RFC3339))
+
 	// 生成任务 UUID
 	if req.UUID.IsNil() {
 		req.UUID = uuid.NewV4()
 	}
 
 	// 将请求数据存储到 Redis
-	paramKey := action.ActionKey(req.UUID)
+	paramKey := actionEngine.ActionKey(req.UUID)
 	reqData, err := json.Marshal(req)
 	if err != nil {
 		logger.Errorf(ctx, "marshal RunActionReq err: %+v", err)
@@ -130,7 +160,7 @@ func (h *Handle) GetActionResult(ctx *gin.Context) {
 	}
 
 	// 从 Redis 获取结果
-	retKey := action.ActionRetKey(taskUUID)
+	retKey := actionEngine.ActionRetKey(taskUUID)
 	result := h.rClient.Get(ctx, retKey)
 	if result.Err() != nil {
 		if result.Err() == r.Nil {
@@ -143,7 +173,7 @@ func (h *Handle) GetActionResult(ctx *gin.Context) {
 	}
 
 	// 解析结果
-	resp := &action.RunActionResp{}
+	resp := &actionEngine.RunActionResp{}
 	if err := json.Unmarshal([]byte(result.Val()), resp); err != nil {
 		logger.Errorf(ctx, "unmarshal action result err: %+v", err)
 		common.ReplyErr(ctx, code.RPCHttpErr.WithErr(err))
@@ -151,4 +181,116 @@ func (h *Handle) GetActionResult(ctx *gin.Context) {
 	}
 
 	common.ReplyOk(ctx, resp)
+}
+
+// HandleNotify 处理通知消息并通过 WebSocket 广播给前端
+func (h *Handle) HandleNotify(ctx context.Context, msg string) error {
+	notifyData := &notify.SendMsg{}
+	if err := json.Unmarshal([]byte(msg), notifyData); err != nil {
+		logger.Errorf(ctx, "HandleNotify unmarshal data err: %+v", err)
+		return err
+	}
+
+	d := &common.Resp{
+		Code: code.Success,
+		Data: &common.WSData[any]{
+			WsMsgType: common.WsMsgType{
+				Action:  "action_status_update",
+				MsgUUID: notifyData.UUID,
+			},
+			Data: notifyData.Data,
+		},
+		Timestamp: time.Now().Unix(),
+	}
+
+	data, _ := json.Marshal(d)
+	// 广播给所有订阅了该任务的客户端
+	return h.wsClient.BroadcastFilter(data, func(s *melody.Session) bool {
+		sessionValue, ok := s.Get("task_uuid")
+		if !ok {
+			return false
+		}
+
+		if sessionValue.(uuid.UUID) == notifyData.TaskUUID {
+			return true
+		}
+
+		return false
+	})
+}
+
+// initActionWebSocket 初始化 WebSocket 处理器
+func (h *Handle) initActionWebSocket() {
+	h.wsClient.HandlePong(func(s *melody.Session) {
+		if ctx, ok := s.Get("ctx"); ok {
+			logger.Infof(ctx.(context.Context), "==================== action ws pong =====================")
+		}
+	})
+
+	h.wsClient.HandleClose(func(s *melody.Session, _ int, _ string) error {
+		if ctx, ok := s.Get("ctx"); ok {
+			logger.Infof(ctx.(context.Context), "action client close keys: %+v", s.Keys)
+		}
+		return nil
+	})
+
+	h.wsClient.HandleDisconnect(func(s *melody.Session) {
+		if ctx, ok := s.Get("ctx"); ok {
+			logger.Infof(ctx.(context.Context), "action client disconnected keys: %+v", s.Keys)
+		}
+	})
+
+	h.wsClient.HandleError(func(s *melody.Session, err error) {
+		if errors.Is(err, melody.ErrMessageBufferFull) {
+			return
+		}
+
+		if closeErr, ok := err.(*websocket.CloseError); ok {
+			if closeErr.Code == websocket.CloseGoingAway {
+				return
+			}
+		}
+
+		if strings.Contains(err.Error(), "use of closed network connection") {
+			return
+		}
+
+		if ctx, ok := s.Get("ctx"); ok {
+			logger.Errorf(ctx.(context.Context), "action websocket error keys: %+v, err: %+v", s.Keys, err)
+		}
+	})
+
+	h.wsClient.HandleConnect(func(s *melody.Session) {
+		c, _ := s.Get("ctx")
+		ctx := c.(*gin.Context)
+		logger.Infof(ctx, "action client connected keys: %+v", s.Keys)
+	})
+}
+
+// @Summary 		Action WebSocket 连接
+// @Description 	连接到指定任务的 WebSocket 会话，用于接收实时动作执行状态更新
+// @Tags 			Action
+// @Accept 			json
+// @Produce 		json
+// @Security 		BearerAuth
+// @Param 			task_uuid path string true "任务UUID"
+// @Success 		200 {object} common.Resp{} "连接成功（协议升级）"
+// @Failure 		200 {object} common.Resp{code=code.ErrCode} "请求参数错误"
+// @Router 			/v1/ws/action/{task_uuid} [get]
+func (h *Handle) ActionWebSocket(ctx *gin.Context) {
+	taskUUIDStr := ctx.Param("task_uuid")
+	taskUUID, err := uuid.FromString(taskUUIDStr)
+	if err != nil {
+		logger.Errorf(ctx, "parse task_uuid err: %+v", err)
+		common.ReplyErr(ctx, code.ParamErr.WithMsg("invalid task_uuid"))
+		return
+	}
+
+	// 阻塞运行 WebSocket 连接
+	if err := h.wsClient.HandleRequestWithKeys(ctx.Writer, ctx.Request, map[string]any{
+		"task_uuid": taskUUID,
+		"ctx":       ctx,
+	}); err != nil {
+		logger.Errorf(ctx, "action HandleRequestWithKeys err: %+v", err)
+	}
 }

@@ -6220,6 +6220,7 @@ __metadata:
     react-i18next: "npm:^16.0.0"
     react-icons: "npm:^5.5.0"
     react-router-dom: "npm:^7.9.3"
+    react-use-websocket: "npm:^4.13.0"
     tailwindcss: "npm:^4.1.14"
     three: "npm:^0.180.0"
     typescript: "npm:~5.8.3"

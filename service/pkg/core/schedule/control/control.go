@@ -374,9 +374,10 @@ func (i *control) createWrokflowTask(ctx context.Context, info *engine.WorkflowI
 
 	taskCtx, cancle := context.WithCancel(ctx)
 	task := dag.NewDagTask(taskCtx, &engine.TaskParam{
-		Session: targetSession,
-		Cancle:  cancle,
-		Sandbox: i.sandbox,
+		Session:    targetSession,
+		Cancle:     cancle,
+		Sandbox:    i.sandbox,
+		BoardEvent: i.boardEvent,
 	})
 
 	controlTask := &schedule.ControlTask{
@@ -623,9 +624,10 @@ func (i *control) createActionTask(ctx context.Context, info *engine.WorkflowInf
 
 	taskCtx, cancle := context.WithCancel(ctx)
 	task := action.NewActionTask(taskCtx, &engine.TaskParam{
-		Session: targetSession,
-		Cancle:  cancle,
-		Sandbox: i.sandbox,
+		Session:    targetSession,
+		Cancle:     cancle,
+		Sandbox:    i.sandbox,
+		BoardEvent: i.boardEvent,
 	})
 
 	controlTask := &schedule.ControlTask{
