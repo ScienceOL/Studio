@@ -239,6 +239,8 @@ func (l *lab) LabInfo(ctx context.Context, req *environment.LabInfoReq) (*enviro
 		resp.AccessKey = lab.AccessKey
 		resp.AccessSecret = lab.AccessSecret
 		resp.Status = lab.Status
+		resp.IsOnline = lab.IsOnline
+		resp.LastConnectedAt = lab.LastConnectedAt
 		resp.CreatedAt = lab.CreatedAt
 		resp.UpdatedAt = lab.UpdatedAt
 	}
@@ -450,14 +452,16 @@ func (l *lab) LabList(ctx context.Context, req *common.PageReq) (*common.PageMor
 		}
 
 		return &environment.LaboratoryResp{
-			UUID:        lab.UUID,
-			Name:        lab.Name,
-			UserID:      lab.UserID,
-			Description: lab.Description,
-			MemberCount: labMemberMap[lab.ID],
-			IsAdmin:     lab.UserID == userInfo.ID,
-			CreatedAt:   lab.CreatedAt,
-			UpdatedAt:   lab.UpdatedAt,
+			UUID:            lab.UUID,
+			Name:            lab.Name,
+			UserID:          lab.UserID,
+			Description:     lab.Description,
+			MemberCount:     labMemberMap[lab.ID],
+			IsAdmin:         lab.UserID == userInfo.ID,
+			IsOnline:        lab.IsOnline,
+			LastConnectedAt: lab.LastConnectedAt,
+			CreatedAt:       lab.CreatedAt,
+			UpdatedAt:       lab.UpdatedAt,
 		}, true
 	})
 

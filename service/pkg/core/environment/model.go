@@ -48,26 +48,30 @@ type LabInfoReq struct {
 }
 
 type LaboratoryResp struct {
-	UUID        uuid.UUID `json:"uuid"`
-	Name        string    `json:"name"`
-	UserID      string    `json:"user_id"`
-	Description *string   `json:"description"`
-	MemberCount int64     `json:"member_count"`
-	IsAdmin     bool      `json:"is_admin"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	UUID            uuid.UUID  `json:"uuid"`
+	Name            string     `json:"name"`
+	UserID          string     `json:"user_id"`
+	Description     *string    `json:"description"`
+	MemberCount     int64      `json:"member_count"`
+	IsAdmin         bool       `json:"is_admin"`
+	IsOnline        bool       `json:"is_online"`
+	LastConnectedAt *time.Time `json:"last_connected_at"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
 type LabInfoResp struct {
-	UUID         uuid.UUID               `json:"uuid"`
-	Name         string                  `json:"name"`
-	UserID       string                  `json:"user_id"`
-	IsAdmin      bool                    `json:"is_admin"`
-	AccessKey    string                  `json:"access_key"`
-	AccessSecret string                  `json:"access_secret"`
-	Status       model.EnvironmentStatus `json:"status"`
-	CreatedAt    time.Time               `json:"created_at"`
-	UpdatedAt    time.Time               `json:"updated_at"`
+	UUID            uuid.UUID               `json:"uuid"`
+	Name            string                  `json:"name"`
+	UserID          string                  `json:"user_id"`
+	IsAdmin         bool                    `json:"is_admin"`
+	AccessKey       string                  `json:"access_key"`
+	AccessSecret    string                  `json:"access_secret"`
+	Status          model.EnvironmentStatus `json:"status"`
+	IsOnline        bool                    `json:"is_online"`
+	LastConnectedAt *time.Time              `json:"last_connected_at"`
+	CreatedAt       time.Time               `json:"created_at"`
+	UpdatedAt       time.Time               `json:"updated_at"`
 }
 
 type RegAction struct {

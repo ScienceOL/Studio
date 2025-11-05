@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"time"
 
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
@@ -59,4 +60,8 @@ type LaboratoryRepo interface {
 	GetLabByLabID(ctx context.Context, req *common.PageReqT[int64]) (*common.PageResp[[]*model.LaboratoryMember], error)
 	// 获取实验室成员数量
 	GetLabMemberCount(ctx context.Context, labIDs ...int64) map[int64]int64
+	// 更新实验室在线状态
+	UpdateLabOnlineStatus(ctx context.Context, labID int64, isOnline bool, lastConnectedAt *time.Time) error
+	// 批量获取实验室在线状态
+	GetLabsOnlineStatus(ctx context.Context, labIDs []int64) (map[int64]bool, error)
 }

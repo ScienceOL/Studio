@@ -21,6 +21,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/web/views"
 	"github.com/scienceol/studio/service/pkg/web/views/action"
 	"github.com/scienceol/studio/service/pkg/web/views/foo"
+	"github.com/scienceol/studio/service/pkg/web/views/labstatus"
 	"github.com/scienceol/studio/service/pkg/web/views/login"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
@@ -56,6 +57,10 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 	api.GET("/health", views.Health)
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
+	// 在服务启动时初始化实验室状态服务，确保注册到全局通知器
+	labStatusHandle := labstatus.New()
+	logger.Infof(ctx, "lab status service initialized and registered to global notifier")
+
 	// Test
 	{
 		fooGroup := api.Group("/foo")
@@ -80,6 +85,11 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 	{
 		v1 := api.Group("/v1")
 		wsRouter := v1.Group("/ws", auth.Auth())
+
+		// 实验室状态 WebSocket
+		{
+			wsRouter.GET("/lab/status", labStatusHandle.ConnectLabStatus)
+		}
 
 		// 环境相关
 		{

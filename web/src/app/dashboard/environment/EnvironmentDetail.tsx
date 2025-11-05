@@ -17,6 +17,7 @@ import {
   useMaterials,
   useResourceTemplates,
 } from '@/hooks/queries/useEnvironmentQueries';
+import { useLabStatus } from '@/hooks/useLabStatus';
 import type { ResourceTemplate } from '@/types/material';
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react';
 import {
@@ -36,6 +37,7 @@ import {
   ActionLogsPanel,
   ActionPanel,
   DetailsPanel,
+  LabStatusIndicator,
   MaterialsPanel,
   ResourceActionDialog,
   ResourceTemplatesPanel,
@@ -76,6 +78,24 @@ export default function EnvironmentDetail() {
   const [selectedResource, setSelectedResource] =
     useState<ResourceTemplate | null>(null);
 
+  // 实验室在线状态监控（自动查询单个实验室）
+  const { getStatus } = useLabStatus({
+    labUuid: labUuid || '', // 传入实验室 UUID
+    autoQueryDetail: true, // 自动查询该实验室详情
+    onStatusUpdate: (statuses) => {
+      const updated = statuses.find((s) => s.lab_uuid === labUuid);
+      if (updated) {
+        console.log('📡 实验室状态更新:', updated);
+      }
+    },
+  });
+
+  // 获取当前实验室的状态
+  const labStatus = labUuid ? getStatus(labUuid) : undefined;
+  const isOnline = labStatus?.is_online ?? lab?.is_online ?? false;
+  const lastConnectedAt =
+    labStatus?.last_connected_at ?? lab?.last_connected_at;
+
   if (!labUuid) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -104,16 +124,36 @@ export default function EnvironmentDetail() {
       </Button>
 
       {/* 标题区域 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-            {lab?.name || '加载中...'}
-          </h1>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+              {lab?.name || '加载中...'}
+            </h1>
+            <LabStatusIndicator
+              isOnline={isOnline}
+              lastConnectedAt={lastConnectedAt}
+              showText={true}
+              size="md"
+            />
+          </div>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
             {lab?.description || '暂无描述'}
           </p>
+          {/* 连接时间信息 */}
+          {lastConnectedAt && (
+            <div className="mt-2">
+              <LabStatusIndicator
+                isOnline={isOnline}
+                lastConnectedAt={lastConnectedAt}
+                showText={false}
+                showTime={true}
+                size="sm"
+              />
+            </div>
+          )}
         </div>
-        <Badge className="bg-indigo-100 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100">
+        <Badge className="bg-indigo-100 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100 shrink-0">
           {labUuid.slice(0, 8)}
         </Badge>
       </div>

@@ -35,6 +35,7 @@ import (
 	s "github.com/scienceol/studio/service/pkg/repo/sandbox"
 	wfl "github.com/scienceol/studio/service/pkg/repo/workflow"
 	"github.com/scienceol/studio/service/pkg/utils"
+	"github.com/scienceol/studio/service/pkg/web/views/labstatus"
 )
 
 var (
@@ -137,6 +138,18 @@ func (i *control) Connect(ctx context.Context) {
 		logger.Errorf(ctx, "schedule control add edge to redis set access key: %s, err: %+v,", labUser.AccessKey, err)
 		common.ReplyErr(ginCtx, code.ParamErr.WithMsg("schedule add to redis set err"))
 		return
+	}
+
+	// 更新数据库：设置实验室为在线状态
+	now := time.Now()
+	logger.Infof(ctx, "🟢 [Schedule Control] Lab connecting: %s (ID: %d)", lab.UUID, lab.ID)
+	if err := i.labStore.UpdateLabOnlineStatus(ctx, lab.ID, true, &now); err != nil {
+		logger.Errorf(ctx, "❌ [Schedule Control] Failed to update lab online status err: %+v", err)
+	} else {
+		logger.Infof(ctx, "✅ [Schedule Control] Lab online status updated in DB, now notifying...")
+		// 通知状态变化
+		labstatus.GetGlobalNotifier().Notify(ctx, lab.UUID, true, &now)
+		logger.Infof(ctx, "📡 [Schedule Control] Global notifier called for lab %s", lab.UUID)
 	}
 
 	defer func() {
@@ -456,6 +469,7 @@ func (i *control) initWebSocket(ctx context.Context) {
 		ctxI, _ := s.Get("ctx")
 		gCtx := ctxI.(*gin.Context)
 		labUUID := s.MustGet("lab_uuid").(uuid.UUID)
+		labID := s.MustGet("lab_id").(int64)
 		logger.Infof(gCtx, "client close keys: %+v", s.Keys)
 
 		i.labClient.Delete(labUUID)
@@ -463,6 +477,19 @@ func (i *control) initWebSocket(ctx context.Context) {
 			logger.Errorf(ctx, "schedule control initWebSocket RemoveUser fail uuid: %s, err: %+v", labUUID.String(), err)
 			return err
 		}
+
+		// 更新数据库：设置实验室为离线状态
+		now := time.Now()
+		logger.Infof(gCtx, "🔴 [Schedule Control] Lab disconnecting (HandleClose): %s (ID: %d)", labUUID, labID)
+		if err := i.labStore.UpdateLabOnlineStatus(gCtx, labID, false, &now); err != nil {
+			logger.Errorf(gCtx, "❌ [Schedule Control] Failed to update lab offline status err: %+v", err)
+		} else {
+			logger.Infof(gCtx, "✅ [Schedule Control] Lab offline status updated in DB, now notifying...")
+			// 通知状态变化
+			labstatus.GetGlobalNotifier().Notify(gCtx, labUUID, false, &now)
+			logger.Infof(gCtx, "📡 [Schedule Control] Global notifier called for lab %s", labUUID)
+		}
+
 		return nil
 	})
 
@@ -472,11 +499,26 @@ func (i *control) initWebSocket(ctx context.Context) {
 		ctx, _ := s.Get("ctx")
 		gCtx := ctx.(*gin.Context)
 		labUUID := s.MustGet("lab_uuid").(uuid.UUID)
+		labID, _ := s.Get("lab_id")
 		logger.Infof(gCtx, "client close keys: %+v", s.Keys)
 
 		i.labClient.Delete(labUUID)
 		if err := i.consumer.RemoveUser(context.Background(), labUUID.String()); err != nil {
 			logger.Errorf(gCtx, "schedule control initWebSocket HandleDisconnect  uuid: %s, fail err: %+v", labUUID.String(), err)
+		}
+
+		// 更新数据库：设置实验室为离线状态
+		if labIDVal, ok := labID.(int64); ok {
+			now := time.Now()
+			logger.Infof(gCtx, "🔴 [Schedule Control] Lab disconnecting (HandleDisconnect): %s (ID: %d)", labUUID, labIDVal)
+			if err := i.labStore.UpdateLabOnlineStatus(context.Background(), labIDVal, false, &now); err != nil {
+				logger.Errorf(gCtx, "❌ [Schedule Control] Failed to update lab offline status err: %+v", err)
+			} else {
+				logger.Infof(gCtx, "✅ [Schedule Control] Lab offline status updated in DB, now notifying...")
+				// 通知状态变化
+				labstatus.GetGlobalNotifier().Notify(context.Background(), labUUID, false, &now)
+				logger.Infof(gCtx, "📡 [Schedule Control] Global notifier called for lab %s", labUUID)
+			}
 		}
 	})
 

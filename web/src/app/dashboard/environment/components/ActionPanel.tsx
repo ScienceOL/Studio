@@ -296,7 +296,7 @@ export default function ActionPanel({
                                 variant="secondary"
                                 className="mt-1 text-xs"
                               >
-                                <span className=" truncate w-64">
+                                <span className=" truncate max-w-64 dark:text-neutral-500">
                                   {action.type}
                                 </span>
                               </Badge>

@@ -3,15 +3,16 @@
 export interface Lab {
   uuid: string;
   name: string;
+  description?: string;
   user_id: string;
-  is_admin: boolean;
-  access_key: string;
-  access_secret: string;
-  status: string;
+  access_key?: string;
+  access_secret?: string;
+  member_count?: number;
+  is_admin?: boolean;
+  is_online?: boolean;
+  last_connected_at?: string;
   created_at: string;
   updated_at: string;
-  description?: string;
-  owner_uuid?: string;
   [key: string]: unknown;
 }
 

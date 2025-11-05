@@ -99,4 +99,11 @@ export const environmentService = {
     );
     return res.data;
   },
+
+  // WebSocket URL for lab status
+  getLabStatusWebSocketUrl(): string {
+    const wsProtocol = config.apiBaseUrl.startsWith('https') ? 'wss' : 'ws';
+    const baseUrl = config.apiBaseUrl.replace(/^https?:/, '');
+    return `${wsProtocol}:${baseUrl}/api/v1/ws/lab/status`;
+  },
 };

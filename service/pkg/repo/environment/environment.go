@@ -3,6 +3,7 @@ package environment
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
@@ -414,4 +415,48 @@ func (e *envImpl) GetLabMemberCount(ctx context.Context, labIDs ...int64) map[in
 	return utils.Slice2Map(datas, func(m *MemberCount) (int64, int64) {
 		return m.LabID, m.Count
 	})
+}
+
+func (e *envImpl) UpdateLabOnlineStatus(ctx context.Context, labID int64, isOnline bool, lastConnectedAt *time.Time) error {
+	updates := map[string]interface{}{
+		"is_online": isOnline,
+	}
+	if lastConnectedAt != nil {
+		updates["last_connected_at"] = lastConnectedAt
+	}
+
+	statement := e.DBWithContext(ctx).Model(&model.Laboratory{}).
+		Where("id = ?", labID).
+		Updates(updates)
+
+	if statement.Error != nil {
+		logger.Errorf(ctx, "UpdateLabOnlineStatus err: %+v", statement.Error)
+		return code.UpdateDataErr.WithErr(statement.Error)
+	}
+	return nil
+}
+
+func (e *envImpl) GetLabsOnlineStatus(ctx context.Context, labIDs []int64) (map[int64]bool, error) {
+	if len(labIDs) == 0 {
+		return map[int64]bool{}, nil
+	}
+
+	type OnlineStatus struct {
+		ID       int64 `gorm:"column:id"`
+		IsOnline bool  `gorm:"column:is_online"`
+	}
+
+	var results []OnlineStatus
+	if err := e.DBWithContext(ctx).
+		Model(&model.Laboratory{}).
+		Select("id, is_online").
+		Where("id IN ?", labIDs).
+		Find(&results).Error; err != nil {
+		logger.Errorf(ctx, "GetLabsOnlineStatus err: %+v", err)
+		return nil, code.QueryRecordErr.WithErr(err)
+	}
+
+	return utils.Slice2Map(results, func(r OnlineStatus) (int64, bool) {
+		return r.ID, r.IsOnline
+	}), nil
 }

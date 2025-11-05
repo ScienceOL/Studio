@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useEnvironment } from '@/hooks/useEnvironment';
+import { useLabStatus } from '@/hooks/useLabStatus';
 import type { Lab } from '@/types/environment';
 import {
   ArrowRight,
@@ -53,10 +54,19 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LabStatusIndicator } from './components';
 
 export default function EnvironmentPage() {
   const navigate = useNavigate();
   const environment = useEnvironment();
+
+  // 实验室在线状态监控（自动查询列表）
+  const { labStatuses } = useLabStatus({
+    autoQueryList: true, // 自动查询所有实验室状态
+    onStatusUpdate: (statuses) => {
+      console.log('📡 实验室状态更新:', statuses);
+    },
+  });
 
   // 本地表单状态
   const [labName, setLabName] = useState('');
@@ -197,54 +207,80 @@ export default function EnvironmentPage() {
       ) : environment.viewMode === 'grid' ? (
         // 网格视图
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-          {environment.labs.map((lab: Lab) => (
-            <Card
-              key={lab.uuid}
-              className="hover:shadow-lg dark:hover:shadow-neutral-900/50 transition-all duration-200 cursor-pointer border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700"
-            >
-              <CardHeader className="space-y-3">
-                <CardTitle className="text-neutral-900 dark:text-neutral-100">
-                  {lab.name}
-                </CardTitle>
-                <CardDescription className="text-neutral-600 dark:text-neutral-400 line-clamp-2">
-                  {lab.description || '暂无描述'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                  <Badge
+          {environment.labs.map((lab: Lab) => {
+            // 获取实时状态
+            const realtimeStatus = labStatuses.get(lab.uuid);
+            const isOnline =
+              realtimeStatus?.is_online ?? lab.is_online ?? false;
+            const lastConnectedAt =
+              realtimeStatus?.last_connected_at ?? lab.last_connected_at;
+
+            return (
+              <Card
+                key={lab.uuid}
+                className="hover:shadow-lg dark:hover:shadow-neutral-900/50 transition-all duration-200 cursor-pointer border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700"
+              >
+                <CardHeader className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-neutral-900 dark:text-neutral-100 flex-1">
+                      {lab.name}
+                    </CardTitle>
+                    <LabStatusIndicator
+                      isOnline={isOnline}
+                      lastConnectedAt={lastConnectedAt}
+                      showText={false}
+                      size="sm"
+                    />
+                  </div>
+                  <CardDescription className="text-neutral-600 dark:text-neutral-400 line-clamp-2">
+                    {lab.description || '暂无描述'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {/* 状态信息 */}
+                  <LabStatusIndicator
+                    isOnline={isOnline}
+                    lastConnectedAt={lastConnectedAt}
+                    showText={true}
+                    showTime={true}
+                    size="sm"
+                  />
+                  {/* 其他信息 */}
+                  <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                    <Badge
+                      variant="outline"
+                      className="border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300"
+                    >
+                      {lab.uuid.slice(0, 8)}
+                    </Badge>
+                    <span>•</span>
+                    <span>
+                      {new Date(lab.created_at).toLocaleDateString('zh-CN')}
+                    </span>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex gap-3 pt-4">
+                  <Button
                     variant="outline"
-                    className="border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300"
+                    size="sm"
+                    onClick={() => handleViewCredentials(lab.uuid)}
+                    className="hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   >
-                    {lab.uuid.slice(0, 8)}
-                  </Badge>
-                  <span>•</span>
-                  <span>
-                    {new Date(lab.created_at).toLocaleDateString('zh-CN')}
-                  </span>
-                </div>
-              </CardContent>
-              <CardFooter className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleViewCredentials(lab.uuid)}
-                  className="hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                >
-                  <Key className="mr-2 h-4 w-4" />
-                  查看凭证
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleEnterLab(lab.uuid)}
-                  className="ml-auto"
-                >
-                  进入
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+                    <Key className="mr-2 h-4 w-4" />
+                    查看凭证
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleEnterLab(lab.uuid)}
+                    className="ml-auto"
+                  >
+                    进入
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         // 列表视图
@@ -262,7 +298,7 @@ export default function EnvironmentPage() {
                   UUID
                 </TableHead>
                 <TableHead className="text-neutral-700 dark:text-neutral-300 py-4">
-                  创建时间
+                  创建时间 / 状态
                 </TableHead>
                 <TableHead className="text-right text-neutral-700 dark:text-neutral-300 py-4">
                   操作
@@ -270,48 +306,75 @@ export default function EnvironmentPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {environment.labs.map((lab: Lab) => (
-                <TableRow
-                  key={lab.uuid}
-                  className="border-b border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
-                >
-                  <TableCell className="font-medium text-neutral-900 dark:text-neutral-100 py-4">
-                    {lab.name}
-                  </TableCell>
-                  <TableCell className="text-neutral-700 dark:text-neutral-300 py-4 max-w-xs truncate">
-                    {lab.description || '-'}
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <Badge
-                      variant="outline"
-                      className="border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300"
-                    >
-                      {lab.uuid.slice(0, 8)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-neutral-700 dark:text-neutral-300 py-4">
-                    {new Date(lab.created_at).toLocaleDateString('zh-CN')}
-                  </TableCell>
-                  <TableCell className="text-right py-4">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewCredentials(lab.uuid)}
-                        className="hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              {environment.labs.map((lab: Lab) => {
+                // 获取实时状态
+                const realtimeStatus = labStatuses.get(lab.uuid);
+                const isOnline =
+                  realtimeStatus?.is_online ?? lab.is_online ?? false;
+                const lastConnectedAt =
+                  realtimeStatus?.last_connected_at ?? lab.last_connected_at;
+
+                return (
+                  <TableRow
+                    key={lab.uuid}
+                    className="border-b border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                  >
+                    <TableCell className="font-medium text-neutral-900 dark:text-neutral-100 py-4">
+                      <div className="flex items-center gap-3">
+                        <LabStatusIndicator
+                          isOnline={isOnline}
+                          showText={false}
+                          size="sm"
+                        />
+                        {lab.name}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-neutral-700 dark:text-neutral-300 py-4 max-w-xs truncate">
+                      {lab.description || '-'}
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <Badge
+                        variant="outline"
+                        className="border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300"
                       >
-                        <Key className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleEnterLab(lab.uuid)}
-                      >
-                        进入
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                        {lab.uuid.slice(0, 8)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-neutral-700 dark:text-neutral-300 py-4">
+                      <div className="space-y-1">
+                        <div>
+                          {new Date(lab.created_at).toLocaleDateString('zh-CN')}
+                        </div>
+                        <LabStatusIndicator
+                          isOnline={isOnline}
+                          lastConnectedAt={lastConnectedAt}
+                          showText={true}
+                          showTime={!isOnline}
+                          size="sm"
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right py-4">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewCredentials(lab.uuid)}
+                          className="hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        >
+                          <Key className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleEnterLab(lab.uuid)}
+                        >
+                          进入
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </Card>
