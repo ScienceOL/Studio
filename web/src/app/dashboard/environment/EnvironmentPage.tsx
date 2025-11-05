@@ -194,7 +194,7 @@ export default function EnvironmentPage() {
         </div>
       ) : environment.labs.length === 0 ? (
         <Card className="border-neutral-200 dark:border-neutral-800 mt-6">
-          <CardContent className="flex flex-col items-center justify-center py-16">
+          <CardContent className="flex mt-12 flex-col items-center justify-center py-16">
             <p className="text-neutral-600 dark:text-neutral-400 mb-6 text-lg">
               暂无实验室
             </p>
