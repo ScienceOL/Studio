@@ -99,7 +99,7 @@
 
 @utility custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
 }
 
 /* 全局背景色设置，防止滚动时出现白色 */

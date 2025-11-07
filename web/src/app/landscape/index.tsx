@@ -8,7 +8,7 @@ import FeatureOfServer from './FeatureOfServer';
 
 export default function LandscapePage() {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col custom-scrollbar">
       <Navbar />
       <Hero />
       <FeatureOfAbout />
