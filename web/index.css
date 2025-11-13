@@ -1,10 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@source "node_modules/@sciol/xyzen/dist/style.css";
+@source "node_modules/@sciol/xyzen/dist/xyzen.css";
 
 /* Tailwind v4: use @import to include other CSS files; @source is for class scanning only */
 @import "@/styles/markdown.css";
-@import "@/styles/code-block.css";
 @import "@/styles/markdown.abstract.css";
 @import "@/styles/markdown.dark.css";
 @import "@/styles/markdown.quote.css";

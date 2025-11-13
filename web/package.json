@@ -21,7 +21,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.4.0",
-    "@sciol/xyzen": "^0.3.13",
+    "@sciol/xyzen": "^0.3.16",
     "@tailwindcss/postcss": "^4.1.14",
     "@tailwindcss/vite": "^4.1.14",
     "@tanstack/react-query": "^5.90.5",

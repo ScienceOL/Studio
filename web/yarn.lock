@@ -2308,9 +2308,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sciol/xyzen@npm:^0.3.13":
-  version: 0.3.13
-  resolution: "@sciol/xyzen@npm:0.3.13"
+"@sciol/xyzen@npm:^0.3.16":
+  version: 0.3.16
+  resolution: "@sciol/xyzen@npm:0.3.16"
   dependencies:
     "@dnd-kit/core": "npm:^6.3.1"
     "@dnd-kit/modifiers": "npm:^9.0.0"
@@ -2331,7 +2331,7 @@ __metadata:
     framer-motion: "npm:^12.23.9"
     immer: "npm:^10.1.1"
     katex: "npm:^0.16.22"
-    lucide-react: "npm:^0.552.0"
+    lucide-react: "npm:^0.553.0"
     mini-svg-data-uri: "npm:^1.4.4"
     motion: "npm:^12.23.24"
     radix-ui: "npm:^1.4.3"
@@ -2355,7 +2355,7 @@ __metadata:
   peerDependenciesMeta:
     vite:
       optional: true
-  checksum: 10c0/a5c7a321572ecd6f155220825396765959fba3c35fef17dd140181141fe4ec2d630b7f9fdcb7429385eb596646209760353f6681aa778faae7b95efdfa485d3a
+  checksum: 10c0/da0ee44ea09070544b53892e69602ec6f46904f843a8cf41393a505585207a3bc38184c5f1656037de703183052adb961b8230c4258bc98398232142acee91be
   languageName: node
   linkType: hard
 
@@ -5313,15 +5313,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lucide-react@npm:^0.552.0":
-  version: 0.552.0
-  resolution: "lucide-react@npm:0.552.0"
-  peerDependencies:
-    react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-  checksum: 10c0/60ab9ab6f422360344fb5364f7305f2a2f2a81a72fd4e59ed2376a903ea89d9d152288044638e8b144f2fbaa9c1325ba9a18724632d23265470a55419a01d55d
-  languageName: node
-  linkType: hard
-
 "lucide-react@npm:^0.553.0":
   version: 0.553.0
   resolution: "lucide-react@npm:0.553.0"
@@ -7780,7 +7771,7 @@ __metadata:
     "@monaco-editor/react": "npm:^4.7.0"
     "@react-three/drei": "npm:^10.7.6"
     "@react-three/fiber": "npm:^9.4.0"
-    "@sciol/xyzen": "npm:^0.3.13"
+    "@sciol/xyzen": "npm:^0.3.16"
     "@tailwindcss/postcss": "npm:^4.1.14"
     "@tailwindcss/vite": "npm:^4.1.14"
     "@tanstack/react-query": "npm:^5.90.5"
