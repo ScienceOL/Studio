@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import App from './app/App';
+import ChatPage from './app/chat/page';
 import { EnvironmentPage } from './app/dashboard/environment';
 import EnvironmentDetail from './app/dashboard/environment/EnvironmentDetail';
 import DashboardHome from './app/dashboard/Home';
@@ -20,6 +21,7 @@ export default function Router() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/login/callback" element={<CallbackPage />} />
         <Route path="/ui-test" element={<UiTestPage />} />
+        <Route path="/chat" element={<ChatPage />} />
 
         {/* 所有需要侧边栏和登录保护的页面 */}
         <Route element={<ProtectedDashboardLayout />}>
