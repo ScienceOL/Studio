@@ -2308,9 +2308,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sciol/xyzen@npm:^0.3.8":
-  version: 0.3.8
-  resolution: "@sciol/xyzen@npm:0.3.8"
+"@sciol/xyzen@npm:^0.3.13":
+  version: 0.3.13
+  resolution: "@sciol/xyzen@npm:0.3.13"
   dependencies:
     "@dnd-kit/core": "npm:^6.3.1"
     "@dnd-kit/modifiers": "npm:^9.0.0"
@@ -2355,7 +2355,7 @@ __metadata:
   peerDependenciesMeta:
     vite:
       optional: true
-  checksum: 10c0/252453f91c0a2ec0d0d722729cf15b12f80e1cdd096f49b02863a3da7292c7972a2b52cf404b1bafdd5179f9a01be9919afc72eeab76e25f4b72afc4360b8ec4
+  checksum: 10c0/a5c7a321572ecd6f155220825396765959fba3c35fef17dd140181141fe4ec2d630b7f9fdcb7429385eb596646209760353f6681aa778faae7b95efdfa485d3a
   languageName: node
   linkType: hard
 
@@ -5322,6 +5322,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lucide-react@npm:^0.553.0":
+  version: 0.553.0
+  resolution: "lucide-react@npm:0.553.0"
+  peerDependencies:
+    react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 10c0/b1283f1a2302a50d6a16bd67b9f7417ae08a74cba59ae5ca9953527cb9724247df12ba8c72ca2fc6a70b745f8315cc709ac7573643c4088728766da151999ef6
+  languageName: node
+  linkType: hard
+
 "maath@npm:^0.10.8":
   version: 0.10.8
   resolution: "maath@npm:0.10.8"
@@ -7322,6 +7331,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tailwind-merge@npm:^3.4.0":
+  version: 3.4.0
+  resolution: "tailwind-merge@npm:3.4.0"
+  checksum: 10c0/eaf17bb695c51c7bb7a90366a9c62be295473ee97fcfd1da54287714d4a5788a88ff4ad1ab9e0128638257fda777d6c9ea88682e36195e31a7fa2cf43f45e310
+  languageName: node
+  linkType: hard
+
 "tailwindcss@npm:4.1.14, tailwindcss@npm:^4.1.11, tailwindcss@npm:^4.1.14":
   version: 4.1.14
   resolution: "tailwindcss@npm:4.1.14"
@@ -7480,6 +7496,13 @@ __metadata:
   dependencies:
     zustand: "npm:^4.3.2"
   checksum: 10c0/93cd50c7c9141e2662707602a21401145092e5a3c815b57a752937419ab6187a2ff36fa7e0f65e0c587022149bf2d323ace07dff61106511b7d4845e53390cc9
+  languageName: node
+  linkType: hard
+
+"tw-animate-css@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "tw-animate-css@npm:1.4.0"
+  checksum: 10c0/6cfbc19ccc73883ec80ef1f9147f43e736cb01ee99c8172968b37eb81b720523d30e38b1a96aef92db3c586d864204db5510b51744ddacbbf0ad8e3c7fb56ec7
   languageName: node
   linkType: hard
 
@@ -7757,7 +7780,7 @@ __metadata:
     "@monaco-editor/react": "npm:^4.7.0"
     "@react-three/drei": "npm:^10.7.6"
     "@react-three/fiber": "npm:^9.4.0"
-    "@sciol/xyzen": "npm:^0.3.8"
+    "@sciol/xyzen": "npm:^0.3.13"
     "@tailwindcss/postcss": "npm:^4.1.14"
     "@tailwindcss/vite": "npm:^4.1.14"
     "@tanstack/react-query": "npm:^5.90.5"
@@ -7770,6 +7793,8 @@ __metadata:
     "@vitejs/plugin-react-swc": "npm:^4.1.0"
     autoprefixer: "npm:^10.4.21"
     axios: "npm:^1.12.2"
+    class-variance-authority: "npm:^0.7.1"
+    clsx: "npm:^2.1.1"
     eslint: "npm:^9.36.0"
     eslint-plugin-react-hooks: "npm:^5.2.0"
     eslint-plugin-react-refresh: "npm:^0.4.20"
@@ -7777,7 +7802,7 @@ __metadata:
     globals: "npm:^16.4.0"
     i18next: "npm:^25.5.3"
     i18next-browser-languagedetector: "npm:^8.2.0"
-    lucide-react: "npm:^0.552.0"
+    lucide-react: "npm:^0.553.0"
     monaco-editor: "npm:^0.54.0"
     postcss: "npm:^8.5.6"
     react: "npm:^19.2.0"
@@ -7787,8 +7812,10 @@ __metadata:
     react-icons: "npm:^5.5.0"
     react-router-dom: "npm:^7.9.3"
     react-use-websocket: "npm:^4.13.0"
+    tailwind-merge: "npm:^3.4.0"
     tailwindcss: "npm:^4.1.14"
     three: "npm:^0.180.0"
+    tw-animate-css: "npm:^1.4.0"
     typescript: "npm:~5.8.3"
     typescript-eslint: "npm:^8.44.0"
     vite: "npm:^7.1.7"
