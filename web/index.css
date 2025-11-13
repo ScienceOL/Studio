@@ -2,6 +2,13 @@
 @import "tw-animate-css";
 @source "node_modules/@sciol/xyzen/dist/xyzen.css";
 
+/* Tailwind v4: use @import to include other CSS files; @source is for class scanning only */
+@import "@/styles/markdown.css";
+@import "@/styles/markdown.abstract.css";
+@import "@/styles/markdown.dark.css";
+@import "@/styles/markdown.quote.css";
+@import "@/styles/prose.css";
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* 主题扩展 */
@@ -315,6 +322,7 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
