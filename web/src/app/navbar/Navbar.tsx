@@ -1,13 +1,21 @@
 'use client';
 import Logo from '@/assets/Logo';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import About from './About';
 import Community from './Community';
 import Projects from './Projects';
 import { RightSideStatus } from './RightSideStatus';
 import Tutorial from './Tutorials';
+
+const TutorialComponent = Tutorial as React.ComponentType<{
+  index: number;
+  activeMenuItem: number | null;
+  setActiveMenuItem: React.Dispatch<React.SetStateAction<number | null>>;
+  open: boolean;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}>;
 
 const NavbarMenu = () => {
   const { t } = useTranslation();
@@ -29,8 +37,7 @@ const NavbarMenu = () => {
         open={open}
         setOpen={setOpen}
       />
-
-      <Tutorial
+      <TutorialComponent
         index={4}
         activeMenuItem={activeMenuItem}
         setActiveMenuItem={setActiveMenuItem}
