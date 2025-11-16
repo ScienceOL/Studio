@@ -59,17 +59,21 @@
 
 'use client';
 
-// import Link from 'next/link';
+// import Link from 'next/link'
+import { useTranslation } from "react-i18next";
 
 export default function Tutorial() {
+  const { t } = useTranslation();
+
+
   return (
     <a
       href="https://docs.sciol.ac.cn"
       target="_blank"
       rel="noopener noreferrer"
-      className="text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-    >
-      教程
-    </a>
+      className="inline-flex items-center gap-x-1 text-sm font-semibold leading-6 text-neutral-900 focus:outline-none dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-500"
+      >
+      {t('navbar.tutorial','Tutorial')}
+      </a>
   );
 }
