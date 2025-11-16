@@ -9,7 +9,7 @@ export const products = [
     title: "chat2",
     link: "https://www.bohrium.com/apps/xyzen/job?type=app",
     thumbnail:
-      "https://storage.sciol.ac.cn/library/docs/chat2.png",
+      "https://storage.sciol.ac.cn/library/docs/chat2_light.png",
   },
   {
     title: "chat3",
@@ -22,7 +22,7 @@ export const products = [
     title: "chat4",
     link: "https://www.bohrium.com/apps/xyzen/job?type=app",
     thumbnail:
-      "https://storage.sciol.ac.cn/library/docs/chat4.png",
+      "https://storage.sciol.ac.cn/library/docs/chat4_light.png",
   },
   {
     title: "chat5",
@@ -34,7 +34,7 @@ export const products = [
     title: "chat6",
     link: "https://www.bohrium.com/apps/xyzen/job?type=app",
     thumbnail:
-      "https://storage.sciol.ac.cn/library/docs/chat6.png",
+      "https://storage.sciol.ac.cn/library/docs/chat6_light.png",
   },
 
   {
@@ -47,7 +47,7 @@ export const products = [
     title: "chat8",
     link: "https://www.bohrium.com/apps/xyzen/job?type=app",
     thumbnail:
-      "https://storage.sciol.ac.cn/library/docs/chat8.png",
+      "https://storage.sciol.ac.cn/library/docs/chat8_light.png",
   },
   {
     title: "chat9",
@@ -59,7 +59,7 @@ export const products = [
     title: "chat10",
     link: "https://www.bohrium.com/apps/xyzen/job?type=app",
     thumbnail:
-      "https://storage.sciol.ac.cn/library/docs/chat10.png",
+      "https://storage.sciol.ac.cn/library/docs/chat10_light.png",
   },
   {
     title: "chat11",
@@ -72,7 +72,7 @@ export const products = [
     title: "chat12",
     link: "https://www.bohrium.com/apps/xyzen/job?type=app",
     thumbnail:
-      "https://storage.sciol.ac.cn/library/docs/chat12.png",
+      "https://storage.sciol.ac.cn/library/docs/chat12_light.png",
   },
   {
     title: "chat13",
@@ -84,7 +84,7 @@ export const products = [
     title: "chat14",
     link: "https://www.bohrium.com/apps/xyzen/job?type=app",
     thumbnail:
-      "https://storage.sciol.ac.cn/library/docs/chat14.png",
+      "https://storage.sciol.ac.cn/library/docs/chat14_light.png",
   },
   // {
   //   title: "E Free Invoice",
