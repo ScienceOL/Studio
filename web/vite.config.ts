@@ -1,14 +1,14 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import { resolve } from "path";
-import tailwindcss from "@tailwindcss/vite";
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react-swc';
+import { resolve } from 'path';
+import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      "@": resolve(__dirname, "./src"),
+      '@': resolve(__dirname, './src'),
     },
   },
   server: {
@@ -21,8 +21,13 @@ export default defineConfig({
     },
     hmr: {
       // 热模块替换配置
-      host: "localhost",
+      host: 'localhost',
       port: 32234,
     },
   },
-});
+  // 仅在生产构建时移除 console.log / console.debug（保留 warn / error）
+  esbuild:
+    command === 'build'
+      ? { pure: ['console.log', 'console.debug'] }
+      : undefined,
+}));
