@@ -1,7 +1,7 @@
 'use client';
 import Logo from '@/assets/Logo';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import About from './About';
 import Community from './Community';
@@ -39,7 +39,7 @@ const NavbarMenu = () => {
       />
       <a
         className={`inline-flex items-center gap-x-1 text-sm font-semibold leading-6 text-neutral-900 focus:outline-none dark:text-neutral-100 ${'hover:text-indigo-600 dark:hover:text-indigo-500'}`}
-        href='https://docs.sciol.ac.cn'
+        href="https://docs.sciol.ac.cn"
       >
         <span>{t('navbar.tutorial')}</span>
       </a>
