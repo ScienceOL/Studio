@@ -9,6 +9,7 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
 // --- Real Dashboard Sections ---
+import CameraMonitor from '@/components/CameraMonitor';
 import AddWidgetModal from './AddWidgetModal';
 import {
   ArticlesSection,
@@ -341,6 +342,10 @@ export default function DashboardHome() {
       ref={gridContainerRef}
       className="relative h-full w-full bg-neutral-50 p-4 dark:bg-neutral-900"
     >
+      {/* Prototype Camera Monitor */}
+      <div className="mb-6">
+        <CameraMonitor hostId="demo-host" cameraId="camera-1" />
+      </div>
       {/* 右上角添加组件按钮 */}
       <button
         onClick={() => setIsModalOpen(true)}
