@@ -29,6 +29,7 @@ export const CameraMonitor: React.FC<Props> = ({ hostId, cameraId }) => {
   );
   const statsTimerRef = useRef<number | null>(null);
   const remoteSetRef = useRef(false);
+  const startSessionRef = useRef(0);
 
   useEffect(() => {
     // auto start on mount
@@ -50,7 +51,7 @@ export const CameraMonitor: React.FC<Props> = ({ hostId, cameraId }) => {
     setConnected(false);
   };
 
-  const connectWS = (): Promise<void> => {
+  const connectWS = (sessionId: number): Promise<void> => {
     return new Promise((resolve, reject) => {
       const clientId = `client-${Date.now()}`;
       // Use getAuthenticatedWsUrl to include auth token and handle protocol
@@ -60,16 +61,27 @@ export const CameraMonitor: React.FC<Props> = ({ hostId, cameraId }) => {
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
+        if (sessionId !== startSessionRef.current) {
+          ws.close();
+          return;
+        }
         setConnected(true);
         wsRef.current = ws;
         resolve();
       };
       ws.onerror = (e) => {
+        if (sessionId !== startSessionRef.current) return;
         setError('WebSocket error');
         reject(e);
       };
-      ws.onclose = () => setConnected(false);
+      ws.onclose = () => {
+        if (sessionId === startSessionRef.current) {
+          setConnected(false);
+        }
+      };
       ws.onmessage = async (ev) => {
+        if (ws !== wsRef.current) return;
+
         const msg: SignalMessage = JSON.parse(ev.data);
         const pc = pcRef.current;
         if (!pc) return;
@@ -147,6 +159,7 @@ export const CameraMonitor: React.FC<Props> = ({ hostId, cameraId }) => {
   };
 
   const start = async () => {
+    const sessionId = ++startSessionRef.current;
     // Cleanup previous session to avoid state conflicts
     cleanup();
 
@@ -154,8 +167,9 @@ export const CameraMonitor: React.FC<Props> = ({ hostId, cameraId }) => {
       setError(null);
       // Ensure WS is connected
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-        await connectWS();
+        await connectWS(sessionId);
       }
+      if (sessionId !== startSessionRef.current) return;
 
       const pc = new RTCPeerConnection({
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
@@ -195,6 +209,7 @@ export const CameraMonitor: React.FC<Props> = ({ hostId, cameraId }) => {
       setStreaming(true);
       startStatsInterval();
     } catch (err: unknown) {
+      if (sessionId !== startSessionRef.current) return;
       if (err instanceof Error) {
         setError(err.message);
       } else {
