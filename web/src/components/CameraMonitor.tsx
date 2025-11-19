@@ -1,10 +1,10 @@
+import { apiClient } from '@/service/http/client';
+import { getAuthenticatedWsUrl } from '@/service/ws/client';
 import { useEffect, useRef, useState } from 'react';
 
 interface Props {
   hostId: string;
   cameraId: string;
-  signalingUrl?: string; // ws endpoint for client signaling
-  apiUrl?: string; // http api base
 }
 
 interface SignalMessage {
@@ -16,12 +16,7 @@ interface SignalMessage {
 }
 
 // Simplified WebRTC player (prototype) based on demo/WebRTCPlayer.tsx
-export const CameraMonitor: React.FC<Props> = ({
-  hostId,
-  cameraId,
-  signalingUrl = 'ws://localhost:48197/api/realtime/signal/client',
-  apiUrl = 'http://localhost:48197/api/realtime',
-}) => {
+export const CameraMonitor: React.FC<Props> = ({ hostId, cameraId }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -58,7 +53,12 @@ export const CameraMonitor: React.FC<Props> = ({
   const connectWS = (): Promise<void> => {
     return new Promise((resolve, reject) => {
       const clientId = `client-${Date.now()}`;
-      const ws = new WebSocket(`${signalingUrl}?clientId=${clientId}`);
+      // Use getAuthenticatedWsUrl to include auth token and handle protocol
+      const wsUrl = getAuthenticatedWsUrl(
+        `/api/realtime/signal/client?clientId=${clientId}`
+      );
+      const ws = new WebSocket(wsUrl);
+
       ws.onopen = () => {
         setConnected(true);
         wsRef.current = ws;
@@ -189,12 +189,8 @@ export const CameraMonitor: React.FC<Props> = ({
       sendSignal({ type: 'offer', hostId, cameraId, sdp: offer.sdp });
 
       // Notify backend to start stream
-      const resp = await fetch(`${apiUrl}/camera/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostId, cameraId }),
-      });
-      if (!resp.ok) throw new Error('start stream failed');
+      // Use apiClient for authenticated request and correct base URL
+      await apiClient.post('/api/realtime/camera/start', { hostId, cameraId });
 
       setStreaming(true);
       startStatsInterval();
