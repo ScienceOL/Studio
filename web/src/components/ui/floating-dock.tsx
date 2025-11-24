@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
-import { IconLayoutNavbarCollapse } from "@tabler/icons-react";
+import { cn } from '@/lib/utils';
+import { IconLayoutNavbarCollapse } from '@tabler/icons-react';
 import {
   AnimatePresence,
   MotionValue,
@@ -7,9 +7,9 @@ import {
   useMotionValue,
   useSpring,
   useTransform,
-} from "motion/react";
+} from 'motion/react';
 
-import { useRef, useState } from "react";
+import { useRef, useState } from 'react';
 
 export const FloatingDock = ({
   items,
@@ -21,6 +21,7 @@ export const FloatingDock = ({
     icon: React.ReactNode;
     href: string;
     onClick?: () => void;
+    isActive?: boolean;
   }[];
   desktopClassName?: string;
   mobileClassName?: string;
@@ -42,12 +43,13 @@ const FloatingDockMobile = ({
     icon: React.ReactNode;
     href: string;
     onClick?: () => void;
+    isActive?: boolean;
   }[];
   className?: string;
 }) => {
   const [open, setOpen] = useState(false);
   return (
-    <div className={cn("relative block md:hidden", className)}>
+    <div className={cn('relative block md:hidden', className)}>
       <AnimatePresence>
         {open && (
           <motion.div
@@ -80,9 +82,12 @@ const FloatingDockMobile = ({
                       item.onClick();
                     }
                   }}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-neutral-900"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-neutral-900 relative"
                 >
                   <div className="h-4 w-4">{item.icon}</div>
+                  {item.isActive && (
+                    <div className="absolute -bottom-1 h-1 w-1 rounded-full bg-neutral-500 dark:bg-neutral-400" />
+                  )}
                 </a>
               </motion.div>
             ))}
@@ -108,17 +113,18 @@ const FloatingDockDesktop = ({
     icon: React.ReactNode;
     href: string;
     onClick?: () => void;
+    isActive?: boolean;
   }[];
   className?: string;
 }) => {
-  let mouseX = useMotionValue(Infinity);
+  const mouseX = useMotionValue(Infinity);
   return (
     <motion.div
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
       className={cn(
-        "mx-auto hidden h-16 items-end gap-4 rounded-2xl bg-gray-50 px-4 pb-3 md:flex dark:bg-neutral-900",
-        className,
+        'mx-auto hidden h-16 items-end gap-4 rounded-2xl bg-gray-50 px-4 pb-3 md:flex dark:bg-neutral-900',
+        className
       )}
     >
       {items.map((item) => (
@@ -134,48 +140,54 @@ function IconContainer({
   icon,
   href,
   onClick,
+  isActive,
 }: {
   mouseX: MotionValue;
   title: string;
   icon: React.ReactNode;
   href: string;
   onClick?: () => void;
+  isActive?: boolean;
 }) {
-  let ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
-  let distance = useTransform(mouseX, (val) => {
-    let bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
+  const distance = useTransform(mouseX, (val) => {
+    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
 
     return val - bounds.x - bounds.width / 2;
   });
 
-  let widthTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40]);
-  let heightTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40]);
+  const widthTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40]);
+  const heightTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40]);
 
-  let widthTransformIcon = useTransform(distance, [-150, 0, 150], [20, 40, 20]);
-  let heightTransformIcon = useTransform(
+  const widthTransformIcon = useTransform(
     distance,
     [-150, 0, 150],
-    [20, 40, 20],
+    [20, 40, 20]
+  );
+  const heightTransformIcon = useTransform(
+    distance,
+    [-150, 0, 150],
+    [20, 40, 20]
   );
 
-  let width = useSpring(widthTransform, {
+  const width = useSpring(widthTransform, {
     mass: 0.1,
     stiffness: 150,
     damping: 12,
   });
-  let height = useSpring(heightTransform, {
+  const height = useSpring(heightTransform, {
     mass: 0.1,
     stiffness: 150,
     damping: 12,
   });
 
-  let widthIcon = useSpring(widthTransformIcon, {
+  const widthIcon = useSpring(widthTransformIcon, {
     mass: 0.1,
     stiffness: 150,
     damping: 12,
   });
-  let heightIcon = useSpring(heightTransformIcon, {
+  const heightIcon = useSpring(heightTransformIcon, {
     mass: 0.1,
     stiffness: 150,
     damping: 12,
@@ -203,9 +215,9 @@ function IconContainer({
         <AnimatePresence>
           {hovered && (
             <motion.div
-              initial={{ opacity: 0, y: 10, x: "-50%" }}
-              animate={{ opacity: 1, y: 0, x: "-50%" }}
-              exit={{ opacity: 0, y: 2, x: "-50%" }}
+              initial={{ opacity: 0, y: 10, x: '-50%' }}
+              animate={{ opacity: 1, y: 0, x: '-50%' }}
+              exit={{ opacity: 0, y: 2, x: '-50%' }}
               className="absolute -top-8 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white"
             >
               {title}
@@ -218,6 +230,9 @@ function IconContainer({
         >
           {icon}
         </motion.div>
+        {isActive && (
+          <div className="absolute -bottom-2 h-1 w-1 rounded-full bg-neutral-500 dark:bg-neutral-400" />
+        )}
       </motion.div>
     </a>
   );
