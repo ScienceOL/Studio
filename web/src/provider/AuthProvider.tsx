@@ -1,7 +1,7 @@
-import { AuthCore } from '@/core/authCore';
-import { AuthUtils } from '@/utils/auth';
-import { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { AuthCore } from "@/core/authCore";
+import { AuthUtils } from "@/utils/auth";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -30,7 +30,7 @@ interface AuthProviderProps {
 export default function AuthProvider({
   children,
   requireAuth = true,
-  redirectTo = '/login',
+  redirectTo = "/login",
   showModal = true,
   modalDelay = 3000,
 }: AuthProviderProps) {
@@ -42,7 +42,7 @@ export default function AuthProvider({
   const navigate = useNavigate();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
-    null
+    null,
   );
 
   useEffect(() => {
@@ -52,6 +52,8 @@ export default function AuthProvider({
     }
 
     const checkAuth = async () => {
+      // 必须先初始化 AuthCore 以配置 API 客户端的拦截器和 Token 注入
+      await AuthCore.initialize();
       const authenticated = await AuthCore.checkAuthStatus();
       setIsAuthenticated(authenticated);
       setIsChecking(false);
@@ -80,14 +82,14 @@ export default function AuthProvider({
       timerRef.current = setTimeout(() => {
         // 保存当前路径并跳转到登录
         console.log(
-          '🔐 Saving return URL to sessionStorage:',
-          location.pathname
+          "🔐 Saving return URL to sessionStorage:",
+          location.pathname,
         );
         AuthUtils.redirectToLogin(location.pathname);
       }, modalDelay);
     } else {
       // 保存当前路径并跳转到登录
-      console.log('🔐 Saving return URL to sessionStorage:', location.pathname);
+      console.log("🔐 Saving return URL to sessionStorage:", location.pathname);
       AuthUtils.redirectToLogin(location.pathname);
     }
 

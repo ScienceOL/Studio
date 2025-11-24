@@ -10,8 +10,8 @@
  * 4. 点击进入实验室详情
  */
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -19,7 +19,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -27,10 +27,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -38,11 +38,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
-import { useEnvironment } from '@/hooks/useEnvironment';
-import { useLabStatus } from '@/hooks/useLabStatus';
-import type { Lab } from '@/types/environment';
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { useEnvironment } from "@/hooks/useEnvironment";
+import { useLabStatus } from "@/hooks/useLabStatus";
+import type { Lab } from "@/types/environment";
 import {
   ArrowRight,
   CheckCheck,
@@ -51,26 +51,26 @@ import {
   Key,
   List,
   Plus,
-} from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { LabStatusIndicator } from './components';
+} from "lucide-react";
+import { useState } from "react";
+import EnvironmentDetail from "./EnvironmentDetail";
+import { LabStatusIndicator } from "./components";
 
 export default function EnvironmentPage() {
-  const navigate = useNavigate();
+  const [selectedLabUuid, setSelectedLabUuid] = useState<string | null>(null);
   const environment = useEnvironment();
 
   // 实验室在线状态监控（自动查询列表）
   const { labStatuses } = useLabStatus({
     autoQueryList: true, // 自动查询所有实验室状态
-    onStatusUpdate: (statuses) => {
-      console.log('📡 实验室状态更新:', statuses);
+    onStatusUpdate: (_statuses) => {
+      console.log("Lab statuses updated:", _statuses);
     },
   });
 
   // 本地表单状态
-  const [labName, setLabName] = useState('');
-  const [labDescription, setLabDescription] = useState('');
+  const [labName, setLabName] = useState("");
+  const [labDescription, setLabDescription] = useState("");
   const [credentials, setCredentials] = useState<{
     accessKey: string;
     secretKey: string;
@@ -90,11 +90,11 @@ export default function EnvironmentPage() {
       });
 
       // 重置表单并关闭对话框
-      setLabName('');
-      setLabDescription('');
+      setLabName("");
+      setLabDescription("");
       environment.setCreateDialogOpen(false);
     } catch (error) {
-      console.error('Failed to create lab:', error);
+      console.error("Failed to create lab:", error);
       // TODO: 显示错误通知
     }
   };
@@ -106,7 +106,7 @@ export default function EnvironmentPage() {
       setCredentials(creds);
       environment.setCredentialsDialogOpen(true);
     } catch (error) {
-      console.error('Failed to get credentials:', error);
+      console.error("Failed to get credentials:", error);
     }
   };
 
@@ -117,7 +117,7 @@ export default function EnvironmentPage() {
       setCopiedField(field);
       setTimeout(() => setCopiedField(null), 2000);
     } catch (error) {
-      console.error('Failed to copy:', error);
+      console.error("Failed to copy:", error);
     }
   };
 
@@ -125,14 +125,27 @@ export default function EnvironmentPage() {
   const handleEnterLab = async (labUuid: string) => {
     try {
       await environment.enterLab(labUuid);
-      // 导航到实验室详情页
-      navigate(`/dashboard/environment/${labUuid}`);
+      // 在桌面模式下，切换到详情视图而不是跳转路由
+      setSelectedLabUuid(labUuid);
     } catch (error) {
-      console.error('Failed to enter lab:', error);
+      console.error("Failed to enter lab:", error);
     }
   };
 
   // ========== 渲染 ==========
+
+  // 如果选中了实验室，显示详情页
+  if (selectedLabUuid) {
+    return (
+      <div className="h-full w-full overflow-hidden">
+        <EnvironmentDetail
+          labUuid={selectedLabUuid}
+          onBack={() => setSelectedLabUuid(null)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8 px-4 space-y-6">
       {/* 头部 */}
@@ -148,17 +161,17 @@ export default function EnvironmentPage() {
         <div className="flex items-center gap-3">
           {/* 视图切换 */}
           <Button
-            variant={environment.viewMode === 'grid' ? 'default' : 'outline'}
+            variant={environment.viewMode === "grid" ? "default" : "outline"}
             size="icon"
-            onClick={() => environment.setViewMode('grid')}
+            onClick={() => environment.setViewMode("grid")}
             className="hover:bg-neutral-100 dark:hover:bg-neutral-800"
           >
             <Grid className="h-4 w-4" />
           </Button>
           <Button
-            variant={environment.viewMode === 'list' ? 'default' : 'outline'}
+            variant={environment.viewMode === "list" ? "default" : "outline"}
             size="icon"
-            onClick={() => environment.setViewMode('list')}
+            onClick={() => environment.setViewMode("list")}
             className="hover:bg-neutral-100 dark:hover:bg-neutral-800"
           >
             <List className="h-4 w-4" />
@@ -204,7 +217,7 @@ export default function EnvironmentPage() {
             </Button>
           </CardContent>
         </Card>
-      ) : environment.viewMode === 'grid' ? (
+      ) : environment.viewMode === "grid" ? (
         // 网格视图
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           {environment.labs.map((lab: Lab) => {
@@ -233,7 +246,7 @@ export default function EnvironmentPage() {
                     />
                   </div>
                   <CardDescription className="text-neutral-600 dark:text-neutral-400 line-clamp-2">
-                    {lab.description || '暂无描述'}
+                    {lab.description || "暂无描述"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -255,7 +268,7 @@ export default function EnvironmentPage() {
                     </Badge>
                     <span>•</span>
                     <span>
-                      {new Date(lab.created_at).toLocaleDateString('zh-CN')}
+                      {new Date(lab.created_at).toLocaleDateString("zh-CN")}
                     </span>
                   </div>
                 </CardContent>
@@ -330,7 +343,7 @@ export default function EnvironmentPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-neutral-700 dark:text-neutral-300 py-4 max-w-xs truncate">
-                      {lab.description || '-'}
+                      {lab.description || "-"}
                     </TableCell>
                     <TableCell className="py-4">
                       <Badge
@@ -343,7 +356,7 @@ export default function EnvironmentPage() {
                     <TableCell className="text-neutral-700 dark:text-neutral-300 py-4">
                       <div className="space-y-1">
                         <div>
-                          {new Date(lab.created_at).toLocaleDateString('zh-CN')}
+                          {new Date(lab.created_at).toLocaleDateString("zh-CN")}
                         </div>
                         <LabStatusIndicator
                           isOnline={isOnline}
@@ -444,7 +457,7 @@ export default function EnvironmentPage() {
               onClick={handleCreateLab}
               disabled={!labName.trim() || environment.isCreating}
             >
-              {environment.isCreating ? '创建中...' : '创建'}
+              {environment.isCreating ? "创建中..." : "创建"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -482,12 +495,12 @@ export default function EnvironmentPage() {
                     variant="outline"
                     size="icon"
                     onClick={() =>
-                      handleCopy(credentials.accessKey, 'accessKey')
+                      handleCopy(credentials.accessKey, "accessKey")
                     }
                     className="hover:bg-neutral-100 dark:hover:bg-neutral-800 shrink-0"
                   >
-                    {copiedField === 'accessKey' ? (
-                      <CheckCheck className="h-4 w-4 text-green-500 dark:text-green-400" />
+                    {copiedField === "accessKey" ? (
+                      <CheckCheck className="h-4 w-4 text-green-500" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
@@ -502,18 +515,19 @@ export default function EnvironmentPage() {
                   <Input
                     value={credentials.secretKey}
                     readOnly
+                    type="password"
                     className="bg-neutral-50 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 font-mono text-sm"
                   />
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() =>
-                      handleCopy(credentials.secretKey, 'secretKey')
+                      handleCopy(credentials.secretKey, "secretKey")
                     }
                     className="hover:bg-neutral-100 dark:hover:bg-neutral-800 shrink-0"
                   >
-                    {copiedField === 'secretKey' ? (
-                      <CheckCheck className="h-4 w-4 text-green-500 dark:text-green-400" />
+                    {copiedField === "secretKey" ? (
+                      <CheckCheck className="h-4 w-4 text-green-500" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
@@ -522,7 +536,7 @@ export default function EnvironmentPage() {
               </div>
             </div>
           )}
-          <DialogFooter className="mt-2">
+          <DialogFooter>
             <Button
               onClick={() => environment.setCredentialsDialogOpen(false)}
               className="w-full sm:w-auto"

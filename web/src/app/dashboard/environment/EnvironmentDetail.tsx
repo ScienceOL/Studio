@@ -9,17 +9,17 @@
  * 3. 展示 Materials 物料信息（Materials 标签页）
  */
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   useLabDetail,
   useLabMembers,
   useMaterials,
   useResourceTemplates,
-} from '@/hooks/queries/useEnvironmentQueries';
-import { useLabStatus } from '@/hooks/useLabStatus';
-import type { ResourceTemplate } from '@/types/material';
-import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react';
+} from "@/hooks/queries/useEnvironmentQueries";
+import { useLabStatus } from "@/hooks/useLabStatus";
+import type { ResourceTemplate } from "@/types/material";
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import {
   ArrowLeft,
   Box,
@@ -29,9 +29,9 @@ import {
   Layers,
   Zap,
   type LucideIcon,
-} from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+} from "lucide-react";
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   ActionDebugPanel,
   ActionLogsPanel,
@@ -41,36 +41,46 @@ import {
   MaterialsPanel,
   ResourceActionDialog,
   ResourceTemplatesPanel,
-} from './components';
+} from "./components";
 
 // 标签页配置
 const TABS_CONFIG: Array<{
   icon: LucideIcon;
   label: string;
 }> = [
-  { icon: Info, label: '详细信息' },
-  { icon: Box, label: 'Templates' },
-  { icon: Layers, label: 'Materials' },
-  { icon: Zap, label: 'Actions' },
-  { icon: ClipboardList, label: 'Logs' },
-  { icon: Bug, label: 'Debug' },
+  { icon: Info, label: "详细信息" },
+  { icon: Box, label: "Templates" },
+  { icon: Layers, label: "Materials" },
+  { icon: Zap, label: "Actions" },
+  { icon: ClipboardList, label: "Logs" },
+  { icon: Bug, label: "Debug" },
 ];
 
-export default function EnvironmentDetail() {
-  const { labUuid } = useParams<{ labUuid: string }>();
+interface EnvironmentDetailProps {
+  labUuid?: string;
+  onBack?: () => void;
+}
+
+export default function EnvironmentDetail({
+  labUuid: propLabUuid,
+  onBack,
+}: EnvironmentDetailProps = {}) {
+  const params = useParams<{ labUuid: string }>();
   const navigate = useNavigate();
 
+  const labUuid = propLabUuid || params.labUuid;
+
   // 使用统一的 query hooks
-  const { data: lab, isLoading: isLoadingLab } = useLabDetail(labUuid || '');
+  const { data: lab, isLoading: isLoadingLab } = useLabDetail(labUuid || "");
   const { data: members = [], isLoading: isLoadingMembers } = useLabMembers(
-    labUuid || ''
+    labUuid || "",
   );
 
   // 查询 Resource Templates 和 Materials
   const { data: resourceTemplates = [], isLoading: isLoadingResources } =
-    useResourceTemplates(labUuid || '');
+    useResourceTemplates(labUuid || "");
   const { data: materials = [], isLoading: isLoadingMaterials } = useMaterials(
-    labUuid || ''
+    labUuid || "",
   );
 
   // Resource Action Dialog 状态
@@ -80,12 +90,12 @@ export default function EnvironmentDetail() {
 
   // 实验室在线状态监控（自动查询单个实验室）
   const { getStatus } = useLabStatus({
-    labUuid: labUuid || '', // 传入实验室 UUID
+    labUuid: labUuid || "", // 传入实验室 UUID
     autoQueryDetail: true, // 自动查询该实验室详情
     onStatusUpdate: (statuses) => {
       const updated = statuses.find((s) => s.lab_uuid === labUuid);
       if (updated) {
-        console.log('📡 实验室状态更新:', updated);
+        console.log("📡 实验室状态更新:", updated);
       }
     },
   });
@@ -116,7 +126,13 @@ export default function EnvironmentDetail() {
       {/* 返回按钮 */}
       <Button
         variant="ghost"
-        onClick={() => navigate('/dashboard/environment')}
+        onClick={() => {
+          if (onBack) {
+            onBack();
+          } else {
+            navigate("/dashboard/environment");
+          }
+        }}
         className="mb-6 hover:bg-neutral-100 dark:hover:bg-neutral-800"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -128,7 +144,7 @@ export default function EnvironmentDetail() {
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-              {lab?.name || '加载中...'}
+              {lab?.name || "加载中..."}
             </h1>
             <LabStatusIndicator
               isOnline={isOnline}
@@ -138,7 +154,7 @@ export default function EnvironmentDetail() {
             />
           </div>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            {lab?.description || '暂无描述'}
+            {lab?.description || "暂无描述"}
           </p>
           {/* 连接时间信息 */}
           {lastConnectedAt && (
@@ -170,8 +186,8 @@ export default function EnvironmentDetail() {
                   `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all
                   ${
                     selected
-                      ? 'bg-white dark:bg-neutral-700 text-indigo-700 dark:text-indigo-400 shadow'
-                      : 'text-neutral-700 dark:text-neutral-300 hover:bg-white/[0.12] hover:text-neutral-900 dark:hover:text-white'
+                      ? "bg-white dark:bg-neutral-700 text-indigo-700 dark:text-indigo-400 shadow"
+                      : "text-neutral-700 dark:text-neutral-300 hover:bg-white/[0.12] hover:text-neutral-900 dark:hover:text-white"
                   }`
                 }
               >

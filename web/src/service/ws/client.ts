@@ -1,12 +1,13 @@
-import { config } from '@/configs';
-import type { Options } from 'react-use-websocket';
+import { config } from "@/configs";
+import { AuthUtils } from "@/utils/auth";
+import type { Options } from "react-use-websocket";
 
 /**
  * 获取 WebSocket URL（自动处理 http/https 到 ws/wss 的转换）
  */
 export function getWebSocketUrl(path: string): string {
-  const wsProtocol = config.apiBaseUrl.startsWith('https') ? 'wss' : 'ws';
-  const baseUrl = config.apiBaseUrl.replace(/^https?:/, '');
+  const wsProtocol = config.apiBaseUrl.startsWith("https") ? "wss" : "ws";
+  const baseUrl = config.apiBaseUrl.replace(/^https?:/, "");
   return `${wsProtocol}:${baseUrl}${path}`;
 }
 
@@ -33,7 +34,7 @@ export function configureWsClient(injected: WsClientDeps) {
  * 所以我们需要通过 URL query 参数传递 token
  */
 export function getAuthenticatedWsOptions(
-  baseOptions?: Partial<Options>
+  baseOptions?: Partial<Options>,
 ): Options {
   return {
     ...baseOptions,
@@ -61,16 +62,16 @@ export function getAuthenticatedWsOptions(
  */
 export function getAuthenticatedWsUrl(path: string): string {
   const baseUrl = getWebSocketUrl(path);
-  const token = deps.getAccessToken?.();
+  const token = deps.getAccessToken?.() || AuthUtils.getAccessToken();
 
   if (!token) {
-    console.warn('⚠️ No token available for WebSocket connection');
+    console.warn("⚠️ No token available for WebSocket connection");
     return baseUrl;
   }
 
   // 将 token 添加到 URL query 参数（使用 access_token_v2，与后端保持一致）
   const url = new URL(baseUrl);
-  url.searchParams.set('access_token_v2', `Bearer ${token}`);
+  url.searchParams.set("access_token_v2", `Bearer ${token}`);
 
   return url.toString();
 }
