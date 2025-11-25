@@ -418,7 +418,7 @@ export default function DashboardDesktop() {
             <div className="bg-black/40 p-2 text-white text-xs font-medium">
               Camera Feed
             </div>
-            <CameraMonitor hostId="demo" cameraId="cam-1" />
+            <CameraMonitor hostId="demo-host" cameraId="camera-1" />
           </div>
         </div>
       </div>

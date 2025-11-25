@@ -227,6 +227,9 @@ export default function EnvironmentPage() {
               const lastConnectedAt =
                 realtimeStatus?.last_connected_at ?? lab.last_connected_at;
 
+              // Debug log
+              // console.log(`Lab ${lab.name} (${lab.uuid}): realtime=${realtimeStatus?.is_online}, static=${lab.is_online}, final=${isOnline}`);
+
               return (
                 <Card
                   key={lab.uuid}
