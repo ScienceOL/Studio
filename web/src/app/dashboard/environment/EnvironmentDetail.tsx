@@ -122,8 +122,9 @@ export default function EnvironmentDetail({
   };
 
   return (
-    <div className="h-full w-full overflow-auto bg-neutral-50/50 dark:bg-neutral-900/50">
-      <div className="container mx-auto py-8 px-4 space-y-6">
+    <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden bg-neutral-50/50 dark:bg-neutral-900/50">
+      <div className="flex-1 overflow-y-auto">
+        <div className="container mx-auto py-8 px-4 space-y-6">
         {/* 返回按钮 */}
         <Button
           variant="ghost"
@@ -266,5 +267,6 @@ export default function EnvironmentDetail({
         )}
       </div>
     </div>
+  </div>
   );
 }

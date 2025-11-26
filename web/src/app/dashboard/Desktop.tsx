@@ -24,6 +24,7 @@ import { FloatingDock } from '@/components/ui/floating-dock';
 import { EnvironmentPage } from './environment';
 
 // --- Sections ---
+import { Xyzen } from '@sciol/xyzen';
 import {
   ArticlesSection,
   type ArticleItem,
@@ -472,55 +473,66 @@ export default function DashboardDesktop() {
                 bounds="window"
                 dragHandleClassName="window-header"
                 enableUserSelectHack={false}
-                className="flex flex-col rounded-xl overflow-hidden shadow-2xl border border-black/5 dark:border-white/10 bg-white/85 dark:bg-neutral-900/85 backdrop-blur-xl transition-shadow"
+                className="bg-transparent"
               >
-                {/* MacOS-like Window Header */}
-                <div
-                  className="window-header flex h-10 shrink-0 items-center justify-between px-4 bg-white/50 dark:bg-black/20 select-none border-b border-black/5 dark:border-white/5"
-                  onDoubleClick={() => {
-                    // Maximize logic placeholder
-                  }}
-                >
-                  {/* Traffic Lights */}
-                  <div className="flex gap-2 group">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        closeWindow(win.id);
-                      }}
-                      className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-[8px] text-black/50 opacity-100 shadow-sm"
-                    >
-                      <XMarkIcon className="w-2 h-2 hidden group-hover:block text-red-900" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        minimizeWindow(win.id);
-                      }}
-                      className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 flex items-center justify-center text-[8px] text-black/50 shadow-sm"
-                    >
-                      <MinusIcon className="w-2 h-2 hidden group-hover:block text-yellow-900" />
-                    </button>
-                    <button className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-[8px] text-black/50 shadow-sm">
-                      <ArrowsPointingOutIcon className="w-2 h-2 hidden group-hover:block text-green-900" />
-                    </button>
-                  </div>
+                <div className="w-full h-full flex flex-col rounded-xl overflow-hidden shadow-2xl border border-black/5 dark:border-white/10 bg-white/85 dark:bg-neutral-900/85 backdrop-blur-xl transition-shadow">
+                  {/* MacOS-like Window Header */}
+                  <div
+                    className="window-header flex h-10 shrink-0 items-center justify-between px-4 bg-white/50 dark:bg-black/20 select-none border-b border-black/5 dark:border-white/5"
+                    onDoubleClick={() => {
+                      // Maximize logic placeholder
+                    }}
+                  >
+                    {/* Traffic Lights */}
+                    <div className="flex gap-2 group">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeWindow(win.id);
+                        }}
+                        className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-[8px] text-black/50 opacity-100 shadow-sm"
+                      >
+                        <XMarkIcon className="w-2 h-2 hidden group-hover:block text-red-900" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          minimizeWindow(win.id);
+                        }}
+                        className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 flex items-center justify-center text-[8px] text-black/50 shadow-sm"
+                      >
+                        <MinusIcon className="w-2 h-2 hidden group-hover:block text-yellow-900" />
+                      </button>
+                      <button className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-[8px] text-black/50 shadow-sm">
+                        <ArrowsPointingOutIcon className="w-2 h-2 hidden group-hover:block text-green-900" />
+                      </button>
+                    </div>
 
-                  {/* Title */}
-                  {/*<div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-medium text-neutral-700 dark:text-neutral-200">
+                    {/* Title */}
+                    {/*<div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-medium text-neutral-700 dark:text-neutral-200">
                 {app.title}
               </div>*/}
-                </div>
+                  </div>
 
-                {/* Window Content */}
-                <div className="flex-1 overflow-hidden relative bg-white/50 dark:bg-neutral-900/50 p-0 flex flex-col">
-                  <Component />
+                  {/* Window Content */}
+                  <div className="flex-1 custom-scrollbar min-h-0 overflow-hidden relative bg-white/50 dark:bg-neutral-900/50 p-0 flex flex-col">
+                    <Component />
+                  </div>
                 </div>
               </Rnd>
             </motion.div>
           );
         })}
       </AnimatePresence>
+
+      {/* Xyzen Side Panel (Global) */}
+      <div className="relative z-[88888]">
+        <Xyzen
+          backendUrl={
+            import.meta.env.DEV ? 'http://localhost:48196' : undefined
+          }
+        />
+      </div>
 
       {/* Dock Layer */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[99999]">
