@@ -11,14 +11,14 @@
  */
 
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import {
+  LocalDialog as Dialog,
+  LocalDialogContent as DialogContent,
+  LocalDialogDescription as DialogDescription,
+  LocalDialogHeader as DialogHeader,
+  LocalDialogTitle as DialogTitle,
+} from '@/components/ui/local-dialog';
 import type { DeviceActionInfo, ResourceTemplate } from '@/types/material';
 import Editor, { loader } from '@monaco-editor/react';
 import { ChevronRight, Loader2, Play, Sparkles } from 'lucide-react';
@@ -130,7 +130,6 @@ export default function ResourceActionDialog({
         if (!open) resetState();
         onOpenChange(open);
       }}
-      size="5xl"
     >
       <DialogContent className="max-w-5xl w-[95vw] h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-neutral-200 dark:border-neutral-800 flex-shrink-0">
