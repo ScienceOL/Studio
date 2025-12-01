@@ -3,6 +3,7 @@
  */
 
 import LogoLoading from '@/components/basic/loading';
+import MobileOverlay from '@/components/mobile-overlay';
 import { useAuth } from '@/hooks/useAuth';
 
 import { useUI } from '@/hooks/useUI';
@@ -34,5 +35,10 @@ export default function App() {
   }
 
   // 渲染落地页
-  return <LandscapePage />;
+  return (
+    <>
+      <MobileOverlay />
+      <LandscapePage />
+    </>
+  );
 }
