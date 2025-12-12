@@ -161,6 +161,7 @@ func (i *control) Connect(ctx context.Context) {
 		"ctx":            ctx,
 		"lab_uuid":       lab.UUID,
 		"lab_id":         lab.ID,
+		"lab_user_id":    labUser.ID,
 	}); err != nil {
 		i.labClient.Delete(lab.UUID)
 		if err := i.consumer.RemoveUser(ctx, lab.UUID.String()); err != nil {

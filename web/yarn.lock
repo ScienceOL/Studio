@@ -2661,7 +2661,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@radix-ui/react-select@npm:2.2.6":
+"@radix-ui/react-select@npm:2.2.6, @radix-ui/react-select@npm:^2.2.6":
   version: 2.2.6
   resolution: "@radix-ui/react-select@npm:2.2.6"
   dependencies:
@@ -3537,9 +3537,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sciol/xyzen@npm:^0.4.1":
-  version: 0.4.1
-  resolution: "@sciol/xyzen@npm:0.4.1"
+"@sciol/xyzen@npm:^0.4.3":
+  version: 0.4.3
+  resolution: "@sciol/xyzen@npm:0.4.3"
   dependencies:
     "@dnd-kit/core": "npm:^6.3.1"
     "@dnd-kit/modifiers": "npm:^9.0.0"
@@ -3547,6 +3547,7 @@ __metadata:
     "@headlessui/react": "npm:^2.2.9"
     "@heroicons/react": "npm:^2.2.0"
     "@radix-ui/react-alert-dialog": "npm:^1.1.15"
+    "@radix-ui/react-select": "npm:^2.2.6"
     "@radix-ui/react-slot": "npm:^1.2.4"
     "@tabler/icons-react": "npm:^3.35.0"
     "@tailwindcss/vite": "npm:^4.1.11"
@@ -3588,7 +3589,7 @@ __metadata:
   peerDependenciesMeta:
     vite:
       optional: true
-  checksum: 10c0/b6625bbe17fb30b0516e5f553195d9181726b4e79393d9e194cea48d5716a07326451c73085dadcedd08c4c64fe8879a02d41ca104a5d42451ba1520e8566706
+  checksum: 10c0/9ca01073868ba229dea0c002c418a12007e4a695affbc77ed16e68f133223986d7723305517c6e01b0b5e2981e5d2252260ea0844d99e25cfd66b5b60f30a22e
   languageName: node
   linkType: hard
 
@@ -10640,7 +10641,7 @@ __metadata:
     "@radix-ui/react-slot": "npm:^1.2.4"
     "@react-three/drei": "npm:^10.7.6"
     "@react-three/fiber": "npm:^9.4.0"
-    "@sciol/xyzen": "npm:^0.4.1"
+    "@sciol/xyzen": "npm:^0.4.3"
     "@tabler/icons-react": "npm:^3.35.0"
     "@tailwindcss/postcss": "npm:^4.1.14"
     "@tailwindcss/vite": "npm:^4.1.14"

@@ -1,7 +1,7 @@
 name: sciol-infra
 services:
   network-service:
-    image: registry.sciol.ac.cn/library/alpine:3.22
+    image: alpine:3.22
     ports:
       # - '${POSTGRES_PORT:-5432}:5432'
       - '${MINIO_PORT:-9000}:9000'
@@ -16,8 +16,53 @@ services:
     networks:
       - sciol-network
 
+  # nacos:
+  #   image: nacos/nacos-server:v3.0.2
+  #   container_name: sciol-nacos
+  #   pull_policy: if_not_present
+  #   network_mode: 'service:network-service'
+  #   environment:
+  #     - MODE=standalone
+  #     - PREFER_HOST_MODE=hostname
+  #     - NACOS_AUTH_ENABLE=false
+  #     - NACOS_AUTH_TOKEN=012345678901234567890123456789012345678901234567890123456789
+  #     - NACOS_AUTH_IDENTITY_KEY=serverIdentity
+  #     - NACOS_AUTH_IDENTITY_VALUE=security
+  #     # - NACOS_AUTH_ADMIN_USERNAME=nacos
+  #     # - NACOS_AUTH_ADMIN_PASSWORD=nacos
+  #   restart: always
+  #   deploy:
+  #     replicas: ${NACOS_REPLICAS:-1}
+  #   volumes:
+  #     - nacos-data:/home/nacos/data
+  #     - ../infra/nacos/init.sh:/init.sh
+  #   entrypoint: >
+  #     /bin/sh -c "
+  #       /home/nacos/bin/docker-startup.sh &
+  #       pid=$$!
+
+  #       # 等待 Nacos 启动
+  #       until curl -i http://localhost:8080 > /dev/null 2>&1; do
+  #         echo 'Waiting for Nacos to start...'
+  #         sleep 2
+  #       done
+
+  #       # 执行初始化脚本
+  #       chmod +x /init.sh
+  #       /init.sh
+
+  #       wait $$pid
+  #     "
+  #   healthcheck:
+  #     test:
+  #       ['CMD-SHELL', 'curl --fail --silent --max-time 3 http://localhost:8080']
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 3
+  #   attach: false
+
   postgresql:
-    image: registry.sciol.ac.cn/library/postgres:16.8-alpine
+    image: postgres:16.8-alpine
     pull_policy: if_not_present
     network_mode: 'service:network-service'
     restart: always
@@ -43,7 +88,7 @@ services:
       - db-data:/var/lib/postgresql/data
 
   minio:
-    image: registry.sciol.ac.cn/library/minio
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     container_name: sciol-minio
     network_mode: 'service:network-service'
     volumes:
@@ -82,6 +127,14 @@ services:
           echo 'Bucket casdoor already exists'
         fi
 
+        # 检查 Xyzen 存储桶是否存在，不存在则创建
+        if ! mc ls myminio/xyzen > /dev/null 2>&1; then
+          echo 'Creating bucket xyzen'
+          mc mb myminio/xyzen
+        else
+          echo 'Bucket xyzen already exists'
+        fi
+
         mc anonymous set download myminio/casdoor
 
         # 检查 Lab 收集存储桶是否启用，启用则创建
@@ -108,7 +161,7 @@ services:
     attach: false
 
   redis:
-    image: registry.sciol.ac.cn/library/redis:7.4.2-alpine
+    image: redis:7.4.2-alpine
     network_mode: 'service:network-service'
     restart: always
     volumes:
@@ -123,7 +176,7 @@ services:
       replicas: ${REDIS_REPLICAS:-1}
 
   casdoor:
-    image: registry.sciol.ac.cn/library/casdoor:v2.43.0
+    image: casbin/casdoor:v2.43.0
     container_name: sciol-casdoor
     network_mode: 'service:network-service'
     depends_on:
@@ -150,6 +203,8 @@ volumes:
     driver: local
   s3_data:
     driver: local
+  # nacos-data:
+  #   driver: local
 
 networks:
   sciol-network:

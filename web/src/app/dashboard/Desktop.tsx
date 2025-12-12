@@ -6,6 +6,7 @@ import {
 import {
   Activity,
   Bell,
+  Camera,
   Cpu,
   Home,
   MessageSquare,
@@ -163,20 +164,16 @@ const WorkflowsWidget = () => {
   );
 };
 
-// --- App Definitions ---
-type AppId =
-  | 'nodes'
-  | 'workflows'
-  | 'notifications'
-  | 'news'
-  | 'activity'
-  | 'trending'
-  | 'articles'
-  | 'home'
-  | 'environment';
+const CameraWidget = () => {
+  return (
+    <div className="h-full w-full overflow-hidden">
+      <CameraMonitor hostId="demo-host" cameraId="camera-1" />
+    </div>
+  );
+};
 
 interface AppDefinition {
-  id: AppId;
+  id: string;
   title: string;
   icon: React.ReactNode;
   component: React.FC | null; // null for simple links like Home
@@ -196,6 +193,16 @@ const APPS: AppDefinition[] = [
     defaultWidth: 0,
     defaultHeight: 0,
     href: '/dashboard',
+  },
+  {
+    id: 'camera',
+    title: 'Camera',
+    icon: (
+      <Camera className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+    ),
+    component: CameraWidget,
+    defaultWidth: 520,
+    defaultHeight: 360,
   },
   {
     id: 'environment',
@@ -268,8 +275,8 @@ const APPS: AppDefinition[] = [
     defaultHeight: 400,
   },
   {
-    id: 'articles',
-    title: 'Articles',
+    id: 'settings',
+    title: 'Settings',
     icon: (
       <MessageSquare className="h-full w-full text-neutral-500 dark:text-neutral-300" />
     ),
@@ -281,7 +288,7 @@ const APPS: AppDefinition[] = [
 
 interface DesktopWindow {
   id: string; // unique instance id
-  appId: AppId;
+  appId: string;
   x: number;
   y: number;
   width: number;
@@ -344,6 +351,14 @@ export default function DashboardDesktop() {
     },
     [windows, maxZIndex, bringToFront]
   );
+
+  // const openAppById = useCallback(
+  //   (appId: string) => {
+  //     const app = APPS.find((a) => a.id === appId);
+  //     if (app) openApp(app);
+  //   },
+  //   [openApp]
+  // );
 
   const closeWindow = useCallback((id: string) => {
     setWindows((prev) => prev.filter((w) => w.id !== id));
@@ -410,19 +425,20 @@ export default function DashboardDesktop() {
       }}
     >
       {/* Desktop Area */}
-      <div className="absolute inset-0 z-0">
-        {/* We could put desktop icons here if we wanted */}
-
-        {/* Camera Monitor pinned to background (optional) */}
-        <div className="absolute top-8 left-8 w-80 opacity-90 hover:opacity-100 transition-opacity">
+      {/* <div className="absolute inset-0 z-0">
+        <button
+          type="button"
+          onClick={() => openAppById('camera')}
+          className="absolute top-8 left-8 w-80 opacity-90 hover:opacity-100 transition-opacity text-left"
+        >
           <div className="rounded-xl overflow-hidden shadow-2xl border border-white/20 backdrop-blur-md">
             <div className="bg-black/40 p-2 text-white text-xs font-medium">
               Camera Feed
             </div>
             <CameraMonitor hostId="demo-host" cameraId="camera-1" />
           </div>
-        </div>
-      </div>
+        </button>
+      </div> */}
 
       {/* Windows Layer */}
       <AnimatePresence>
@@ -526,11 +542,12 @@ export default function DashboardDesktop() {
       </AnimatePresence>
 
       {/* Xyzen Side Panel (Global) */}
-      <div className="relative z-[88888]">
+      <div className="relative">
         <Xyzen
           backendUrl={
             import.meta.env.DEV ? 'http://localhost:48196' : undefined
           }
+          centeredInputPosition="bottom-right"
         />
       </div>
 

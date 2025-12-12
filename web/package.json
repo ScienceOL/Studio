@@ -23,7 +23,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.4.0",
-    "@sciol/xyzen": "^0.4.1",
+    "@sciol/xyzen": "^0.4.3",
     "@tabler/icons-react": "^3.35.0",
     "@tailwindcss/postcss": "^4.1.14",
     "@tailwindcss/vite": "^4.1.14",
