@@ -3,6 +3,8 @@ package engine
 import (
 	"context"
 	"time"
+
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 )
 
 /*
@@ -14,6 +16,7 @@ type Task interface {
 	Stop(ctx context.Context) error
 	GetStatus(ctx context.Context) error
 	OnJobUpdate(ctx context.Context, data *JobData) error
+	ID(ctx context.Context) uuid.UUID // 获取当前任务 id
 
 	// 状态控制
 	GetDeviceActionStatus(ctx context.Context, key ActionKey) (ActionValue, bool)
