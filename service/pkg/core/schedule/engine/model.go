@@ -12,6 +12,12 @@ import (
 	"gorm.io/datatypes"
 )
 
+type ActionParam struct {
+	Session      *melody.Session
+	Sandbox      repo.Sandbox
+	WorkflowInfo *WorkflowInfo
+}
+
 type TaskParam struct {
 	Session    *melody.Session
 	Cancle     context.CancelFunc

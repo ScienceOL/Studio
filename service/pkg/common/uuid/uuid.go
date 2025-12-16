@@ -140,6 +140,10 @@ func NewV4() UUID {
 	return UUID{UUID: uuid.Must(uuid.NewV4())}
 }
 
+func NewNil() UUID {
+	return UUID{UUID: uuid.Nil}
+}
+
 func (u UUID) String() string {
 	return u.UUID.String()
 }

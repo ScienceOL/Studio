@@ -56,9 +56,19 @@ const TABS_CONFIG: Array<{
   { icon: Bug, label: 'Debug' },
 ];
 
-export default function EnvironmentDetail() {
-  const { labUuid } = useParams<{ labUuid: string }>();
+interface EnvironmentDetailProps {
+  labUuid?: string;
+  onBack?: () => void;
+}
+
+export default function EnvironmentDetail({
+  labUuid: propLabUuid,
+  onBack,
+}: EnvironmentDetailProps = {}) {
+  const params = useParams<{ labUuid: string }>();
   const navigate = useNavigate();
+
+  const labUuid = propLabUuid || params.labUuid;
 
   // 使用统一的 query hooks
   const { data: lab, isLoading: isLoadingLab } = useLabDetail(labUuid || '');
@@ -98,7 +108,7 @@ export default function EnvironmentDetail() {
 
   if (!labUuid) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-full w-full">
         <div className="text-center text-neutral-900 dark:text-neutral-100">
           Invalid lab UUID
         </div>
@@ -112,141 +122,151 @@ export default function EnvironmentDetail() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 space-y-6">
-      {/* 返回按钮 */}
-      <Button
-        variant="ghost"
-        onClick={() => navigate('/dashboard/environment')}
-        className="mb-6 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        返回列表
-      </Button>
+    <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden bg-neutral-50/50 dark:bg-neutral-900/50">
+      <div className="flex-1 overflow-y-auto">
+        <div className="container mx-auto py-8 px-4 space-y-6">
+        {/* 返回按钮 */}
+        <Button
+          variant="ghost"
+          onClick={() => {
+            if (onBack) {
+              onBack();
+            } else {
+              navigate('/dashboard/environment');
+            }
+          }}
+          className="mb-6 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          返回列表
+        </Button>
 
-      {/* 标题区域 */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-              {lab?.name || '加载中...'}
-            </h1>
-            <LabStatusIndicator
-              isOnline={isOnline}
-              lastConnectedAt={lastConnectedAt}
-              showText={true}
-              size="md"
-            />
-          </div>
-          <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            {lab?.description || '暂无描述'}
-          </p>
-          {/* 连接时间信息 */}
-          {lastConnectedAt && (
-            <div className="mt-2">
+        {/* 标题区域 */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+                {lab?.name || '加载中...'}
+              </h1>
               <LabStatusIndicator
                 isOnline={isOnline}
                 lastConnectedAt={lastConnectedAt}
-                showText={false}
-                showTime={true}
-                size="sm"
+                showText={true}
+                size="md"
               />
             </div>
-          )}
+            <p className="text-neutral-600 dark:text-neutral-400 mt-1">
+              {lab?.description || '暂无描述'}
+            </p>
+            {/* 连接时间信息 */}
+            {lastConnectedAt && (
+              <div className="mt-2">
+                <LabStatusIndicator
+                  isOnline={isOnline}
+                  lastConnectedAt={lastConnectedAt}
+                  showText={false}
+                  showTime={true}
+                  size="sm"
+                />
+              </div>
+            )}
+          </div>
+          <Badge className="bg-indigo-100 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100 shrink-0">
+            {labUuid.slice(0, 8)}
+          </Badge>
         </div>
-        <Badge className="bg-indigo-100 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100 shrink-0">
-          {labUuid.slice(0, 8)}
-        </Badge>
-      </div>
 
-      {/* Tabs 标签页 */}
-      <TabGroup>
-        <TabList className="flex space-x-1 rounded-xl bg-neutral-100 dark:bg-neutral-800 p-1">
-          {TABS_CONFIG.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <Tab
-                key={tab.label}
-                className={({ selected }) =>
-                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all
+        {/* Tabs 标签页 */}
+        <TabGroup>
+          <TabList className="flex space-x-1 rounded-xl bg-neutral-100 dark:bg-neutral-800 p-1">
+            {TABS_CONFIG.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <Tab
+                  key={tab.label}
+                  className={({ selected }) =>
+                    `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all
                   ${
                     selected
                       ? 'bg-white dark:bg-neutral-700 text-indigo-700 dark:text-indigo-400 shadow'
                       : 'text-neutral-700 dark:text-neutral-300 hover:bg-white/[0.12] hover:text-neutral-900 dark:hover:text-white'
                   }`
-                }
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                </div>
-              </Tab>
-            );
-          })}
-        </TabList>
+                  }
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Icon className="h-4 w-4" />
+                    <span>{tab.label}</span>
+                  </div>
+                </Tab>
+              );
+            })}
+          </TabList>
 
-        <TabPanels className="mt-6">
-          {/* 详细信息面板 */}
-          <TabPanel>
-            <DetailsPanel
-              labUuid={labUuid}
-              lab={lab}
-              isLoadingLab={isLoadingLab}
-              members={members}
-              isLoadingMembers={isLoadingMembers}
-            />
-          </TabPanel>
+          <TabPanels className="mt-6">
+            {/* 详细信息面板 */}
+            <TabPanel>
+              <DetailsPanel
+                labUuid={labUuid}
+                lab={lab}
+                isLoadingLab={isLoadingLab}
+                members={members}
+                isLoadingMembers={isLoadingMembers}
+              />
+            </TabPanel>
 
-          {/* Resources 面板 */}
-          <TabPanel>
-            <ResourceTemplatesPanel
-              resourceTemplates={resourceTemplates}
-              isLoading={isLoadingResources}
-              onSelectResource={handleOpenResourceActions}
-            />
-          </TabPanel>
+            {/* Resources 面板 */}
+            <TabPanel>
+              <ResourceTemplatesPanel
+                resourceTemplates={resourceTemplates}
+                isLoading={isLoadingResources}
+                onSelectResource={handleOpenResourceActions}
+              />
+            </TabPanel>
 
-          {/* Materials 面板 */}
-          <TabPanel>
-            <MaterialsPanel
-              materials={materials}
-              isLoading={isLoadingMaterials}
-              resourceTemplates={resourceTemplates}
-              onOpenResourceActions={handleOpenResourceActions}
-            />
-          </TabPanel>
+            {/* Materials 面板 */}
+            <TabPanel>
+              <MaterialsPanel
+                materials={materials}
+                isLoading={isLoadingMaterials}
+                resourceTemplates={resourceTemplates}
+                onOpenResourceActions={handleOpenResourceActions}
+              />
+            </TabPanel>
 
-          {/* Actions 面板 */}
-          <TabPanel>
-            <ActionPanel
-              labUuid={labUuid}
-              materials={materials}
-              resourceTemplates={resourceTemplates}
-              isLoadingMaterials={isLoadingMaterials}
-              isLoadingResources={isLoadingResources}
-            />
-          </TabPanel>
+            {/* Actions 面板 */}
+            <TabPanel>
+              <ActionPanel
+                labUuid={labUuid}
+                materials={materials}
+                resourceTemplates={resourceTemplates}
+                isLoadingMaterials={isLoadingMaterials}
+                isLoadingResources={isLoadingResources}
+              />
+            </TabPanel>
 
-          {/* Logs 面板 */}
-          <TabPanel>
-            <ActionLogsPanel labUuid={labUuid} />
-          </TabPanel>
+            {/* Logs 面板 */}
+            <TabPanel>
+              <ActionLogsPanel labUuid={labUuid} />
+            </TabPanel>
 
-          {/* Debug 面板 */}
-          <TabPanel>
-            <ActionDebugPanel labUuid={labUuid} />
-          </TabPanel>
-        </TabPanels>
-      </TabGroup>
+            {/* Debug 面板 */}
+            <TabPanel>
+              <ActionDebugPanel labUuid={labUuid} />
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
 
-      {/* Resource Action Dialog */}
-      {selectedResource && (
-        <ResourceActionDialog
-          open={actionDialogOpen}
-          onOpenChange={setActionDialogOpen}
-          resourceTemplate={selectedResource}
-          labUuid={labUuid}
-        />
-      )}
+        {/* Resource Action Dialog */}
+        {selectedResource && (
+          <ResourceActionDialog
+            open={actionDialogOpen}
+            onOpenChange={setActionDialogOpen}
+            resourceTemplate={selectedResource}
+            labUuid={labUuid}
+          />
+        )}
+      </div>
     </div>
+  </div>
   );
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/web/views/laboratory"
 	"github.com/scienceol/studio/service/pkg/web/views/material"
+	"github.com/scienceol/studio/service/pkg/web/views/realtime"
 	"github.com/scienceol/studio/service/pkg/web/views/workflow"
 
 	"github.com/scienceol/studio/service/pkg/web/views"
@@ -85,6 +86,16 @@ func InstallURL(ctx context.Context, g *gin.Engine) {
 	{
 		v1 := api.Group("/v1")
 		wsRouter := v1.Group("/ws", auth.Auth())
+
+		// Realtime (prototype, no auth for now) -- mount under /api/realtime
+		realtimeGroup := api.Group("/realtime")
+		{
+			rh := realtime.NewHandle()
+			realtimeGroup.GET("/signal/client", rh.ClientSignal)
+			realtimeGroup.GET("/signal/host/:hostId", rh.HostSignal)
+			realtimeGroup.POST("/camera/start", rh.StartCamera)
+			realtimeGroup.POST("/camera/stop", rh.StopCamera)
+		}
 
 		// 实验室状态 WebSocket
 		{

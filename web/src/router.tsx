@@ -32,6 +32,7 @@ export default function Router() {
         <Routes>
           {/* 根路径 - App 组件根据登录状态分流 */}
           <Route path="/" element={<App />} />
+        <Route path="/" element={<App />} />
 
           {/* 公开路由 */}
           <Route path="/login" element={<LoginPage />} />
@@ -40,18 +41,16 @@ export default function Router() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/3D_lab" element={<Lab3DPage />} />
 
-          {/* 所有需要侧边栏和登录保护的页面 */}
-          <Route element={<ProtectedDashboardLayout />}>
-            <Route path="/dashboard" element={<DashboardHome />} />
-            <Route
-              path="/dashboard/environment"
-              element={<EnvironmentPage />}
-            />
-            <Route
-              path="/dashboard/environment/:labUuid"
-              element={<EnvironmentDetail />}
-            />
-          </Route>
+        {/* 所有需要侧边栏和登录保护的页面 */}
+        <Route element={<ProtectedDashboardLayout />}>
+          {/*<Route path="/dashboard" element={<DashboardHome />} />*/}
+          <Route path="dashboard" element={<DesktopWindow />} />
+          <Route path="/dashboard/environment" element={<EnvironmentPage />} />
+          <Route
+            path="/dashboard/environment/:labUuid"
+            element={<EnvironmentDetail />}
+          />
+        </Route>
         </Routes>
       </Suspense>
     </BrowserRouter>

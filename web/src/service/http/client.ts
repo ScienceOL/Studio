@@ -1,11 +1,12 @@
-import { config } from '@/configs';
+import { config } from "@/configs";
+import { AuthUtils } from "@/utils/auth";
 import type {
   AxiosError,
   AxiosHeaderValue,
   AxiosInstance,
   AxiosRequestConfig,
-} from 'axios';
-import axios, { AxiosHeaders } from 'axios';
+} from "axios";
+import axios, { AxiosHeaders } from "axios";
 
 // 由 Core 注入的依赖，避免 Service → Core 反向依赖导致循环
 export interface ApiClientDeps {
@@ -23,7 +24,7 @@ export const apiClient: AxiosInstance = axios.create({
   // withCredentials: false, // 使用 Authorization Bearer，不依赖 Cookie
   timeout: 30_000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -38,10 +39,10 @@ export function configureApiClient(injected: ApiClientDeps) {
 function toAxiosHeaders(h: unknown): AxiosHeaders {
   if (h instanceof AxiosHeaders) return h;
   const ax = new AxiosHeaders();
-  if (h && typeof h === 'object') {
+  if (h && typeof h === "object") {
     for (const [k, v] of Object.entries(h as Record<string, unknown>)) {
       const vv = v as AxiosHeaderValue | undefined;
-      if (typeof vv !== 'undefined') ax.set(k, vv);
+      if (typeof vv !== "undefined") ax.set(k, vv);
     }
   }
   return ax;
@@ -50,26 +51,26 @@ function toAxiosHeaders(h: unknown): AxiosHeaders {
 // 请求拦截：附加 Authorization 头
 apiClient.interceptors.request.use((request) => {
   console.group(
-    `🚀 API Request: ${request.method?.toUpperCase()} ${request.url}`
+    `🚀 API Request: ${request.method?.toUpperCase()} ${request.url}`,
   );
-  console.log('📍 Full URL:', `${request.baseURL}${request.url}`);
-  console.log('📋 Headers:', request.headers);
-  console.log('📦 Data:', request.data);
-  console.log('🔍 Params:', request.params);
+  console.log("📍 Full URL:", `${request.baseURL}${request.url}`);
+  console.log("📋 Headers:", request.headers);
+  console.log("📦 Data:", request.data);
+  console.log("🔍 Params:", request.params);
 
   try {
-    const token = deps.getAccessToken?.();
+    const token = deps.getAccessToken?.() || AuthUtils.getAccessToken();
     if (token) {
-      console.log('🔑 Token found:', token.substring(0, 20) + '...');
+      console.log("🔑 Token found:", token.substring(0, 20) + "...");
       const axHeaders = toAxiosHeaders(request.headers);
-      axHeaders.set('Authorization', `Bearer ${token}`);
+      axHeaders.set("Authorization", `Bearer ${token}`);
       request.headers = axHeaders;
-      console.log('✅ Authorization header added');
+      console.log("✅ Authorization header added");
     } else {
-      console.log('⚠️ No token available');
+      console.log("⚠️ No token available");
     }
   } catch (err) {
-    console.error('❌ Error adding token:', err);
+    console.error("❌ Error adding token:", err);
     // 静默失败，交由服务端处理未鉴权
   }
 
@@ -83,11 +84,11 @@ apiClient.interceptors.response.use(
     console.group(
       `✅ API Response: ${response.config.method?.toUpperCase()} ${
         response.config.url
-      }`
+      }`,
     );
-    console.log('📊 Status:', response.status, response.statusText);
-    console.log('📋 Headers:', response.headers);
-    console.log('📦 Data:', response.data);
+    console.log("📊 Status:", response.status, response.statusText);
+    console.log("📋 Headers:", response.headers);
+    console.log("📦 Data:", response.data);
     console.groupEnd();
     return response;
   },
@@ -95,13 +96,13 @@ apiClient.interceptors.response.use(
     console.group(
       `❌ API Error: ${error.config?.method?.toUpperCase()} ${
         error.config?.url
-      }`
+      }`,
     );
-    console.log('📊 Status:', error.response?.status);
-    console.log('📋 Response Headers:', error.response?.headers);
-    console.log('📦 Response Data:', error.response?.data);
-    console.log('🔍 Error Message:', error.message);
-    console.log('🌐 Network Error:', !error.response);
+    console.log("📊 Status:", error.response?.status);
+    console.log("📋 Response Headers:", error.response?.headers);
+    console.log("📦 Response Data:", error.response?.data);
+    console.log("🔍 Error Message:", error.message);
+    console.log("🌐 Network Error:", !error.response);
     console.groupEnd();
 
     const status = error.response?.status;
@@ -113,8 +114,8 @@ apiClient.interceptors.response.use(
     }
 
     // 防止在刷新接口自身或登录接口上循环重试
-    const url = (original.url || '').toString();
-    if (url.includes('/api/auth/refresh') || url.includes('/api/auth/login')) {
+    const url = (original.url || "").toString();
+    if (url.includes("/api/auth/refresh") || url.includes("/api/auth/login")) {
       return Promise.reject(error);
     }
 
@@ -134,10 +135,10 @@ apiClient.interceptors.response.use(
       }
 
       // 刷新成功，读取最新 token 并重放原请求
-      const newToken = deps.getAccessToken?.();
+      const newToken = deps.getAccessToken?.() || AuthUtils.getAccessToken();
       if (newToken) {
         const axHeaders = toAxiosHeaders(original.headers);
-        axHeaders.set('Authorization', `Bearer ${newToken}`);
+        axHeaders.set("Authorization", `Bearer ${newToken}`);
         original.headers = axHeaders;
       } else {
         // 无新 token 也视为失败
@@ -150,7 +151,7 @@ apiClient.interceptors.response.use(
       deps.onAuthFailure?.();
       return Promise.reject(e);
     }
-  }
+  },
 );
 
 export default apiClient;

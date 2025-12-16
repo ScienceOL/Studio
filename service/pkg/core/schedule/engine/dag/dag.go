@@ -88,6 +88,14 @@ func NewDagTask(ctx context.Context, param *engine.TaskParam) engine.Task {
 	return d
 }
 
+func (d *dagEngine) ID(ctx context.Context) uuid.UUID {
+	if d.job == nil {
+		return uuid.NewNil()
+	}
+
+	return d.job.TaskUUID
+}
+
 func (d *dagEngine) checkTaskStatus(ctx context.Context) error {
 	task := &model.WorkflowTask{}
 	if err := d.workflowStore.GetData(ctx, task, map[string]any{

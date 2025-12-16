@@ -116,3 +116,4 @@ docker-compose.override.yml
 !.gitkeep
 !.keep
 !.placeholder
+**/demo/

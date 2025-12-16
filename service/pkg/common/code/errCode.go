@@ -196,6 +196,7 @@ const (
 	DataNotMapAnyTypeErr                                   // data not map any type error
 	ValueSliceOutIndexErr                                  // value slice out index error
 	ValueNotExistErr                                       // value not exist error
+	SetLabHeartErr                                         // set lab heart error
 	TargetDataNotMapAnyTypeErr                             // target data not map any type error
 	MarshalTargetDataErr                                   // marshal target data error
 	TargetParamInvalidateErr                               // target param invalidate error

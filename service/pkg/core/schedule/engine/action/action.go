@@ -9,6 +9,7 @@ import (
 	"github.com/olahol/melody"
 	r "github.com/redis/go-redis/v9"
 	"github.com/scienceol/studio/service/pkg/common/code"
+	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/core/notify"
 	"github.com/scienceol/studio/service/pkg/core/schedule"
 	"github.com/scienceol/studio/service/pkg/core/schedule/engine"
@@ -357,4 +358,12 @@ func (d *actionEngine) boardMsg(ctx context.Context, jobData *engine.JobData) {
 	}); err != nil {
 		logger.Errorf(ctx, "action board msg fail err: %+v", err)
 	}
+}
+
+func (d *actionEngine) ID(ctx context.Context) uuid.UUID {
+	if d.job == nil {
+		return uuid.NewNil()
+	}
+
+	return d.job.TaskUUID
 }

@@ -177,8 +177,20 @@ class LabStatusManager {
       }
 
       // 处理状态更新通知
-      if (action === 'status_update' && Array.isArray(responseData)) {
-        this.handleStatusUpdate(responseData);
+      if (action === 'status_update') {
+        console.log('🔔 [LabStatusCore] Received status update action');
+        if (Array.isArray(responseData)) {
+          console.log(
+            '🔔 [LabStatusCore] Processing status update array:',
+            responseData
+          );
+          this.handleStatusUpdate(responseData);
+        } else {
+          console.warn(
+            '⚠️ [LabStatusCore] Status update data is not an array:',
+            responseData
+          );
+        }
       }
     } catch (error) {
       console.error('❌ [LabStatusCore] Failed to parse message:', error);

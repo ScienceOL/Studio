@@ -25,7 +25,7 @@ export function Dialog({
     <Transition show={open} as={Fragment}>
       <HeadlessDialog
         onClose={() => onOpenChange(false)}
-        className="relative z-50"
+        className="relative z-[100000]"
       >
         <Transition.Child
           as={Fragment}

@@ -8,8 +8,12 @@ export default function LoginPage() {
   useEffect(() => {
     // 如果已经登录，重定向到首页
     if (AuthUtils.isAuthenticated()) {
-      navigate('/');
+      navigate('/', { replace: true });
+      return;
     }
+
+    // 未登录则自动跳转到后端登录（保留按钮作为兜底）
+    AuthUtils.redirectToLogin();
   }, [navigate]);
 
   const handleLogin = () => {
@@ -25,7 +29,7 @@ export default function LoginPage() {
             欢迎使用 Studio
           </h2>
           <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-            请登录以继续使用
+            正在为您跳转到登录页面…
           </p>
         </div>
 
@@ -33,7 +37,7 @@ export default function LoginPage() {
           <div className="space-y-6">
             <div className="text-center">
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
-                点击下方按钮使用 OAuth2 登录
+                如果未自动跳转，请点击下方按钮使用 OAuth2 登录
               </p>
               <button
                 onClick={handleLogin}
@@ -59,12 +63,12 @@ export default function LoginPage() {
                     d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                   />
                 </svg>
-                使用 OAuth2 登录
+                未自动跳转？点击登录
               </button>
             </div>
 
-            <div className="border-t border-neutral-200 dark:border-neutral-700 pt-6">
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 space-y-2">
+            <div className="border-t w-full border-neutral-200 dark:border-neutral-700 pt-6">
+              <div className="text-xs text-center text-neutral-500 dark:text-neutral-400 space-y-2">
                 <p>🔒 使用 Casdoor 进行安全认证</p>
                 <p>🚀 登录后将自动跳转到首页</p>
                 <p>💾 Token 将安全存储在本地</p>

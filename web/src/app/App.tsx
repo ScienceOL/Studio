@@ -1,13 +1,9 @@
 /**
- * 🎨 Component Layer - 应用入口（重构版）
- *
- * 职责：
- * 1. 只负责 UI 渲染
- * 2. 通过 Hook 获取状态和方法
- * 3. 处理用户交互事件
+ * 🎨 Component Layer - Entrypoint
  */
 
 import LogoLoading from '@/components/basic/loading';
+import MobileOverlay from '@/components/mobile-overlay';
 import { useAuth } from '@/hooks/useAuth';
 
 import { useUI } from '@/hooks/useUI';
@@ -16,9 +12,8 @@ import { useNavigate } from 'react-router-dom';
 import LandscapePage from './landscape';
 
 export default function App() {
-  // 🎣 使用认证 Hook
   const { isAuthenticated, isLoading } = useAuth();
-  // 🎣 使用 UI Hook，它会在内部处理主题初始化等副作用
+
   useUI();
 
   const navigate = useNavigate();
@@ -40,5 +35,10 @@ export default function App() {
   }
 
   // 渲染落地页
-  return <LandscapePage />;
+  return (
+    <>
+      <MobileOverlay />
+      <LandscapePage />
+    </>
+  );
 }
