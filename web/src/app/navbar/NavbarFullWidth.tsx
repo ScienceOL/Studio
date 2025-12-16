@@ -4,6 +4,7 @@ import clsx from 'clsx';
 
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import NavbarFullWidthFooter from './NavbarFullWidthFooter';
 import type { NavbarFullWidthProps } from './types';
 
@@ -102,13 +103,25 @@ export default function NavbarFullWidth({
                     />
                   </div>
                   <div>
-                    <a
-                      href={item.href}
-                      className="font-semibold text-neutral-900 dark:text-white"
-                    >
-                      {item.name}
-                      <span className="absolute inset-0" />
-                    </a>
+                    {item.href && item.href.startsWith('http') ? (
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-neutral-900 dark:text-white"
+                      >
+                        {item.name}
+                        <span className="absolute inset-0" />
+                      </a>
+                    ) : (
+                      <Link
+                        to={item.href || '#'}
+                        className="font-semibold text-neutral-900 dark:text-white"
+                      >
+                        {item.name}
+                        <span className="absolute inset-0" />
+                      </Link>
+                    )}
                     <p className="mt-1 text-neutral-600 dark:text-neutral-400">
                       {item.description}
                     </p>
