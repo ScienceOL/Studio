@@ -1,7 +1,2 @@
-version = 4
+version = 1
 requires-python = ">=3.8"
-
-[[package]]
-name = "placeholder"
-version = "0.0.0"
-description = "Placeholder package for UV lock file"
