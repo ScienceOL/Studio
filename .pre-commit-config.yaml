@@ -5,6 +5,7 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: '\.(yaml|yml|json|md|sh|go|conf)$|^(launch/|infra/|docker/|\.github/)'
       - id: end-of-file-fixer
         exclude: '\.(yaml|yml|json|md|sh|go|conf)$|^(launch/|infra/|docker/)'
       - id: check-yaml
