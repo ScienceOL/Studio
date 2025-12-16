@@ -43,8 +43,7 @@ export default function Router() {
 
         {/* 所有需要侧边栏和登录保护的页面 */}
         <Route element={<ProtectedDashboardLayout />}>
-          {/*<Route path="/dashboard" element={<DashboardHome />} />*/}
-          <Route path="dashboard" element={<DesktopWindow />} />
+          <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/dashboard/environment" element={<EnvironmentPage />} />
           <Route
             path="/dashboard/environment/:labUuid"
