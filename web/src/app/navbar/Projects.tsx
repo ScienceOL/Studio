@@ -134,7 +134,7 @@ import {
   // RectangleGroupIcon,
 } from '@heroicons/react/24/outline';
 
-import { SiUnrealengine,SiUnity,SiProton,SiX,SiStmicroelectronics } from 'react-icons/si';
+import { SiUnrealengine,SiUnity,SiProton,SiX,SiStmicroelectronics,SiBlender } from 'react-icons/si';
 import { GitHubIcon } from '@/assets/SocialIcons';
 import NavbarFullWidth from './NavbarFullWidth';
 import type { NavbarFullWidthProps } from './types';
@@ -165,7 +165,7 @@ const resources = [
   {
     name: 'Anti',
     description: '用于实验室模拟的3D数字孪生平台',
-    href: `/deepmd-kit`,
+    href: `/3D_lab`,
     icon: SiUnity,
     color:'text-rose-500',
   },
@@ -175,7 +175,14 @@ const resources = [
     href: `/deepmd-kit`,
     icon: SiUnrealengine,
     color:'text-emerald-500',
-  }
+  },
+  {
+    name:'3D Lab',
+    description: '展示3D实验室的实验仪器和场景',
+    href: `/3D_lab`,
+    icon: SiBlender,
+    color:'text-purple-500',
+  },
 ];
 
 const callsToAction = [
