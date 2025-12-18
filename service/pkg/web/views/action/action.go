@@ -11,17 +11,19 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/olahol/melody"
 	r "github.com/redis/go-redis/v9"
-	"github.com/scienceol/studio/service/internal/config"
 	"github.com/scienceol/studio/service/pkg/common"
 	"github.com/scienceol/studio/service/pkg/common/code"
 	"github.com/scienceol/studio/service/pkg/common/constant"
 	"github.com/scienceol/studio/service/pkg/common/uuid"
 	"github.com/scienceol/studio/service/pkg/core/notify"
 	"github.com/scienceol/studio/service/pkg/core/notify/events"
+	"github.com/scienceol/studio/service/pkg/core/schedule/edge"
 	"github.com/scienceol/studio/service/pkg/core/schedule/engine"
 	actionEngine "github.com/scienceol/studio/service/pkg/core/schedule/engine/action"
+	"github.com/scienceol/studio/service/pkg/middleware/auth"
 	"github.com/scienceol/studio/service/pkg/middleware/logger"
 	"github.com/scienceol/studio/service/pkg/middleware/redis"
+	"github.com/scienceol/studio/service/pkg/utils"
 )
 
 const (
@@ -89,6 +91,12 @@ func (h *Handle) RunAction(ctx *gin.Context) {
 		return
 	}
 
+	userInfo := auth.GetCurrentUser(ctx)
+	if userInfo == nil {
+		common.ReplyErr(ctx, code.UnLogin)
+		return
+	}
+
 	// 打印当前时间
 	now := time.Now()
 	logger.Infof(ctx, "RunAction request received at: %s", now.Format(time.RFC3339))
@@ -96,6 +104,23 @@ func (h *Handle) RunAction(ctx *gin.Context) {
 	// 生成任务 UUID
 	if req.UUID.IsNil() {
 		req.UUID = uuid.NewV4()
+	}
+
+	if exists, err := h.rClient.Exists(ctx, utils.LabHeartName(req.LabUUID)).Result(); err != nil || exists == 0 {
+		common.ReplyErr(ctx, code.EdgeNotStartedErr)
+		return
+	}
+
+	data := edge.ApiControlData[engine.WorkflowInfo]{
+		ApiControlMsg: edge.ApiControlMsg{
+			Action: edge.StartAction,
+		},
+		Data: engine.WorkflowInfo{
+			TaskUUID:     req.UUID,
+			WorkflowUUID: req.UUID,
+			LabUUID:      req.LabUUID,
+			UserID:       userInfo.ID,
+		},
 	}
 
 	// 将请求数据存储到 Redis
@@ -107,7 +132,7 @@ func (h *Handle) RunAction(ctx *gin.Context) {
 		return
 	}
 
-	ret := h.rClient.SetEx(ctx, paramKey, reqData, 1*time.Hour)
+	ret := h.rClient.SetEx(ctx, paramKey, reqData, 24*time.Hour)
 	if ret.Err() != nil {
 		logger.Errorf(ctx, "set action param to redis err: %+v", ret.Err())
 		common.ReplyErr(ctx, code.RPCHttpErr.WithErr(ret.Err()))
@@ -115,16 +140,8 @@ func (h *Handle) RunAction(ctx *gin.Context) {
 	}
 
 	// 发送任务到队列
-	conf := config.Global().Job
-	jobInfo := engine.WorkflowInfo{
-		Action:   engine.StartAction,
-		TaskUUID: req.UUID,
-		LabUUID:  req.LabUUID,
-		UserID:   "manual", // 手动触发
-	}
-
-	jobData, _ := json.Marshal(jobInfo)
-	pushRet := h.rClient.LPush(ctx, conf.JobQueueName, jobData)
+	jobData, _ := json.Marshal(data)
+	pushRet := h.rClient.LPush(ctx, utils.LabControlName(req.LabUUID), jobData)
 	if pushRet.Err() != nil {
 		logger.Errorf(ctx, "push job to queue err: %+v", pushRet.Err())
 		common.ReplyErr(ctx, code.RPCHttpErr.WithErr(pushRet.Err()))

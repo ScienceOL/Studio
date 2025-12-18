@@ -123,6 +123,7 @@ func _() {
 	_ = x[WorkflowNodeScriptEmtpyErr-30031]
 	_ = x[UnknownWorkflowNodeTypeErr-30032]
 	_ = x[ExecWorkflowNodeScriptErr-30033]
+	_ = x[EdgeNotStartedErr-30034]
 }
 
 const (
@@ -135,7 +136,7 @@ const (
 	_ErrCode_name_6 = "notify action already registrynotify subscribe channel failnotify send message error"
 	_ErrCode_name_7 = "rpc request http errorrpc request http code errorrpc request http code resp errorcreate lab user errorquery lab user errorbhor batch query user error"
 	_ErrCode_name_8 = "can not get workflow uuidworkflow not existupsert workflow edge errorpermission deniedbatch save nodes errorbatch save workflow edge errorworkflow node not found errorworkflow not found errorformat csv data error"
-	_ErrCode_name_9 = "workflow task already exist errorcan not found edge sessionworkflow has circular errorconnect closed when node running errormarshal node data errorjob run fail errorcan not found workflow task errorworkflow task status errorworkflow task finishedworkflow node no device name errorworkflow node no action name errorworkflow node no action type errorquery job status key note exists errorcallback job status key note exists errorjob timeout errorjob retry timeout errorcallback job status timeout errorjob is canceledcan not get workflow task errorworkflow task not in pending statuscan not found workflow handle errorcan not found parent node job errorparam data key invalidate errorparam data value invalidate errordata not map any type errorvalue slice out index errorvalue not exist errorset lab heart errortarget data not map any type errormarshal target data errortarget param invalidate errorworkflow script empty errorunknown workflow node type errorexec workflow script error"
+	_ErrCode_name_9 = "workflow task already exist errorcan not found edge sessionworkflow has circular errorconnect closed when node running errormarshal node data errorjob run fail errorcan not found workflow task errorworkflow task status errorworkflow task finishedworkflow node no device name errorworkflow node no action name errorworkflow node no action type errorquery job status key note exists errorcallback job status key note exists errorjob timeout errorjob retry timeout errorcallback job status timeout errorjob is canceledcan not get workflow task errorworkflow task not in pending statuscan not found workflow handle errorcan not found parent node job errorparam data key invalidate errorparam data value invalidate errordata not map any type errorvalue slice out index errorvalue not exist errorset lab heart errortarget data not map any type errormarshal target data errortarget param invalidate errorworkflow script empty errorunknown workflow node type errorexec workflow script erroredge not started error"
 )
 
 var (
@@ -148,7 +149,7 @@ var (
 	_ErrCode_index_6 = [...]uint8{0, 30, 59, 84}
 	_ErrCode_index_7 = [...]uint8{0, 22, 49, 81, 102, 122, 149}
 	_ErrCode_index_8 = [...]uint8{0, 25, 43, 69, 86, 108, 138, 167, 191, 212}
-	_ErrCode_index_9 = [...]uint16{0, 33, 59, 86, 124, 147, 165, 198, 224, 246, 280, 314, 348, 386, 427, 444, 467, 500, 515, 546, 581, 616, 651, 682, 715, 742, 769, 790, 809, 843, 868, 897, 924, 956, 982}
+	_ErrCode_index_9 = [...]uint16{0, 33, 59, 86, 124, 147, 165, 198, 224, 246, 280, 314, 348, 386, 427, 444, 467, 500, 515, 546, 581, 616, 651, 682, 715, 742, 769, 790, 809, 843, 868, 897, 924, 956, 982, 1004}
 )
 
 func (i ErrCode) String() string {
@@ -179,7 +180,7 @@ func (i ErrCode) String() string {
 	case 28000 <= i && i <= 28008:
 		i -= 28000
 		return _ErrCode_name_8[_ErrCode_index_8[i]:_ErrCode_index_8[i+1]]
-	case 30000 <= i && i <= 30033:
+	case 30000 <= i && i <= 30034:
 		i -= 30000
 		return _ErrCode_name_9[_ErrCode_index_9[i]:_ErrCode_index_9[i+1]]
 	default:

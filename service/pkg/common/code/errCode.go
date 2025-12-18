@@ -203,5 +203,5 @@ const (
 	WorkflowNodeScriptEmtpyErr                             // workflow script empty error
 	UnknownWorkflowNodeTypeErr                             // unknown workflow node type error
 	ExecWorkflowNodeScriptErr                              // exec workflow script error
-
+	EdgeNotStartedErr                                      // edge not started error
 )
