@@ -1,0 +1,104 @@
+/* 3D Lab 页面样式 */
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+}
+
+@keyframes pulse-slow {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse-slow {
+    animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 延迟动画 */
+.delay-75 {
+    animation-delay: 75ms;
+}
+
+.delay-150 {
+    animation-delay: 150ms;
+}
+
+/* 自定义滚动条样式 - 覆盖 Tailwind utility */
+.custom-scrollbar {
+    /* Firefox */
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(156, 163, 175, 0.5) rgba(0, 0, 0, 0.05) !important;
+    /* 强制显示滚动条 */
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+/* Webkit 浏览器（Chrome, Safari, Edge）的滚动条样式 */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 10px !important;
+    height: 10px !important;
+    -webkit-appearance: none;
+    display: block !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-radius: 5px;
+    margin: 4px 0;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5) !important;
+    border-radius: 5px !important;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    -webkit-appearance: none;
+    min-height: 20px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.6) !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+    background-color: rgba(156, 163, 175, 0.8) !important;
+}
+
+/* 深色模式下的滚动条 */
+.dark .custom-scrollbar {
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent !important;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5) !important;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.7) !important;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:active {
+    background-color: rgba(156, 163, 175, 0.9) !important;
+}
