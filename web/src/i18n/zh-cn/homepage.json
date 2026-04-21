@@ -1,111 +1,141 @@
 {
-  "Find our latest feature update.": "查看我们最近的功能更新。",
-  "Read more": "阅读更多",
+  "Find our latest feature update.": "OSDL 系列新品现已发售",
+  "Read more": "立即查看",
   "navbar": {
     "community": "社区",
-    "project": "项目",
-    "tutorial": "教程",
+    "project": "产品",
+    "tutorial": "支持",
     "docs": "文档",
-    "publication": "出版物",
-    "certification": "证书",
+    "publication": "开发者",
+    "certification": "商业合作",
     "about": {
       "title": "关于",
-      "Introduction": "介绍",
-      "Manifesto": "宣言",
+      "Introduction": "关于我们",
+      "Manifesto": "技术白皮书",
       "Join us": "加入我们",
-      "Follow in Github": "关注 GitHub",
+      "Follow in Github": "GitHub",
       "Contact us": "联系我们"
     }
   },
   "hero": {
-    "title": "为 AI 驱动的实验室打造的开源操作系统",
-    "description": "ScienceOL 正在为自动化、人工智能驱动的未来科学研究构建开源操作系统。构建、自动化、协作。",
+    "title": "重新定义实验室自动化",
+    "description": "模块化硬件 · 智能调度 · AI 驱动。OSDL 系列硬件搭配 OpenSDL 软件与 Xyzen 智能体平台，构建属于你的自主实验室。",
     "button": {
-      "primary": "立即开始",
-      "secondary": "了解更多"
+      "primary": "探索产品",
+      "secondary": "了解技术"
     }
   },
   "about": {
-    "title": "连接数字与物理实验室",
+    "title": "一个生态，三层架构",
     "button": {
-      "primary": "了解更多"
+      "primary": "查看全部产品"
     },
-    "description": "我们的双功能平台使科学工具的使用变得大众化。Science Online 提供虚拟实验室和云计算，而 OpenLab 则为模块化、自动化的硬件设立开源标准。两者共同创建了一个适用于现代研究的无缝生态系统。"
+    "description": "OSDL 模块化硬件负责执行，OpenSDL 本地软件负责调度，Xyzen 云端智能体负责决策。三者无缝协作，让实验室从手动操作进化为自主运行。"
   },
   "chat": {
-    "subtitle": "社区驱动",
-    "title": "全球科学协作中心",
-    "description": "加入一个由科学家、工程师和创新者组成的充满活力的社区。分享可复现的工作流，发现新思想，并与专家联系，加速您从概念到发现的研究过程。",
+    "subtitle": "云端智能",
+    "title": "Xyzen 智能体经济",
+    "description": "一个让 AI 智能体专业化、协作、交易的平台。你的智能体为你工作——设计实验、分析数据、调度硬件。发布到市场，让其他人调用，7×24 小时产生收益。",
     "features": {
       "discover": {
-        "name": "分享与发现工作流",
-        "description": "访问一个不断增长的、由社区贡献的、适用于各种科学领域的工作流库。"
+        "name": "专业化智能体",
+        "description": "每个智能体专注一个领域——合成、表征、数据分析。各自拥有独立记忆与技能，越用越强。"
       },
       "connect": {
-        "name": "与专家联系",
-        "description": "与同行和顶尖研究人员互动，共同解决复杂的挑战。"
+        "name": "智能体经济",
+        "description": "发布你的智能体到市场。其他用户和智能体调用它，你自动获得收益。一个无摩擦的微经济体。"
       },
       "accelerate": {
-        "name": "加速研究",
-        "description": "利用集体智慧和预构建的模块，避免重复造轮子。"
+        "name": "硬件联动",
+        "description": "Xyzen 智能体通过 OpenSDL 直接控制 OSDL 硬件。从云端决策到本地执行，全链路自动化。"
       }
     }
   },
   "server": {
-    "subtitle": "自动化与智能化",
-    "title": "自动化探索的未来",
-    "description": "通过我们为机器人、人工智能和数据管理设计的开源框架，为您的实验室赋能。构建一个完全自主、自我驱动的实验室，加速科学发现的步伐。",
+    "subtitle": "本地调度",
+    "title": "OpenSDL — 你的实验室操作系统",
+    "description": "运行在本地的轻量级调度引擎。连接 OSDL 硬件，接收 Xyzen 指令，编排实验工作流。即插即用，离线可用。",
     "features": {
       "robotics": {
-        "name": "机器人集成",
-        "description": "无缝连接和控制各种实验室硬件及机器人系统。"
+        "name": "即插即用",
+        "description": "OSDL 硬件接入后自动识别，零配置启动。像插 USB 一样简单。"
       },
       "ai": {
-        "name": "AI 驱动决策",
-        "description": "利用 AI 代理自主设计实验、分析数据并决定下一步行动。"
+        "name": "实时调度",
+        "description": "毫秒级响应，精确控制每一台设备的动作时序与参数。"
       },
       "data": {
-        "name": "统一数据管理",
-        "description": "以结构化和可复现的方式捕获、处理和分析实验数据。"
+        "name": "数据采集",
+        "description": "自动记录每次实验的完整数据，结构化存储，可追溯可复现。"
       },
       "digital-twin": {
-        "name": "数字孪生",
-        "description": "在真实世界中运行实验之前，在虚拟环境中进行模拟和优化。"
+        "name": "离线运行",
+        "description": "核心调度完全本地化，断网不影响实验。云端连接恢复后自动同步。"
       },
       "remote": {
-        "name": "远程实验室访问",
-        "description": "从世界任何地方监控和控制您的实验。"
+        "name": "远程监控",
+        "description": "通过 Xyzen 远程查看实验状态，随时随地掌控你的实验室。"
       },
       "modular": {
-        "name": "模块化与可扩展",
-        "description": "从小处着手，逐步扩展。我们的模块化设计能适应任何实验室的需求。"
+        "name": "开放接口",
+        "description": "标准化 API 和 SDK，第三方硬件也能轻松接入生态。"
       }
     }
   },
   "products": {
-    "studio": {
-      "name": "Studio",
-      "description": "所有 ScienceOL 服务和社区的门户。"
+    "osdl": {
+      "name": "OSDL",
+      "description": "模块化实验室硬件系列。注射泵、移液工作站、XYZ 平台——积木式组合，按需搭建。"
     },
-    "protium": {
-      "name": "PROTIUM",
-      "description": "为科学计算设计的 AI 原生工作流引擎。"
+    "opensdl": {
+      "name": "OpenSDL",
+      "description": "本地调度软件。连接硬件，编排实验，实时控制。你的实验室操作系统。"
     },
     "xyzen": {
       "name": "Xyzen",
-      "description": "面向实验室场景的专用智能体。"
-    },
-    "anti": {
-      "name": "Anti",
-      "description": "用于实验室模拟的 3D 数字孪生平台。"
-    },
-    "labos": {
-      "name": "Lab-OS",
-      "description": "用于模块化实验室硬件的开源操作系统。"
+      "description": "云端 AI 智能体平台。让智能体为你设计实验、分析数据、调度硬件、创造收益。"
     }
   },
-  "sponsor": "支持机构",
+  "landing": {
+    "hero": {
+      "tagline1": "开源、AI 驱动的实验室自动化",
+      "tagline2": "模块化硬件，灵活编排实验流程",
+      "tagline3": "全程数据记录，每一次实验皆可复现",
+      "cta_start": "快速开始",
+      "cta_xyzen": "Xyzen / AI 入口",
+      "cta_products": "产品列表"
+    },
+    "products": {
+      "label": "硬件产品",
+      "title": "模块化 · 灵活 · 可复现",
+      "description": "每个模块完整记录过程数据。按需组合，自由搭建——每一次实验都完全可复现。",
+      "note": "所有模块均支持 OpenSDL 即插即用",
+      "syringe_pump": "注射泵",
+      "syringe_pump_subtitle": "精密流体输送",
+      "liquid_handler": "移液工作站",
+      "liquid_handler_subtitle": "自动化移液",
+      "xyz_stage": "XYZ 运动平台",
+      "xyz_stage_subtitle": "三轴运动控制",
+      "temperature_module": "温控模块",
+      "temperature_module_subtitle": "精密温度调节",
+      "status_available": "现货供应",
+      "status_coming_soon": "即将发售"
+    },
+    "ecosystem": {
+      "label": "生态系统",
+      "title": "开源 + AI",
+      "opensdl_tag": "开源",
+      "opensdl_description": "本地调度引擎。连接硬件模块，编排实验流程，记录每一个数据点。灵活、模块化，支持离线运行。",
+      "xyzen_tag": "AI 驱动",
+      "xyzen_description": "云端智能体平台。AI 设计实验、通过 OpenSDL 控制硬件、实时监控一切。桌面端、移动端，随时随地。",
+      "flow": "硬件 → OpenSDL → Xyzen → 你"
+    },
+    "footer": {
+      "about": "关于"
+    }
+  },
+  "sponsor": "技术合作伙伴",
   "article": {
-    "intro": "我们正在改变科学实践。"
+    "intro": "让每一间实验室都能自主运行。"
   }
 }

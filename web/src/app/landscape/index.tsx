@@ -1,20 +1,16 @@
-import FeatureOfAbout from '@/app/landscape/FeatureOfAbout';
 import Footer from '@/app/landscape/Footer';
 import Hero from '@/app/landscape/Hero';
-import Sponsor from '@/app/landscape/Sponsor';
 import Navbar from '@/app/navbar/Navbar';
-import FeatureOfChat from './FeatureOfChat';
-import FeatureOfServer from './FeatureOfServer';
+import Ecosystem from './Ecosystem';
+import ProductShowcase from './ProductShowcase';
 
 export default function LandscapePage() {
   return (
-    <div className="flex flex-col custom-scrollbar">
+    <div className="flex flex-col custom-scrollbar bg-black">
       <Navbar />
       <Hero />
-      <FeatureOfAbout />
-      <FeatureOfChat />
-      <FeatureOfServer />
-      <Sponsor />
+      <ProductShowcase />
+      <Ecosystem />
       <Footer />
     </div>
   );

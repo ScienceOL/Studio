@@ -1,115 +1,146 @@
 {
-  "Find our latest feature update.": "Find our latest feature update. ",
+  "Find our latest feature update.": "OSDL Series — Now Available",
+  "Read more": "Shop Now",
   "hero": {
-    "title": "OpenSource Kernel for AI-Driven Labs",
-    "description": "ScienceOL is building the open-source operating system for the future of automated, AI-powered scientific research. Build, automate, and collaborate.",
+    "title": "Redefining Lab Automation",
+    "description": "Modular hardware · Intelligent scheduling · AI-driven. OSDL hardware paired with OpenSDL software and the Xyzen agent platform — build your autonomous laboratory.",
     "button": {
-      "primary": "Get Started",
+      "primary": "Explore Products",
       "secondary": "Learn More"
     }
   },
   "about": {
-    "title": "Bridging Digital and Physical Laboratories",
+    "title": "One Ecosystem, Three Layers",
     "button": {
-      "primary": "Read More"
+      "primary": "View All Products"
     },
-    "description": "Our dual-function platform democratizes access to scientific tools. Science Online provides virtual laboratories and cloud computing, while OpenLab sets open-source standards for modular, automated hardware. Together, they create a seamless ecosystem for modern research."
+    "description": "OSDL modular hardware handles execution. OpenSDL local software handles scheduling. Xyzen cloud agents handle decisions. Three layers working seamlessly — transforming your lab from manual to autonomous."
   },
   "chat": {
-    "subtitle": "Community Driven",
-    "title": "A Global Hub for Scientific Collaboration",
-    "description": "Join a vibrant community of scientists, engineers, and innovators. Share reproducible workflows, discover new ideas, and connect with experts to accelerate your research from concept to discovery.",
+    "subtitle": "Cloud Intelligence",
+    "title": "Xyzen Agent Economy",
+    "description": "A platform where AI agents specialize, collaborate, and trade. Your agents work for you — designing experiments, analyzing data, orchestrating hardware. Publish to the marketplace and earn around the clock.",
     "features": {
       "discover": {
-        "name": "Share & Discover Workflows",
-        "description": "Access a growing library of community-contributed workflows for various scientific domains."
+        "name": "Specialized Agents",
+        "description": "Each agent masters one domain — synthesis, characterization, data analysis. With persistent memory and skills that sharpen over time."
       },
       "connect": {
-        "name": "Connect with Experts",
-        "description": "Engage with peers and leading researchers to solve complex challenges together."
+        "name": "Agent Economy",
+        "description": "Publish your agents to the marketplace. When others call them, you earn automatically. A frictionless micro-economy."
       },
       "accelerate": {
-        "name": "Accelerate Research",
-        "description": "Leverage collective knowledge and pre-built modules to avoid reinventing the wheel."
+        "name": "Hardware Integration",
+        "description": "Xyzen agents control OSDL hardware directly through OpenSDL. Cloud decisions to local execution — fully automated."
       }
     }
   },
   "server": {
-    "subtitle": "Automated & Intelligent",
-    "title": "The Future of Automated Discovery",
-    "description": "Empower your lab with our open-source framework for robotics, AI, and data management. Build a fully autonomous, self-driving laboratory that accelerates the pace of discovery.",
+    "subtitle": "Local Scheduling",
+    "title": "OpenSDL — Your Lab Operating System",
+    "description": "A lightweight scheduling engine running locally. Connects OSDL hardware, receives Xyzen commands, orchestrates experiment workflows. Plug and play, works offline.",
     "features": {
       "robotics": {
-        "name": "Robotic Integration",
-        "description": "Seamlessly connect and control a wide range of laboratory hardware and robotic systems."
+        "name": "Plug & Play",
+        "description": "OSDL hardware is auto-detected on connection. Zero configuration. As simple as plugging in a USB device."
       },
       "ai": {
-        "name": "AI-Powered Decisions",
-        "description": "Leverage AI agents to design experiments, analyze data, and decide the next steps autonomously."
+        "name": "Real-time Scheduling",
+        "description": "Millisecond-level response. Precise control over every device action, timing, and parameter."
       },
       "data": {
-        "name": "Unified Data Management",
-        "description": "Capture, process, and analyze experimental data in a structured and reproducible way."
+        "name": "Data Capture",
+        "description": "Automatically records complete data from every experiment. Structured, traceable, reproducible."
       },
       "digital-twin": {
-        "name": "Digital Twin",
-        "description": "Simulate and optimize experiments in a virtual environment before running them in the real world."
+        "name": "Offline Operation",
+        "description": "Core scheduling runs entirely local. Network outages don't stop experiments. Auto-syncs when connectivity returns."
       },
       "remote": {
-        "name": "Remote Lab Access",
-        "description": "Monitor and control your experiments from anywhere in the world."
+        "name": "Remote Monitoring",
+        "description": "Monitor experiment status through Xyzen from anywhere. Your lab in your pocket."
       },
       "modular": {
-        "name": "Modular & Scalable",
-        "description": "Start small and scale up. Our modular design adapts to the needs of any laboratory."
+        "name": "Open Interface",
+        "description": "Standardized APIs and SDKs. Third-party hardware integrates into the ecosystem effortlessly."
       }
     }
   },
   "products": {
-    "studio": {
-      "name": "Studio",
-      "description": "The portal to all ScienceOL services and community."
+    "osdl": {
+      "name": "OSDL",
+      "description": "Modular lab hardware series. Syringe pumps, liquid handlers, XYZ stages — snap together, build what you need."
     },
-    "protium": {
-      "name": "PROTIUM",
-      "description": "AI-native workflow engine for scientific computing."
+    "opensdl": {
+      "name": "OpenSDL",
+      "description": "Local scheduling software. Connects hardware, orchestrates experiments, real-time control. Your lab OS."
     },
     "xyzen": {
       "name": "Xyzen",
-      "description": "The specialized agent for laboratory scenarios."
+      "description": "Cloud AI agent platform. Agents design experiments, analyze data, control hardware, and generate revenue for you."
+    }
+  },
+  "landing": {
+    "hero": {
+      "tagline1": "Open Source, AI-Driven Lab Automation",
+      "tagline2": "Modular Hardware, Flexible Workflow",
+      "tagline3": "Every Step Recorded — Every Experiment Reproducible",
+      "cta_start": "Get Started",
+      "cta_xyzen": "Xyzen / AI Entry",
+      "cta_products": "Product List"
     },
-    "anti": {
-      "name": "Anti",
-      "description": "3D digital twin platform for laboratory simulation."
+    "products": {
+      "label": "Hardware",
+      "title": "Modular. Flexible. Reproducible.",
+      "description": "Every module captures complete process data. Snap together what you need — every experiment is fully reproducible.",
+      "note": "All modules are plug-and-play with OpenSDL",
+      "syringe_pump": "Syringe Pump",
+      "syringe_pump_subtitle": "Precision Fluid Delivery",
+      "liquid_handler": "Liquid Handler",
+      "liquid_handler_subtitle": "Automated Pipetting",
+      "xyz_stage": "XYZ Stage",
+      "xyz_stage_subtitle": "Motion Platform",
+      "temperature_module": "Temperature Module",
+      "temperature_module_subtitle": "Thermal Regulation",
+      "status_available": "Available",
+      "status_coming_soon": "Coming Soon"
     },
-    "labos": {
-      "name": "Lab-OS",
-      "description": "Open-source OS for modular lab hardware."
+    "ecosystem": {
+      "label": "Ecosystem",
+      "title": "Open Source + AI",
+      "opensdl_tag": "Open Source",
+      "opensdl_description": "Local scheduling engine. Connects hardware modules, orchestrates experiments, captures every data point. Flexible, modular, and runs offline.",
+      "xyzen_tag": "AI-Driven",
+      "xyzen_description": "Cloud agent platform. AI designs experiments, controls hardware through OpenSDL, and monitors everything in real-time. Desktop, mobile, everywhere.",
+      "flow": "Hardware → OpenSDL → Xyzen → You"
+    },
+    "footer": {
+      "about": "About"
     }
   },
   "article": {
-    "intro": "Reimagining scientific research through virtual access and open standards."
+    "intro": "Making every laboratory autonomous."
   },
-  "sponsor": "Supported by",
+  "sponsor": "Technology Partners",
   "navbar": {
     "community": "Community",
-    "project": "Project",
-    "publication": "Publication",
-    "tutorial": "Tutorial",
+    "project": "Products",
+    "publication": "Developers",
+    "tutorial": "Support",
     "docs": "Docs",
-    "certification": "Certification",
+    "certification": "Partners",
     "about": {
       "title": "About",
-      "Introduction": "Introduction",
-      "Manifesto": "Manifesto",
-      "Join us": "Join us",
-      "Follow in Github": "Follow in Github",
-      "Contact us": "Contact us"
+      "Introduction": "About Us",
+      "Manifesto": "Technical Whitepaper",
+      "Join us": "Join Us",
+      "Follow in Github": "GitHub",
+      "Contact us": "Contact"
     }
   },
   "login": {
     "description": {
-      "13": "Welcome to our online chatroom! Join us for an exciting discussion on space exploration. Explore topics like spacecraft technology and the search for extraterrestrial life with our panel of experts and enthusiasts."
+      "13": ""
     }
   }
 }

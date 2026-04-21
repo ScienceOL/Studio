@@ -3537,9 +3537,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sciol/xyzen@npm:^0.4.3":
-  version: 0.4.3
-  resolution: "@sciol/xyzen@npm:0.4.3"
+"@sciol/xyzen@npm:^0.4.4":
+  version: 0.4.4
+  resolution: "@sciol/xyzen@npm:0.4.4"
   dependencies:
     "@dnd-kit/core": "npm:^6.3.1"
     "@dnd-kit/modifiers": "npm:^9.0.0"
@@ -3564,9 +3564,10 @@ __metadata:
     html2canvas: "npm:^1.4.1"
     immer: "npm:^10.1.1"
     katex: "npm:^0.16.22"
-    lucide-react: "npm:^0.554.0"
+    lucide-react: "npm:^0.562.0"
     mini-svg-data-uri: "npm:^1.4.4"
-    motion: "npm:^12.23.24"
+    monaco-editor: "npm:^0.55.1"
+    motion: "npm:^12.23.26"
     next-themes: "npm:^0.4.6"
     radix-ui: "npm:^1.4.3"
     react-image-crop: "npm:^11.0.10"
@@ -3581,6 +3582,7 @@ __metadata:
     tailwindcss: "npm:^4.1.11"
     upng-js: "npm:^2.1.0"
     uuid: "npm:^11.1.0"
+    vite-plugin-pwa: "npm:^1.2.0"
     zustand: "npm:^5.0.6"
   peerDependencies:
     react: ^18.0.0 || ^19.0.0
@@ -3589,7 +3591,7 @@ __metadata:
   peerDependenciesMeta:
     vite:
       optional: true
-  checksum: 10c0/9ca01073868ba229dea0c002c418a12007e4a695affbc77ed16e68f133223986d7723305517c6e01b0b5e2981e5d2252260ea0844d99e25cfd66b5b60f30a22e
+  checksum: 10c0/cd2645f41f3dd0e462ff6df07d59d174e3e903d15db0e773b6f22fac4abfc0c73909d0bcd0c8a726ebe193887e06d2eff8325ea179346a675a5066243161d2df
   languageName: node
   linkType: hard
 
@@ -4287,7 +4289,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/trusted-types@npm:^2.0.2":
+"@types/trusted-types@npm:^2.0.2, @types/trusted-types@npm:^2.0.7":
   version: 2.0.7
   resolution: "@types/trusted-types@npm:2.0.7"
   checksum: 10c0/4c4855f10de7c6c135e0d32ce462419d8abbbc33713b31d294596c0cc34ae1fa6112a2f9da729c8f7a20707782b0d69da3b1f8df6645b0366d08825ca1522e0c
@@ -5314,6 +5316,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dompurify@npm:3.2.7":
+  version: 3.2.7
+  resolution: "dompurify@npm:3.2.7"
+  dependencies:
+    "@types/trusted-types": "npm:^2.0.7"
+  dependenciesMeta:
+    "@types/trusted-types":
+      optional: true
+  checksum: 10c0/d41bb31a72f1acdf9b84c56723c549924b05d92a39a15bd8c40bec9007ff80d5fccf844bc53ee12af5b69044f9a7ce24a1e71c267a4f49cf38711379ed8c1363
+  languageName: node
+  linkType: hard
+
 "draco3d@npm:^1.4.1":
   version: 1.5.7
   resolution: "draco3d@npm:1.5.7"
@@ -6034,6 +6048,28 @@ __metadata:
     react-dom:
       optional: true
   checksum: 10c0/716addd9fa85dd2c1475ab848e14c4e6d3246ced041de84afc19b1d6534c897256c8f2878864cf057039116e56f5ca1b87a4cbb943f0b1cf37199ef7174c3cf8
+  languageName: node
+  linkType: hard
+
+"framer-motion@npm:^12.23.26":
+  version: 12.23.26
+  resolution: "framer-motion@npm:12.23.26"
+  dependencies:
+    motion-dom: "npm:^12.23.23"
+    motion-utils: "npm:^12.23.6"
+    tslib: "npm:^2.4.0"
+  peerDependencies:
+    "@emotion/is-prop-valid": "*"
+    react: ^18.0.0 || ^19.0.0
+    react-dom: ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    "@emotion/is-prop-valid":
+      optional: true
+    react:
+      optional: true
+    react-dom:
+      optional: true
+  checksum: 10c0/7dbbc4a392b969804e04a056e3d89a55bf31572dc7f6cd79050b90616fbb84a1762e4ac4e2537c735d347bbf4ceebea126f5c090234149b12cffa3ea6c518a34
   languageName: node
   linkType: hard
 
@@ -7409,12 +7445,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lucide-react@npm:^0.554.0":
-  version: 0.554.0
-  resolution: "lucide-react@npm:0.554.0"
+"lucide-react@npm:^0.562.0":
+  version: 0.562.0
+  resolution: "lucide-react@npm:0.562.0"
   peerDependencies:
     react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-  checksum: 10c0/35b11d6f11e4b00047175fcc52f531156be66e5ae7c1f689d0d18bc7bbf06d9e0bf33c767f449e25d99f105acf420399346787491aafe0b55dc68b8d45937e87
+  checksum: 10c0/c713a2490916e42c678b9df0d7309d8cdb715af1d7139c7eb49c45547901b276a7cf722548012a668dc0e337eeadf5141d5af8c8fcda6721fc58fb2d288efcba
   languageName: node
   linkType: hard
 
@@ -8237,6 +8273,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"monaco-editor@npm:^0.55.1":
+  version: 0.55.1
+  resolution: "monaco-editor@npm:0.55.1"
+  dependencies:
+    dompurify: "npm:3.2.7"
+    marked: "npm:14.0.0"
+  checksum: 10c0/c1a0cf887657b42c8996518bc5ee96bbd39c977f862d2a2b2018427c45f14b0dd25d1452278202056f6b1ead97981282ccacd7d7ad918d8f0ef084159f974a25
+  languageName: node
+  linkType: hard
+
 "motion-dom@npm:^12.23.21":
   version: 12.23.21
   resolution: "motion-dom@npm:12.23.21"
@@ -8280,6 +8326,27 @@ __metadata:
     react-dom:
       optional: true
   checksum: 10c0/d937ddaf50816f97e4e7121f323104fd655045ef122bd03d433370649c00129a5dd928cbe54efe9add22a05b2a9b84b7cfda1fd5c5b1e9c6245cd94e1c24e823
+  languageName: node
+  linkType: hard
+
+"motion@npm:^12.23.26":
+  version: 12.23.26
+  resolution: "motion@npm:12.23.26"
+  dependencies:
+    framer-motion: "npm:^12.23.26"
+    tslib: "npm:^2.4.0"
+  peerDependencies:
+    "@emotion/is-prop-valid": "*"
+    react: ^18.0.0 || ^19.0.0
+    react-dom: ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    "@emotion/is-prop-valid":
+      optional: true
+    react:
+      optional: true
+    react-dom:
+      optional: true
+  checksum: 10c0/80ac9c2caaa149fb6feaad4146294b304dda52a643360063eb7a672bf7e7c8e134ec201ddcfafc0a918113004aed939ddbacf546b0e2297ea23955c78235c497
   languageName: node
   linkType: hard
 
@@ -10641,7 +10708,7 @@ __metadata:
     "@radix-ui/react-slot": "npm:^1.2.4"
     "@react-three/drei": "npm:^10.7.6"
     "@react-three/fiber": "npm:^9.4.0"
-    "@sciol/xyzen": "npm:^0.4.3"
+    "@sciol/xyzen": "npm:^0.4.4"
     "@tabler/icons-react": "npm:^3.35.0"
     "@tailwindcss/postcss": "npm:^4.1.14"
     "@tailwindcss/vite": "npm:^4.1.14"

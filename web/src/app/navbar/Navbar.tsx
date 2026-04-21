@@ -1,6 +1,4 @@
 'use client';
-import Logo from '@/assets/Logo';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import About from './About';
@@ -78,10 +76,19 @@ const Navbar = () => {
           <div className="flex">
             <a
               href="/"
-              className="z-50 -m-1.5 rounded-md fill-indigo-800 p-1.5 transition-opacity duration-150 ease-in-out hover:bg-neutral-300/20 dark:fill-white dark:hover:bg-neutral-800"
+              className="z-50 -m-1.5 rounded-md p-1.5 transition-opacity duration-150 ease-in-out hover:bg-neutral-300/20 dark:hover:bg-neutral-800"
             >
-              <span className="sr-only">Protium</span>
-              <Logo className="h-8 w-8" />
+              <span className="sr-only">ScienceOL</span>
+              <img
+                src="https://storage.sciol.ac.cn/library/BLogo-light.svg"
+                alt="ScienceOL"
+                className="h-8 w-8 dark:hidden"
+              />
+              <img
+                src="https://storage.sciol.ac.cn/library/BLogo-dark.svg"
+                alt="ScienceOL"
+                className="hidden h-8 w-8 dark:block"
+              />
             </a>
             <NavbarMenu />
           </div>

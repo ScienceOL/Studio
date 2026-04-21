@@ -109,6 +109,7 @@ i18n
     debug: import.meta.env.NODE_ENV === 'development',
     defaultNS: 'translation',
     fallbackLng: 'en',
+    nonExplicitSupportedLngs: true,
 
     interpolation: {
       escapeValue: false, // react already safes from xss

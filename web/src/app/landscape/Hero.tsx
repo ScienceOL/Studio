@@ -1,175 +1,182 @@
-import DepthWordmark from '@/components/basic/DepthWordmark';
-import ColorfulPattern from '@/components/basic/patterns/ColorfulPattern';
-import GridBackground from '@/components/basic/patterns/GridBackground';
-import { Suspense, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
-import { useNavigate } from 'react-router-dom';
+// Geometric constellation background
+function ConstellationCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationId: number;
+    let particles: { x: number; y: number; vx: number; vy: number; r: number }[] = [];
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    };
+
+    const init = () => {
+      resize();
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      particles = Array.from({ length: 50 }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        r: Math.random() * 1.2 + 0.4,
+      }));
+    };
+
+    const draw = () => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = w;
+        if (p.x > w) p.x = 0;
+        if (p.y < 0) p.y = h;
+        if (p.y > h) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.fill();
+      }
+
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 140) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(255,255,255,${0.05 * (1 - dist / 140)})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+
+      animationId = requestAnimationFrame(draw);
+    };
+
+    init();
+    draw();
+    window.addEventListener('resize', init);
+    return () => {
+      window.removeEventListener('resize', init);
+      cancelAnimationFrame(animationId);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-[1]" />;
+}
 
 export default function Hero() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.play();
-    }
-  }, []);
-
   return (
-    <div className="bg-white dark:bg-neutral-950">
-      <main>
-        <div className="relative isolate">
-          {/* Background */}
-          <GridBackground />
-          {/* Background */}
-          <ColorfulPattern />
+    <section className="relative min-h-screen bg-black overflow-hidden flex flex-col justify-center">
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        className="absolute inset-0 w-full h-full object-cover opacity-15 z-0 will-change-transform"
+        src="https://storage.sciol.ac.cn/library/hero/automation-web.mp4"
+      />
 
-          {/* Content */}
-          <div className="overflow-hidden">
-            <div className="mx-auto max-w-8xl px-6 pb-32 pt-36 sm:pt-60 lg:px-8 lg:pt-32 2xl:max-w-9xl 2xl:pt-48">
-              <div className="lg: mx-auto max-w-2xl justify-between gap-x-14 lg:mx-0 lg:flex lg:max-w-none lg:items-center">
-                <div className="relative w-full max-w-xl lg:shrink-0 lg:pb-12 xl:max-w-2xl">
-                  <div className="hidden sm:mb-8 sm:flex sm:justify-start">
-                    <div className="relative rounded-full px-3 py-1 text-sm leading-6 text-neutral-600 ring-1 ring-neutral-900/10 duration-300 hover:scale-105 hover:ring-neutral-900/20 dark:text-neutral-400 dark:ring-neutral-100/10 dark:hover:ring-neutral-100/20">
-                      {t('Find our latest feature update.')}
-                      <a
-                        href="/login"
-                        className="font-semibold text-indigo-600"
-                      >
-                        <span className="absolute inset-0" aria-hidden="true" />
-                        {t('Read more')}
-                        <span aria-hidden="true"> &rarr;</span>
-                      </a>
-                    </div>
-                  </div>
-                  <h1 className="text-4xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-5xl">
-                    {/* <LogoBanner className="sm:h-24 mb-8 h-16 w-auto max-w-[calc(100%-1rem)] fill-indigo-800 dark:fill-[#6f6be2] " /> */}
-                    <div className="pb-8">
-                      <DepthWordmark />
-                    </div>
-                    {t('hero.title')}
-                  </h1>
-                  <p className="mt-6 text-lg leading-8 text-neutral-600 dark:text-neutral-300 sm:max-w-md lg:max-w-none">
-                    {t('hero.description')}
-                  </p>
-                  <div className="mt-10 flex items-center justify-start gap-x-6">
-                    <button
-                      type="button"
-                      name="Get started"
-                      title="Get started"
-                      onClick={() => {
-                        navigate('/login');
-                      }}
-                      className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500
-                        focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                    >
-                      {t('hero.button.primary')}
-                    </button>
-                    <div className="group inline-block">
-                      <button
-                        type="button"
-                        name="Learn more"
-                        title="Learn more"
-                        onClick={() => {
-                          navigate('/about');
-                        }}
-                        className="text-sm font-semibold leading-6 text-neutral-900 duration-300 dark:text-neutral-100"
-                      >
-                        <span className="" aria-hidden="true">
-                          {t('hero.button.secondary')} →
-                        </span>
-                      </button>
-                      <span className="mt-1 block h-[0.1rem] w-full origin-left scale-x-0 transform bg-indigo-600 transition-all duration-200 ease-in-out group-hover:scale-x-100 dark:bg-white"></span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-14 flex justify-end gap-8 sm:-mt-44 sm:justify-start sm:pl-20 lg:mt-0 lg:pl-0">
-                  <div className="ml-auto w-44 flex-none space-y-8 pt-32 sm:ml-0 sm:pt-80 lg:order-last lg:pt-36 xl:order-none xl:pt-80">
-                    <div className="relative">
-                      <img
-                        src="https://storage.sciol.ac.cn/library/hero/hero2.png"
-                        alt=""
-                        className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover shadow-lg"
-                      />
-                      <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-neutral-900/10" />
-                    </div>
-                  </div>
-                  <div className="mr-auto w-44 flex-none space-y-8 sm:mr-0 sm:pt-52 lg:pt-36">
-                    <div className="relative">
-                      <Suspense
-                        fallback={
-                          <img
-                            src="https://storage.sciol.ac.cn/library/hero/hero10.png"
-                            alt=""
-                            className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover shadow-lg"
-                          />
-                        }
-                      >
-                        <video
-                          ref={videoRef}
-                          src="https://storage.sciol.ac.cn/library/hero/hero10.mp4"
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          poster="https://storage.sciol.ac.cn/library/hero/hero10.png"
-                          className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover  shadow-lg"
-                        />
-                      </Suspense>
-                      <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-neutral-900/10" />
-                    </div>
-                    <div className="relative">
-                      <img
-                        src="https://storage.sciol.ac.cn/library/hero/hero20.png"
-                        alt=""
-                        className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover shadow-lg"
-                      />
-                      <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-neutral-900/10" />
-                    </div>
-                  </div>
-                  <div className="w-44 flex-none space-y-8 pt-32 sm:pt-0">
-                    <div className="relative">
-                      <img
-                        src="https://storage.sciol.ac.cn/library/hero/hero22.png"
-                        alt=""
-                        className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover shadow-lg"
-                      />
-                      <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-neutral-900/10" />
-                    </div>
-                    <div className="relative">
-                      <Suspense
-                        fallback={
-                          <img
-                            src="https://storage.sciol.ac.cn/library/hero/hero8.png"
-                            alt=""
-                            className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover shadow-lg"
-                          />
-                        }
-                      >
-                        <video
-                          ref={videoRef}
-                          src="https://storage.sciol.ac.cn/library/hero/hero8.mp4"
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          poster="https://storage.sciol.ac.cn/library/hero/hero8.png"
-                          className="aspect-[2/3] w-full rounded-xl bg-neutral-900/5 object-cover  shadow-lg"
-                        />
-                      </Suspense>
+      <ConstellationCanvas />
 
-                      <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-neutral-900/10" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
+      <div className="relative z-10 mx-auto w-full max-w-screen-2xl px-6 lg:px-8 py-32 sm:py-40">
+        <motion.h1
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="text-7xl sm:text-9xl lg:text-[10rem] font-black text-white tracking-tighter leading-[0.85] select-none"
+        >
+          Science
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white/90 to-white/30">
+            OL
+          </span>
+        </motion.h1>
+
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-10 max-w-2xl space-y-2"
+        >
+          <p className="text-base sm:text-lg font-mono text-white/80 tracking-wide">
+            {t('landing.hero.tagline1')}
+          </p>
+          <p className="text-sm sm:text-base font-mono text-white/35 tracking-wide">
+            {t('landing.hero.tagline2')}
+          </p>
+          <p className="text-sm sm:text-base font-mono text-white/35 tracking-wide">
+            {t('landing.hero.tagline3')}
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.7, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-12 h-px w-24 bg-gradient-to-r from-white/25 to-transparent origin-left"
+        />
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-10 flex flex-wrap items-center gap-4"
+        >
+          <a
+            href="https://docs.sciol.ac.cn"
+            target="_blank"
+            className="rounded-full bg-white px-7 py-3 text-sm font-semibold text-black transition-all hover:bg-white/90 active:scale-[0.97]"
+          >
+            {t('landing.hero.cta_start')}
+          </a>
+          <a
+            href="https://xyzen.cc/login"
+            target="_blank"
+            className="rounded-full px-6 py-3 text-sm font-medium text-white/50 ring-1 ring-white/[0.1] transition-all hover:text-white/80 hover:ring-white/[0.2] active:scale-[0.97]"
+          >
+            {t('landing.hero.cta_xyzen')}
+          </a>
+        </motion.div>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.5, duration: 1 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
+      >
+        <motion.div
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="h-8 w-5 rounded-full ring-1 ring-white/15 flex items-start justify-center pt-1.5"
+        >
+          <div className="h-1.5 w-0.5 rounded-full bg-white/30" />
+        </motion.div>
+      </motion.div>
+    </section>
   );
 }
