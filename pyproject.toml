@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools-scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "studio"
+version = "0.1.0"
+description = "Studio - Interactive laboratory visualization and management system"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "ScienceOL", email = "contact@sciol.ac.cn"}
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = []
+
+[tool.setuptools]
+packages = ["service"]
