@@ -1,51 +1,39 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
-  SiProton,
-  SiStmicroelectronics,
-  SiUnity,
-  SiUnrealengine,
   SiX,
 } from 'react-icons/si';
+import {
+  CpuChipIcon,
+  CommandLineIcon,
+} from '@heroicons/react/24/solid';
 
 export default function ProductMatrix() {
   const { t } = useTranslation();
 
   const products = [
     {
-      id: 'studio',
-      icon: SiStmicroelectronics,
-      color: 'text-sky-500',
-      href: 'https://github.com/ScienceOL/Studio',
+      id: 'osdl',
+      icon: CpuChipIcon,
+      color: 'text-emerald-500',
+      href: '#osdl',
     },
     {
-      id: 'protium',
-      icon: SiProton,
-      color: 'text-indigo-500',
-      href: 'https://github.com/ScienceOL/Protium',
+      id: 'opensdl',
+      icon: CommandLineIcon,
+      color: 'text-sky-500',
+      href: 'https://github.com/ScienceOL/OpenSDL',
     },
     {
       id: 'xyzen',
       icon: SiX,
       color: 'text-amber-500',
-      href: 'https://github.com/ScienceOL',
-    },
-    {
-      id: 'anti',
-      icon: SiUnity,
-      color: 'text-rose-500',
-      href: 'https://github.com/ScienceOL',
-    },
-    {
-      id: 'labos',
-      icon: SiUnrealengine,
-      color: 'text-emerald-500',
-      href: 'https://github.com/Uni-Lab-OS',
+      href: 'https://xyzen.cc',
     },
   ];
 
   return (
-    <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
       {products.map((product, i) => (
         <motion.div
           key={product.id}

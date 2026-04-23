@@ -1,4 +1,9 @@
-FROM node:24-slim AS base
+FROM node:24-alpine AS base
+
+# Dev stage: minimal image for hot-reload with volume mounts
+FROM base AS dev
+WORKDIR /app
+RUN corepack enable
 
 FROM base AS deps
 WORKDIR /app
@@ -11,8 +16,8 @@ COPY tsconfig.json tsconfig.app.json tsconfig.node.json ./
 # Install dependencies
 RUN corepack enable
 
-# Use --immutable instead of --frozen-lockfile and add retry logic
-RUN yarn install --immutable
+# Skip native addon compilation (fails under QEMU cross-platform emulation)
+RUN YARN_ENABLE_SCRIPTS=0 yarn install --immutable
 
 # Stage 1: Build the application
 FROM base AS builder
