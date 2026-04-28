@@ -7,7 +7,6 @@ import { Fragment } from 'react';
 import Logo from '@/assets/Logo';
 
 import LangSwitch from '@/components/feature/LangSwitch';
-import { ThemeToggle } from '@/components/feature/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { Bars3Icon } from '@heroicons/react/24/outline';
 import React, { useEffect, useState } from 'react';
