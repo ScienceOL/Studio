@@ -1,0 +1,21 @@
+node_modules
+.yarn
+dist
+dist-ssr
+**/dev-dist
+public/assets
+
+# Logs
+*.log
+
+# Editor/OS
+.vscode
+.idea
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# Docs
+README.md

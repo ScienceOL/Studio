@@ -27,3 +27,6 @@ dist-ssr
 # component examples
 */components/shadcn-studio/**
 **/dev-dist/
+
+# Vite PWA dev worker assets
+public/assets/
