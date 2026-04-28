@@ -42,7 +42,6 @@ export const RightSideStatus: React.FC<RightSideStatusProps> = () => {
       {/* 桌面端 */}
       <div className="hidden items-center gap-x-3 lg:flex">
         <LangSwitch />
-        <ThemeToggle />
         {isLogged ? (
           <img
             className="bg-neutral-5 h-8 w-8 rounded-full"
@@ -52,7 +51,7 @@ export const RightSideStatus: React.FC<RightSideStatusProps> = () => {
         ) : (
           <a
             href="/login"
-            className="text-sm font-semibold leading-6 text-neutral-900 opacity-75 hover:text-indigo-600 hover:opacity-100 dark:text-neutral-100 dark:hover:text-white dark:hover:opacity-100"
+            className="text-sm font-semibold leading-6 text-white/75 hover:text-white hover:opacity-100"
           >
             Log in <span aria-hidden="true">&rarr;</span>
           </a>
@@ -70,12 +69,12 @@ export const RightSideStatus: React.FC<RightSideStatusProps> = () => {
         )}
         <button
           type="button"
-          className="-m-2.5 ml-2 inline-flex items-center justify-center rounded-md p-2.5 text-neutral-700 dark:text-neutral-200"
+          className="-m-2.5 ml-2 inline-flex items-center justify-center rounded-md p-2.5 text-white/70"
           onClick={() => setMobileMenuOpen(true)}
         >
           <span className="sr-only">Open main menu</span>
           <Bars3Icon
-            className="h-7 w-7 dark:text-neutral-50"
+            className="h-7 w-7 text-white/80"
             aria-hidden="true"
           />
         </button>
@@ -116,7 +115,6 @@ export const RightSideStatus: React.FC<RightSideStatusProps> = () => {
                 </a>
                 <div className="flex items-center">
                   <LangSwitch className="mr-1.5" />
-                  <ThemeToggle className="mr-1.5" />
                   <button
                     type="button"
                     className="-m-2.5 rounded-md p-2.5 text-neutral-700 transition hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:text-neutral-200 dark:hover:text-neutral-50"

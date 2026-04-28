@@ -21,9 +21,6 @@ const resources = {
     translation: {
       ...enHomepageJson,
       ...enDashboardJson,
-    },
-
-    login: {
       ...enLoginJson,
     },
     about: {
@@ -61,8 +58,6 @@ const resources = {
     translation: {
       ...zhHomepageJson,
       ...zhDashboardJson,
-    },
-    login: {
       ...zhLoginJson,
     },
     userPanel: {

@@ -37,11 +37,11 @@ export default function NavbarFullWidth({
             name={buttonName}
             className={clsx(
               'inline-flex items-center  gap-x-1 text-sm font-semibold leading-6',
-              ' group-hover:text-neutral-900  ',
+              '',
               'transition-transform duration-300 ease-in-out',
               open && activeMenuItem === index
-                ? 'scale-110 text-indigo-600 dark:text-indigo-400'
-                : 'text-neutral-900 dark:text-white'
+                ? 'scale-110 text-indigo-400'
+                : 'text-white/80'
             )}
           >
             {t(`navbar.${buttonName}`)}
@@ -50,8 +50,8 @@ export default function NavbarFullWidth({
                 'h-5 w-5',
                 'transition-transform duration-300 ease-in-out',
                 open && activeMenuItem === index
-                  ? 'rotate-180 text-indigo-600 dark:text-indigo-400'
-                  : 'text-neutral-600 dark:text-neutral-400'
+                  ? 'rotate-180 text-indigo-400'
+                  : 'text-white/50'
               )}
               aria-hidden="true"
             />

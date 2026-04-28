@@ -1,4 +1,24 @@
 {
+  "login": {
+    "tagline": "Welcome to ScienceOL",
+    "subtitle": "Sign in to manage billing, join the community, or use the agent platform.",
+    "apple": "Continue with Apple",
+    "github": "Continue with GitHub",
+    "google": "Continue with Google",
+    "bohrium": "Continue with Bohrium",
+    "terms": "By continuing, you agree to our Terms of Service and Privacy Policy.",
+    "callback": {
+      "processing": "Signing you in…",
+      "success": "Login successful, redirecting…",
+      "error": "Login failed: {{error}}",
+      "stateError": "State verification failed. Please check your Casdoor Redirect URL configuration.",
+      "statusError": "Unexpected login status. Please try again.",
+      "tokenError": "Failed to retrieve login credentials. Please try again.",
+      "unknownError": "An error occurred during login.",
+      "retry": "Retry",
+      "home": "Go Home"
+    }
+  },
   "intro": {
     "title1": "Login or register from email, ",
     "title2": "let's start here.",

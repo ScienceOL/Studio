@@ -36,7 +36,7 @@ const NavbarMenu = () => {
         setOpen={setOpen}
       />
       <a
-        className={`inline-flex items-center gap-x-1 text-sm font-semibold leading-6 text-neutral-900 focus:outline-none dark:text-neutral-100 ${'hover:text-indigo-600 dark:hover:text-indigo-500'}`}
+        className="inline-flex items-center gap-x-1 text-sm font-semibold leading-6 text-white/80 hover:text-white focus:outline-none"
         href="https://docs.sciol.ac.cn"
       >
         <span>{t('navbar.tutorial')}</span>
@@ -56,7 +56,7 @@ const NavbarMenu = () => {
         setOpen={setOpen}
       />
       <a
-        className={`inline-flex items-center gap-x-1 text-sm font-semibold leading-6 text-neutral-900 focus:outline-none dark:text-neutral-100 ${'hover:text-indigo-600 dark:hover:text-indigo-500'}`}
+        className="inline-flex items-center gap-x-1 text-sm font-semibold leading-6 text-white/80 hover:text-white focus:outline-none"
         href="/certification"
       >
         <span>{t('navbar.certification')}</span>
@@ -80,14 +80,9 @@ const Navbar = () => {
             >
               <span className="sr-only">ScienceOL</span>
               <img
-                src="https://storage.sciol.ac.cn/library/BLogo-light.svg"
-                alt="ScienceOL"
-                className="h-8 w-8 dark:hidden"
-              />
-              <img
                 src="https://storage.sciol.ac.cn/library/BLogo-dark.svg"
                 alt="ScienceOL"
-                className="hidden h-8 w-8 dark:block"
+                className="h-8 w-8"
               />
             </a>
             <NavbarMenu />

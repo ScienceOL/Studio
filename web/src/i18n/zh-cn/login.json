@@ -1,4 +1,24 @@
 {
+  "login": {
+    "tagline": "欢迎来到 ScienceOL",
+    "subtitle": "登录以管理账单，参与社区或使用智能体平台。",
+    "apple": "使用 Apple 登录",
+    "github": "使用 GitHub 登录",
+    "google": "使用 Google 登录",
+    "bohrium": "使用 Bohrium 登录",
+    "terms": "继续即表示您同意我们的服务条款和隐私政策。",
+    "callback": {
+      "processing": "正在登录…",
+      "success": "登录成功，正在跳转…",
+      "error": "登录失败：{{error}}",
+      "stateError": "State 验证失败。请检查 Casdoor 的 Redirect URL 配置。",
+      "statusError": "登录状态异常，请重新登录。",
+      "tokenError": "未能获取登录凭证，请重新登录。",
+      "unknownError": "登录过程中发生错误。",
+      "retry": "重新登录",
+      "home": "返回首页"
+    }
+  },
   "intro": {
     "title1": "使用邮箱注册或登录，",
     "title2": "让我们从这里开始...",
