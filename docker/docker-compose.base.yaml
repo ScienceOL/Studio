@@ -1,7 +1,7 @@
 name: sciol-studio
 services:
   network-service:
-    image: registry.sciol.ac.cn/library/alpine:3.22
+    image: alpine:3.22
     container_name: studio-network
     ports:
       - '${WEB_PORT:-32234}:32234'
@@ -14,7 +14,7 @@ services:
       - studio-network
 
   postgresql:
-    image: registry.sciol.ac.cn/library/postgres:16.8-alpine
+    image: postgres:16.8-alpine
     pull_policy: if_not_present
     network_mode: 'service:network-service'
     restart: unless-stopped
@@ -42,7 +42,7 @@ services:
     attach: false
 
   redis:
-    image: registry.sciol.ac.cn/library/redis:7.4.2-alpine
+    image: redis:7.4.2-alpine
     network_mode: 'service:network-service'
     restart: always
     volumes:
@@ -58,7 +58,7 @@ services:
     attach: false
 
   service:
-    image: registry.sciol.ac.cn/sciol/studio-service
+    image: ghcr.io/scienceol/studio-service
     pull_policy: if_not_present
     network_mode: 'service:network-service'
     restart: unless-stopped
@@ -85,7 +85,7 @@ services:
       replicas: 1
 
   schedule:
-    image: registry.sciol.ac.cn/sciol/studio-service
+    image: ghcr.io/scienceol/studio-service
     pull_policy: if_not_present
     network_mode: 'service:network-service'
     restart: unless-stopped
@@ -113,7 +113,7 @@ services:
       replicas: 1
 
   web:
-    image: registry.sciol.ac.cn/sciol/studio-web
+    image: ghcr.io/scienceol/studio-web
     pull_policy: if_not_present
     network_mode: 'service:network-service'
     restart: unless-stopped

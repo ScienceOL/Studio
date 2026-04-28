@@ -1,7 +1,13 @@
 ARG BUILD_ENV=production
 ARG GO_VERSION=1.24.6
 
-FROM registry.sciol.ac.cn/library/golang:${GO_VERSION}-alpine AS base
+FROM golang:${GO_VERSION}-alpine AS base
+
+# Dev stage: for hot-reload with volume mounts
+FROM base AS dev
+WORKDIR /app
+RUN apk add --no-cache git ca-certificates tzdata make
+ENV GOPROXY=https://goproxy.cn,direct
 
 FROM base AS builder
 

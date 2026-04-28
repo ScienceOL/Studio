@@ -1,102 +1,103 @@
-import LogoLoading from '@/components/basic/loading';
 import {
-  BeakerIcon,
-  CircleStackIcon,
-  ComputerDesktopIcon,
-  CpuChipIcon,
-  CubeTransparentIcon,
   PuzzlePieceIcon,
-} from '@heroicons/react/20/solid';
+  CpuChipIcon,
+  CircleStackIcon,
+  CubeTransparentIcon,
+  ComputerDesktopIcon,
+  WrenchScrewdriverIcon,
+} from '@heroicons/react/24/solid';
+import { motion } from 'framer-motion';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
-// 懒加载 3D 组件以优化首屏性能
 const LabScene3D = lazy(() => import('./LabScene3D'));
 
 export default function FeatureOfServer() {
   const { t } = useTranslation();
+
   const features = [
-    {
-      name: t('server.features.robotics.name'),
-      description: t('server.features.robotics.description'),
-      icon: PuzzlePieceIcon,
-    },
-    {
-      name: t('server.features.ai.name'),
-      description: t('server.features.ai.description'),
-      icon: CpuChipIcon,
-    },
-    {
-      name: t('server.features.data.name'),
-      description: t('server.features.data.description'),
-      icon: CircleStackIcon,
-    },
-    {
-      name: t('server.features.digital-twin.name'),
-      description: t('server.features.digital-twin.description'),
-      icon: CubeTransparentIcon,
-    },
-    {
-      name: t('server.features.remote.name'),
-      description: t('server.features.remote.description'),
-      icon: ComputerDesktopIcon,
-    },
-    {
-      name: t('server.features.modular.name'),
-      description: t('server.features.modular.description'),
-      icon: BeakerIcon,
-    },
+    { key: 'robotics', icon: PuzzlePieceIcon },
+    { key: 'ai', icon: CpuChipIcon },
+    { key: 'data', icon: CircleStackIcon },
+    { key: 'digital-twin', icon: CubeTransparentIcon },
+    { key: 'remote', icon: ComputerDesktopIcon },
+    { key: 'modular', icon: WrenchScrewdriverIcon },
   ];
+
   return (
-    <div className="bg-white py-24 dark:bg-neutral-950 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl sm:text-center">
-          <h2 className="text-base font-semibold leading-7 text-indigo-600 dark:text-indigo-400">
+    <section id="osdl" className="relative bg-neutral-950 py-32 overflow-hidden">
+      {/* Gradient accent */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-sky-500/5 to-transparent blur-3xl" />
+
+      <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mx-auto max-w-2xl text-center"
+        >
+          <p className="text-sm font-semibold uppercase tracking-widest text-sky-400">
             {t('server.subtitle')}
-          </h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 sm:text-4xl">
-            {t('server.title')}
           </p>
-          <p className="mt-6 text-lg leading-8 text-neutral-600 dark:text-neutral-300">
+          <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            {t('server.title')}
+          </h2>
+          <p className="mt-6 text-lg leading-8 text-neutral-400">
             {t('server.description')}
           </p>
-        </div>
-      </div>
-      <div className="relative overflow-hidden pt-16">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          {/* 3D 模型展示区域 */}
-          <div className="relative h-[500px] overflow-hidden rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 shadow-2xl ring-1 ring-neutral-950/10 dark:from-neutral-900 dark:to-neutral-800 dark:ring-neutral-50/10">
+        </motion.div>
+
+        {/* 3D Scene */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="mt-16"
+        >
+          <div className="relative h-[500px] overflow-hidden rounded-2xl bg-neutral-900/60 ring-1 ring-neutral-800">
             <Suspense
               fallback={
                 <div className="flex h-full w-full items-center justify-center">
-                  <LogoLoading variant="large" animationType="galaxy" />
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-700 border-t-sky-400" />
                 </div>
               }
             >
               <LabScene3D />
             </Suspense>
           </div>
-          <div className="relative" aria-hidden="true">
-            <div className="absolute -inset-x-20 bottom-0 bg-gradient-to-t from-white pt-[7%] dark:from-neutral-950" />
-          </div>
+        </motion.div>
+
+        {/* Feature grid */}
+        <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature, i) => (
+            <motion.div
+              key={feature.key}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.08 }}
+              className="group rounded-xl bg-neutral-900/40 p-6 ring-1 ring-neutral-800/60 transition-colors hover:ring-neutral-700"
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 ring-1 ring-sky-500/20">
+                  <feature.icon className="h-4.5 w-4.5 text-sky-500" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">
+                    {t(`server.features.${feature.key}.name`)}
+                  </h3>
+                  <p className="mt-1.5 text-sm leading-6 text-neutral-500">
+                    {t(`server.features.${feature.key}.description`)}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
-      <div className="mx-auto mt-16 max-w-7xl px-6 sm:mt-20 md:mt-24 lg:px-8">
-        <dl className="mx-auto grid max-w-2xl grid-cols-1 gap-x-6 gap-y-10 text-base leading-7 text-neutral-600 dark:text-neutral-300 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:grid-cols-3 lg:gap-x-8 lg:gap-y-16">
-          {features.map((feature) => (
-            <div key={feature.name} className="relative pl-9">
-              <dt className="inline font-semibold text-neutral-900 dark:text-neutral-50">
-                <feature.icon
-                  className="absolute left-1 top-1 h-5 w-5 text-indigo-600"
-                  aria-hidden="true"
-                />
-                {feature.name}
-              </dt>{' '}
-              <dd className="inline">{feature.description}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </div>
+    </section>
   );
 }

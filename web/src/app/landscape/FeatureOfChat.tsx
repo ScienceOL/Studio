@@ -1,87 +1,155 @@
-import { GitHubIcon } from '@/assets/SocialIcons';
 import {
-  BookOpenIcon,
-  CloudArrowUpIcon,
-  ServerIcon,
-} from '@heroicons/react/20/solid';
+  BoltIcon,
+  CurrencyDollarIcon,
+  CpuChipIcon,
+} from '@heroicons/react/24/solid';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
 export default function FeatureOfChat() {
   const { t } = useTranslation();
+
   const features = [
     {
       name: t('chat.features.discover.name'),
       description: t('chat.features.discover.description'),
-      icon: CloudArrowUpIcon,
+      icon: BoltIcon,
     },
     {
       name: t('chat.features.connect.name'),
       description: t('chat.features.connect.description'),
-      icon: BookOpenIcon,
+      icon: CurrencyDollarIcon,
     },
     {
       name: t('chat.features.accelerate.name'),
       description: t('chat.features.accelerate.description'),
-      icon: ServerIcon,
+      icon: CpuChipIcon,
     },
   ];
+
   return (
-    <div className="overflow-hidden bg-white py-24 dark:bg-neutral-950 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto grid max-w-2xl grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-2">
-          <div className="lg:pr-8 lg:pt-4">
-            <div className="lg:max-w-lg">
-              <h2 className="text-base font-semibold leading-7 text-indigo-600">
-                {t('chat.subtitle')}
-              </h2>
-              <p className="mt-2 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 sm:text-4xl">
-                {t('chat.title')}
-              </p>
-              <p className="mt-6 text-lg leading-8 text-neutral-600 dark:text-neutral-300">
-                {t('chat.description')}
-              </p>
-              <dl className="mt-10 max-w-xl space-y-8 text-base leading-7 text-neutral-600 dark:text-neutral-300 lg:max-w-none">
-                {features.map((feature) => (
-                  <div key={feature.name} className="relative pl-9">
-                    <dt className="inline font-semibold text-neutral-900 dark:text-neutral-50">
-                      <feature.icon
-                        className="absolute left-1 top-1 h-5 w-5 text-indigo-600"
-                        aria-hidden="true"
-                      />
-                      {feature.name}
-                    </dt>{' '}
-                    <dd className="inline">{feature.description}</dd>
+    <section className="relative bg-neutral-950 py-32 overflow-hidden">
+      {/* Gradient accent */}
+      <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-l from-amber-500/5 to-transparent blur-3xl" />
+
+      <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-16 lg:grid-cols-2 lg:gap-24">
+          {/* Left: content */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <p className="text-sm font-semibold uppercase tracking-widest text-amber-400">
+              {t('chat.subtitle')}
+            </p>
+            <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+              {t('chat.title')}
+            </h2>
+            <p className="mt-6 text-lg leading-8 text-neutral-400">
+              {t('chat.description')}
+            </p>
+
+            <div className="mt-12 space-y-8">
+              {features.map((feature, i) => (
+                <motion.div
+                  key={feature.name}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className="flex gap-4"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 ring-1 ring-amber-500/20">
+                    <feature.icon className="h-5 w-5 text-amber-500" />
                   </div>
-                ))}
-                <div className="group inline-block pl-1 mt-16 cursor-pointer">
-                  <button
-                    type="button"
-                    name="Github"
-                    title="Github"
-                    onClick={() => {
-                      window.open('https://github.com/ScienceOL');
-                    }}
-                    className="font-semibold flex items-center leading-8 text-neutral-900 duration-300 dark:text-neutral-100 cursor-pointer"
-                  >
-                    <GitHubIcon className="size-6 mr-4" />
-                    <span className="" aria-hidden="true">
-                      Github →
-                    </span>
-                  </button>
-                  <span className="mt-1 block h-[0.1rem] w-full origin-left scale-x-0 transform bg-indigo-600 transition-all duration-200 ease-in-out group-hover:scale-x-100 dark:bg-white"></span>
-                </div>
-              </dl>
+                  <div>
+                    <h3 className="text-base font-semibold text-white">{feature.name}</h3>
+                    <p className="mt-1 text-sm leading-6 text-neutral-400">{feature.description}</p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-          </div>
-          <img
-            src="https://storage.sciol.ac.cn/library/hero/ScienceOLGithub.png"
-            alt="Product screenshot"
-            className="w-[48rem] max-w-none rounded-xl shadow-xl ring-1 ring-neutral-400/10 dark:ring-neutral-600/50 sm:w-[57rem] md:-ml-4 lg:-ml-0"
-            width={2432}
-            height={1442}
-          />
+
+            <motion.a
+              href="https://github.com/ScienceOL"
+              target="_blank"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="mt-12 inline-flex items-center gap-2 text-sm font-semibold text-neutral-300 transition-colors hover:text-white"
+            >
+              GitHub &rarr;
+            </motion.a>
+          </motion.div>
+
+          {/* Right: visual placeholder */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="flex items-center justify-center"
+          >
+            <div className="relative w-full max-w-lg aspect-square rounded-2xl bg-neutral-900/60 ring-1 ring-neutral-800 overflow-hidden">
+              {/* Decorative grid */}
+              <div
+                className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage:
+                    'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                  backgroundSize: '40px 40px',
+                }}
+              />
+              {/* Agent nodes visualization */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative">
+                  {/* Center node */}
+                  <div className="h-16 w-16 rounded-full bg-amber-500/20 ring-2 ring-amber-500/40 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-amber-500/40" />
+                  </div>
+                  {/* Orbiting nodes */}
+                  {[0, 60, 120, 180, 240, 300].map((deg, i) => {
+                    const rad = (deg * Math.PI) / 180;
+                    const r = 80;
+                    return (
+                      <motion.div
+                        key={i}
+                        className="absolute h-6 w-6 rounded-full bg-neutral-700 ring-1 ring-neutral-600"
+                        style={{
+                          left: `calc(50% + ${Math.cos(rad) * r}px - 12px)`,
+                          top: `calc(50% + ${Math.sin(rad) * r}px - 12px)`,
+                        }}
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          opacity: [0.5, 1, 0.5],
+                        }}
+                        transition={{
+                          duration: 3,
+                          delay: i * 0.4,
+                          repeat: Infinity,
+                        }}
+                      />
+                    );
+                  })}
+                  {/* Outer ring */}
+                  <div
+                    className="absolute rounded-full border border-neutral-800"
+                    style={{
+                      width: 200,
+                      height: 200,
+                      left: 'calc(50% - 100px)',
+                      top: 'calc(50% - 100px)',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,10 +1,12 @@
 services:
   service:
-    image: registry.sciol.ac.cn/sciol/studio-service
+    image: ghcr.io/scienceol/studio-service
+    pull_policy: never
     working_dir: /app
     build:
       context: ../service
       dockerfile: build/Dockerfile
+      target: dev
     environment:
       - GOPROXY=https://goproxy.cn,direct
       - GIN_MODE=debug
@@ -18,11 +20,13 @@ services:
     command: sh -c "go mod download && make dev"
 
   schedule:
-    image: registry.sciol.ac.cn/sciol/studio-service
+    image: ghcr.io/scienceol/studio-service
+    pull_policy: never
     working_dir: /app
     build:
       context: ../service
       dockerfile: build/Dockerfile
+      target: dev
     environment:
       - GOPROXY=https://goproxy.cn,direct
       - GIN_MODE=debug
@@ -36,10 +40,12 @@ services:
     command: sh -c "go mod download && make dev-schedule"
 
   web:
-    image: registry.sciol.ac.cn/sciol/studio-web
+    image: ghcr.io/scienceol/studio-web
+    pull_policy: never
     build:
       context: ../web
       dockerfile: Dockerfile
+      target: dev
     env_file:
       - .env.dev
     volumes:

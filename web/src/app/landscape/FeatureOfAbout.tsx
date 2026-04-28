@@ -1,54 +1,122 @@
+import {
+  CommandLineIcon,
+  CpuChipIcon,
+  CloudIcon,
+} from '@heroicons/react/24/solid';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
-import ProductMatrix from './ProductMatrix';
+
+const layers = [
+  {
+    id: 'osdl',
+    icon: CpuChipIcon,
+    color: 'emerald',
+    href: '#osdl',
+  },
+  {
+    id: 'opensdl',
+    icon: CommandLineIcon,
+    color: 'sky',
+    href: 'https://github.com/ScienceOL/OpenSDL',
+  },
+  {
+    id: 'xyzen',
+    icon: CloudIcon,
+    color: 'amber',
+    href: 'https://xyzen.cc',
+  },
+];
+
+const colorMap: Record<string, { bg: string; text: string; ring: string; icon: string }> = {
+  emerald: {
+    bg: 'bg-emerald-500/10',
+    text: 'text-emerald-400',
+    ring: 'ring-emerald-500/20',
+    icon: 'text-emerald-500',
+  },
+  sky: {
+    bg: 'bg-sky-500/10',
+    text: 'text-sky-400',
+    ring: 'ring-sky-500/20',
+    icon: 'text-sky-500',
+  },
+  amber: {
+    bg: 'bg-amber-500/10',
+    text: 'text-amber-400',
+    ring: 'ring-amber-500/20',
+    icon: 'text-amber-500',
+  },
+};
 
 export default function FeatureOfAbout() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+
   return (
-    <div
-      id="introduction"
-      className="relative isolate overflow-hidden bg-gradient-to-b from-indigo-100/20 py-4 dark:from-black/10"
-    >
-      <div
-        className="absolute inset-y-0 right-1/2 -z-20 -mr-96 w-[200%] origin-top-right skew-x-[-30deg] bg-white
-      shadow-xl shadow-indigo-600/10 ring-1 ring-indigo-50 dark:bg-black/10 dark:ring-indigo-950 sm:-mr-80 lg:-mr-96"
-        aria-hidden="true"
-      />
-      <div className="absolute inset-x-0 top-0 -z-10 h-24 bg-gradient-to-b from-white dark:from-black/10 sm:h-36" />
-      <div className="mx-auto max-w-8xl px-6 py-24 sm:py-32 lg:px-8 2xl:max-w-9xl">
-        <div className="mx-auto flex max-w-2xl flex-col lg:mx-0 lg:max-w-none">
-          <h1
-            className="max-w-2xl text-4xl font-bold tracking-tight text-neutral-900
-         dark:text-white sm:text-6xl sm:leading-16"
-          >
+    <section id="introduction" className="relative bg-neutral-950 py-32 overflow-hidden">
+      {/* Subtle accent */}
+      <div className="absolute inset-0 bg-gradient-to-b from-neutral-950 via-neutral-900/50 to-neutral-950" />
+
+      <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="max-w-2xl"
+        >
+          <p className="text-sm font-semibold uppercase tracking-widest text-emerald-400">
+            Ecosystem
+          </p>
+          <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
             {t('about.title')}
-          </h1>
-          <div className="mt-6 max-w-xl">
-            <p className="text-lg leading-8 text-neutral-600 dark:text-neutral-300">
-              {t('about.description')}
-            </p>
-            <div className="mt-10 flex items-center justify-start gap-x-6">
-              <div className="group inline-block">
-                <button
-                  type="button"
-                  name="Learn more"
-                  title="Learn more"
-                  onClick={() => {
-                    navigate('/manifesto');
-                  }}
-                  className="relative text-sm font-semibold leading-6 text-neutral-900 group-hover:text-indigo-600 dark:text-neutral-100 dark:group-hover:text-white"
-                >
-                  {t('about.button.primary')} →
-                </button>
-                <span className="mt-1 block h-0.5 w-full origin-left scale-x-0 transform bg-indigo-600 transition-all duration-200 ease-in-out group-hover:scale-x-100 dark:bg-white"></span>
-              </div>
-            </div>
-          </div>
-          <ProductMatrix />
+          </h2>
+          <p className="mt-6 text-lg leading-8 text-neutral-400">
+            {t('about.description')}
+          </p>
+        </motion.div>
+
+        {/* Three-layer cards */}
+        <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-3">
+          {layers.map((layer, i) => {
+            const colors = colorMap[layer.color];
+            return (
+              <motion.a
+                key={layer.id}
+                href={layer.href}
+                target={layer.href.startsWith('http') ? '_blank' : undefined}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                whileHover={{ y: -4 }}
+                className="group relative rounded-2xl bg-neutral-900/80 p-8 ring-1 ring-neutral-800 transition-colors hover:ring-neutral-700"
+              >
+                {/* Layer number */}
+                <span className="absolute top-6 right-6 text-6xl font-bold text-neutral-800/60">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+
+                <div className={`inline-flex rounded-lg p-2.5 ${colors.bg} ring-1 ${colors.ring}`}>
+                  <layer.icon className={`h-6 w-6 ${colors.icon}`} />
+                </div>
+
+                <h3 className="mt-6 text-xl font-bold text-white">
+                  {t(`products.${layer.id}.name`)}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-neutral-400">
+                  {t(`products.${layer.id}.description`)}
+                </p>
+
+                <div className={`mt-6 flex items-center gap-1 text-sm font-medium ${colors.text}`}>
+                  <span className="transition-transform group-hover:translate-x-0.5">
+                    Learn more &rarr;
+                  </span>
+                </div>
+              </motion.a>
+            );
+          })}
         </div>
       </div>
-      <div className="absolute inset-x-0 bottom-0 -z-10 h-24 bg-gradient-to-t from-white dark:from-neutral-950 sm:h-28" />
-    </div>
+    </section>
   );
 }
